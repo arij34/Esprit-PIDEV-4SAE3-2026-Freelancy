@@ -1,0 +1,13 @@
+com\smartfreelance\backend\config\CorsConfig.class
+com\smartfreelance\backend\controller\AuthController.class
+com\smartfreelance\backend\repository\SubscriptionRepository.class
+com\smartfreelance\backend\model\User.class
+com\smartfreelance\backend\config\SecurityConfig.class
+com\smartfreelance\backend\model\Role.class
+com\smartfreelance\backend\BackendApplication.class
+com\smartfreelance\backend\model\SubscriptionType.class
+com\smartfreelance\backend\model\SubscriptionStatus.class
+com\smartfreelance\backend\repository\UserRepository.class
+com\smartfreelance\backend\model\Subscription.class
+com\smartfreelance\backend\config\GlobalExceptionHandler.class
+com\smartfreelance\backend\controller\UserController.class
