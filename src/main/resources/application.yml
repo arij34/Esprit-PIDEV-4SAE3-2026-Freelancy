@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+
+        - id: skill-service
+          uri: lb://skill-management-service
+          predicates:
+            - Path=/skills/**
+
+        - id: ai-service
+          uri: lb://ai-matching-service
+          predicates:
+            - Path=/ai/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
