@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: smart-freelance-backend
+
+  # OAuth2 Resource Server (Keycloak)
+  # (configured via custom JwtDecoder bean; see SecurityConfig)
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/smart_freelance?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: ""
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+app:
+  keycloak:
+    issuer: https://localhost:8443/realms/smart-platform
+    jwk-set-uri: http://localhost:8081/realms/smart-platform/protocol/openid-connect/certs
