@@ -24,3 +24,8 @@ app:
   keycloak:
     issuer: https://localhost:8443/realms/smart-platform
     jwk-set-uri: http://localhost:8081/realms/smart-platform/protocol/openid-connect/certs
+
+
+# NOTE:
+# This project uses application.properties as the main source of truth for ports and Eureka.
+# Keeping application.yml minimal avoids configuration conflicts.
