@@ -53,6 +53,15 @@ public class PublicSignupController {
             keycloakAdminService.assignRealmRole(keycloakId, role);
         }
 
+        // Send email verification link via Keycloak
+        try {
+            keycloakAdminService.sendVerifyEmail(keycloakId);
+        } catch (Exception e) {
+            // If SMTP isn't configured, we don't want to rollback user creation.
+            // The admin can re-send verification emails from Keycloak UI.
+            System.out.println("WARN: Failed to send verification email: " + e.getMessage());
+        }
+
         // Create in local DB with role = null (will be filled on sign-in via /api/me/sync)
         User user = new User();
         user.setFirstName(req.firstName);
@@ -65,7 +74,10 @@ public class PublicSignupController {
         user.setRole(null);
         userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of("message", "Signup successful"));
+        return ResponseEntity.ok(Map.of(
+                "message",
+                "Signup successful. Please check your email to confirm your account before signing in."
+        ));
     }
 
     private boolean isBlank(String s) {

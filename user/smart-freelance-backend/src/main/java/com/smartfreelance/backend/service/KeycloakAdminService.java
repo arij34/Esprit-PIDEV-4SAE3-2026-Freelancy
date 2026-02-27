@@ -1,6 +1,8 @@
 package com.smartfreelance.backend.service;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,19 @@ public class KeycloakAdminService {
 
     @Value("${keycloak.admin.target-realm}")
     private String targetRealm;
+
+    /**
+     * Keycloak clientId used to generate the verify-email link redirect.
+     * Must be a valid client in the target realm.
+     */
+    @Value("${keycloak.admin.client-id:angular-app}")
+    private String clientId;
+
+    /**
+     * Where Keycloak should redirect the user after successful email verification.
+     */
+    @Value("${keycloak.admin.verify-email-redirect-uri:http://localhost:4200/signin}")
+    private String verifyEmailRedirectUri;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -80,11 +95,15 @@ public class KeycloakAdminService {
         headers.setBearerAuth(token);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
+        // IMPORTANT:
+        // - emailVerified must be false so Keycloak can send a verification email.
+        // - requiredActions includes VERIFY_EMAIL to enforce verification.
         Map<String, Object> payload = Map.of(
                 "username", email,
                 "email", email,
                 "enabled", true,
-                "emailVerified", true,
+                "emailVerified", false,
+                "requiredActions", List.of("VERIFY_EMAIL"),
                 "firstName", firstName,
                 "lastName", lastName
         );
@@ -110,6 +129,34 @@ public class KeycloakAdminService {
         restTemplate.exchange(pwdUrl, HttpMethod.PUT, new HttpEntity<>(pwdPayload, headers), String.class);
 
         return userId;
+    }
+
+    /**
+     * Sends Keycloak's built-in verification email with a secure link.
+     * The link, when clicked, will set emailVerified=true for that user.
+     *
+     * Requires:
+     * - SMTP configured in Keycloak realm
+     * - the clientId allows the redirect URI (Valid Redirect URIs)
+     */
+    public void sendVerifyEmail(String userId) {
+        String token = getAdminToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String url = baseUrl
+                + "/admin/realms/" + targetRealm
+                + "/users/" + userId
+                + "/execute-actions-email"
+                + "?client_id=" + urlEncode(clientId)
+                + "&redirect_uri=" + urlEncode(verifyEmailRedirectUri)
+                + "&lifespan=1800";
+
+        // Body is a JSON array of required actions.
+        List<String> actions = List.of("VERIFY_EMAIL");
+        restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(actions, headers), String.class);
     }
 
     public void assignRealmRole(String userId, String roleName) {
@@ -231,7 +278,7 @@ public class KeycloakAdminService {
     }
 
     private String urlEncode(String value) {
-        return value.replace(" ", "%20");
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     public List<Map<String, Object>> listUsers(int max) {
@@ -240,6 +287,45 @@ public class KeycloakAdminService {
         headers.setBearerAuth(token);
 
         String url = baseUrl + "/admin/realms/" + targetRealm + "/users?max=" + max;
+        List list = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), List.class).getBody();
+        return (List<Map<String, Object>>) (List<?>) (list != null ? list : List.of());
+    }
+
+    /**
+     * Paginated users list (Keycloak admin API).
+     */
+    public List<Map<String, Object>> listUsersPage(int first, int max) {
+        String token = getAdminToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        String url = baseUrl + "/admin/realms/" + targetRealm + "/users?first=" + first + "&max=" + max;
+        List list = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), List.class).getBody();
+        return (List<Map<String, Object>>) (List<?>) (list != null ? list : List.of());
+    }
+
+    /**
+     * Total users count in Keycloak.
+     */
+    public long countUsers() {
+        String token = getAdminToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        String url = baseUrl + "/admin/realms/" + targetRealm + "/users/count";
+        Integer count = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), Integer.class).getBody();
+        return count != null ? count.longValue() : 0L;
+    }
+
+    /**
+     * Paginated list of users that have a given realm role.
+     */
+    public List<Map<String, Object>> listUsersByRealmRole(String roleName, int first, int max) {
+        String token = getAdminToken();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        String url = baseUrl + "/admin/realms/" + targetRealm + "/roles/" + urlEncode(roleName) + "/users?first=" + first + "&max=" + max;
         List list = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), List.class).getBody();
         return (List<Map<String, Object>>) (List<?>) (list != null ? list : List.of());
     }
