@@ -1,0 +1,87 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+
+        # Skill Service***
+        - id: skill-management
+          uri: lb://skill-management-service
+          predicates:
+            - Path=/skills/**
+
+        # AI Service
+        - id: ai-service
+          uri: lb://ai-matching-service
+          predicates:
+            - Path=/ai/**
+
+        # Project Service
+        - id: project-service
+          uri: lb://project-service
+          predicates:
+            - Path=/projects/**
+
+        # Contract Service
+        - id: contract-service
+          uri: lb://contract-service
+          predicates:
+            - Path=/contracts/**
+
+        # Challenge Service**
+        - id: challenge-service
+          uri: lb://challenge-service
+          predicates:
+            - Path=/challenges/**
+
+        # Roadmap Service**
+        - id: RoadMap-Carrer
+          uri: lb://roadmap-service
+          predicates:
+            - Path=/roadmaps/**
+
+        # User Service
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**
+
+        # Blog Service
+        - id: blog-service
+          uri: lb://blog-service
+          predicates:
+            - Path=/blogs/**
+
+        # Blog Analytic Service
+        - id: blog-analytic-service
+          uri: lb://blog-analytic-service
+          predicates:
+            - Path=/blog-analytics/**
+
+        # Event Service**
+        - id: evenment
+          uri: lb://event-service
+          predicates:
+            - Path=/events/**
+
+        # Planning Service
+        - id: planning-service
+          uri: lb://planning-service
+          predicates:
+            - Path=/planning/**
+
+        # Subscribe Service
+        - id: subscribe-service
+          uri: lb://subscribe-service
+          predicates:
+            - Path=/subscribe/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
