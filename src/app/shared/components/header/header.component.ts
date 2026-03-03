@@ -1,6 +1,7 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { KC_ROLES } from '../../../core/auth/roles';
 
 @Component({
   selector: 'app-header',
@@ -14,6 +15,7 @@ export class HeaderComponent implements OnInit {
 
   isLoggedIn = false;
   username?: string;
+  isFreelancer = false;
 
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
@@ -45,6 +47,9 @@ export class HeaderComponent implements OnInit {
   async refreshAuthState(): Promise<void> {
     this.isLoggedIn = await this.auth.isLoggedIn();
     this.username = this.isLoggedIn ? this.auth.getDisplayName() : undefined;
+
+    // Role-based UI
+    this.isFreelancer = this.isLoggedIn && this.auth.hasRole(KC_ROLES.FREELANCER);
   }
 
   toggleMobileMenu(): void {

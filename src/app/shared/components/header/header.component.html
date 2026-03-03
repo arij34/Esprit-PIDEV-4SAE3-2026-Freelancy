@@ -20,6 +20,12 @@
         <a class="nav-link" routerLink="/challenges" routerLinkActive="active" *ngIf="isLoggedIn">
           <span>Challenges</span>
         </a>
+        <a class="nav-link" routerLink="/events" routerLinkActive="active" *ngIf="isFreelancer">
+          <span>Event</span>
+        </a>
+        <a class="nav-link" routerLink="/events/participants" routerLinkActive="active" *ngIf="isFreelancer">
+          <span>Participant</span>
+        </a>
         <a class="nav-link" href="#about">
           <span>About</span>
         </a>
@@ -30,6 +36,8 @@
           <span>Contact</span>
         </a>
       </div>
+
+      
 
       <div class="header-actions">
 
@@ -100,6 +108,12 @@
       </a>
       <a class="mobile-nav-link" routerLink="/challenges" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isLoggedIn">
         Challenges
+      </a>
+      <a class="mobile-nav-link" routerLink="/events" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isFreelancer">
+        Event
+      </a>
+      <a class="mobile-nav-link" routerLink="/events/participants" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isFreelancer">
+        Participant
       </a>
       <a class="mobile-nav-link" href="#about" (click)="closeMobileMenu()">
         About

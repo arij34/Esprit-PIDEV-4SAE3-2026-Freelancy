@@ -38,6 +38,14 @@ const routes: Routes = [
     loadChildren: () => import('./features/front-office/front-office.module').then(m => m.FrontOfficeModule)
   },
 
+  // Events (FREELANCER only)
+  {
+    path: 'events',
+    canActivate: [RoleGuard],
+    data: { roles: [KC_ROLES.FREELANCER] },
+    loadChildren: () => import('./features/evenement/evenement.module').then(m => m.EvenementModule)
+  },
+
   { path: 'not-authorized', component: NotAuthorizedComponent },
 
   // Local signup form (creates user in Keycloak + DB)
