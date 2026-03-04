@@ -21,7 +21,7 @@ public class PendingSkillController {
 
     @PostMapping("/{id}/approve")
     public void approve(@PathVariable Long id) {
-        service.approve(id);
+        service.approvePendingSkill(id);
     }
 
     @PostMapping("/{id}/reject")

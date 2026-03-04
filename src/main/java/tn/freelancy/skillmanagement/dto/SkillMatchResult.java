@@ -9,6 +9,9 @@ public class SkillMatchResult {
     private boolean exactMatch;
     private boolean suggestion;
 
+    public SkillMatchResult() {}
+
+
     public SkillMatchResult(Skill skill, double confidence, boolean exactMatch, boolean suggestion) {
         this.skill = skill;
         this.confidence = confidence;
@@ -31,4 +34,9 @@ public class SkillMatchResult {
     public boolean isSuggestion() {
         return suggestion;
     }
+
+    public void setSkill(Skill s)        { this.skill = s; }
+    public void setConfidence(double c)  { this.confidence = c; }
+    public void setExactMatch(boolean e) { this.exactMatch = e; }
+    public void setSuggestion(boolean s) { this.suggestion = s; }
 }

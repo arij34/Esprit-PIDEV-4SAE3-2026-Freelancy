@@ -1,6 +1,5 @@
 package tn.freelancy.skillmanagement.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.freelancy.skillmanagement.dto.SkillMatchResult;
 import tn.freelancy.skillmanagement.entity.*;
@@ -12,261 +11,171 @@ import java.util.*;
 @Service
 public class SkillMatcherService {
 
-    @Autowired
-    private SkillRepository skillRepository;
-    @Autowired
-    private PendingSkillRepository pendingSkillRepository;
+    private final SkillRepository skillRepository;
+    private final PendingSkillRepository pendingSkillRepository;
+    private final SimilarityService similarityService;
 
-    // ✅ TEMP USER ID FOR TESTING
-    private static final Long TEST_USER_ID = 1L; // ⚠️ change later when integrating security
-    // =========================
-    // Alias Dictionary (NORMALIZED)
-    // =========================
+    public SkillMatcherService(SkillRepository skillRepository,
+                               PendingSkillRepository pendingSkillRepository,
+                               SimilarityService similarityService) {
+        this.skillRepository = skillRepository;
+        this.pendingSkillRepository = pendingSkillRepository;
+        this.similarityService = similarityService;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // SEUILS
+    // ════════════════════════════════════════════════════════════
+    private static final double EXACT_MATCH_THRESHOLD    = 0.95;
+    private static final double GOOD_MATCH_THRESHOLD     = 0.80;
+    private static final double SUGGESTION_MIN_THRESHOLD = 0.45;
+
+    // ════════════════════════════════════════════════════════════
+    // ALIASES
+    // ════════════════════════════════════════════════════════════
     private static final Map<String, String> ALIASES = new HashMap<>();
 
     static {
-
-        // JavaScript
-        putAlias("js", "javascript");
-        putAlias("javascript", "javascript");
-        putAlias("js.js", "javascript");
-
-        // TypeScript
-        putAlias("ts", "typescript");
-        putAlias("typescript", "typescript");
-
-        // Python
-        putAlias("python", "python");
-        putAlias("py", "python");
-        putAlias("python3", "python");
-
-        // Java
-        putAlias("java", "java");
-        putAlias("jdk", "java");
-
-        // Spring Boot
-        putAlias("spring", "springboot");
-        putAlias("springboot", "springboot");
+        putAlias("js", "javascript");       putAlias("javascript", "javascript");
+        putAlias("ts", "typescript");       putAlias("typescript", "typescript");
+        putAlias("python", "python");       putAlias("py", "python");
+        putAlias("java", "java");           putAlias("jdk", "java");
+        putAlias("spring", "springboot");   putAlias("springboot", "springboot");
         putAlias("spring boot", "springboot");
-
-        // Node
-        putAlias("node", "nodejs");
-        putAlias("nodejs", "nodejs");
-        putAlias("node.js", "nodejs");
-
-        // React
-        putAlias("react", "react");
-        putAlias("reactjs", "react");
-        putAlias("react.js", "react");
-
-        // Vue
-        putAlias("vue", "vuejs");
-        putAlias("vuejs", "vuejs");
-        putAlias("vue.js", "vuejs");
-
-        // Angular
-        putAlias("angular", "angular");
-        putAlias("angularjs", "angular");
-
-        // Databases
+        putAlias("node", "nodejs");         putAlias("nodejs", "nodejs");
+        putAlias("react", "react");         putAlias("reactjs", "react");
+        putAlias("vue", "vuejs");           putAlias("vuejs", "vuejs");
+        putAlias("angular", "angular");     putAlias("angularjs", "angular");
         putAlias("mysql", "mysql");
-        putAlias("postgres", "postgresql");
-        putAlias("postgresql", "postgresql");
-        putAlias("mongo", "mongodb");
-        putAlias("mongodb", "mongodb");
-
-        // DevOps
-        putAlias("k8s", "kubernetes");
-        putAlias("kube", "kubernetes");
-        putAlias("kubernetes", "kubernetes");
-        putAlias("docker", "docker");
-        putAlias("git", "git");
-        putAlias("github", "git");
+        putAlias("postgres", "postgresql"); putAlias("postgresql", "postgresql");
+        putAlias("mongo", "mongodb");       putAlias("mongodb", "mongodb");
+        putAlias("k8s", "kubernetes");      putAlias("kubernetes", "kubernetes");
+        putAlias("docker", "docker");       putAlias("git", "git");
         putAlias("aws", "aws");
-        putAlias("amazon", "aws");
-
-        // C
-        putAlias("c#", "csharp");
-        putAlias("csharp", "csharp");
-        putAlias("c++", "cplusplus");
-        putAlias("cpp", "cplusplus");
-
-        // PHP
-        putAlias("php", "php");
-        putAlias("laravel", "laravel");
-        putAlias("symfony", "php");
+        putAlias("c#", "csharp");           putAlias("csharp", "csharp");
+        putAlias("c++", "cplusplus");       putAlias("cpp", "cplusplus");
+        putAlias("php", "php");             putAlias("laravel", "laravel");
     }
 
     private static void putAlias(String key, String value) {
-        ALIASES.put(normalizeStatic(key), normalizeStatic(value));
+        ALIASES.put(
+                key.toLowerCase().replaceAll("[^a-z0-9]", ""),
+                value.toLowerCase().replaceAll("[^a-z0-9]", "")
+        );
     }
 
-    private static String normalizeStatic(String input) {
-        return input.toLowerCase()
-                .replaceAll("[^a-z0-9]", "")
-                .trim();
-    }
+    // ════════════════════════════════════════════════════════════
+    // MAIN METHOD — utilisée pour créer un FreelancerSkill
+    // Retourne null si pas de match suffisant (< GOOD_MATCH_THRESHOLD)
+    // ════════════════════════════════════════════════════════════
+    public SkillMatchResult findMatchingSkill(String input) {
 
-    // ====================================================
-    // MAIN MATCHING METHOD
-    // ====================================================
-    public SkillMatchResult findMatchingSkill(String userInput) {
+        String normalizedInput = similarityService.normalize(input);
+        SkillMatchResult best = computeBestMatch(normalizedInput);
 
-        if (userInput == null || userInput.isBlank()) {
-            return null;
+        if (best == null) return null;
+
+        // ✅ Bon match → on associe directement le skill
+        if (best.getConfidence() >= GOOD_MATCH_THRESHOLD) {
+            return new SkillMatchResult(best.getSkill(), best.getConfidence(), false, false);
         }
-
-        String cleaned = normalize(userInput);
-
-        // 1️⃣ Alias match
-        String aliasMatch = ALIASES.get(cleaned);
-        if (aliasMatch != null) {
-
-            Skill skill = skillRepository
-                    .findByNormalizedNameIgnoreCase(aliasMatch);
-
-            if (skill != null) {
-                return new SkillMatchResult(skill, 1.0, true, false);
-            }
-        }
-
-        // 2️⃣ Exact match
-        Skill exact = skillRepository
-                .findByNormalizedNameIgnoreCase(cleaned);
-
-        if (exact != null) {
-            return new SkillMatchResult(exact, 1.0, true, false);
-        }
-
-        // 3️⃣ Fuzzy match
-        List<Skill> candidates = skillRepository.findAll();
-
-        Skill bestMatch = null;
-        double bestScore = 0.0;
-
-        for (Skill skill : candidates) {
-
-            String normalizedSkill = normalize(skill.getNormalizedName());
-            double similarity = calculateSimilarity(cleaned, normalizedSkill);
-
-            if (similarity > bestScore) {
-                bestScore = similarity;
-                bestMatch = skill;
-            }
-        }
-
-        if (bestMatch != null) {
-
-            if (bestScore >= 0.75) {
-                return new SkillMatchResult(bestMatch, bestScore, false, false);
-            }
-
-            if (bestScore >= 0.55) {
-                return new SkillMatchResult(bestMatch, bestScore, false, true);
-            }
-        }
-
-        // 4️⃣ No match → create PendingSkill
-        createPendingSkill(userInput, cleaned, TEST_USER_ID);
 
         return null;
     }
 
-    // ====================================================
-    // LEVENSHTEIN DISTANCE
-    // ====================================================
-    private int levenshteinDistance(String a, String b) {
+    // ════════════════════════════════════════════════════════════
+    // DID YOU MEAN — utilisée par le controller /match
+    // Retourne toujours un résultat (suggestion ou exact)
+    // ════════════════════════════════════════════════════════════
+    public SkillMatchResult findMatchOrSuggest(String input) {
 
-        int[][] dp = new int[a.length() + 1][b.length() + 1];
+        String normalizedInput = similarityService.normalize(input);
 
-        for (int i = 0; i <= a.length(); i++) {
-            for (int j = 0; j <= b.length(); j++) {
-
-                if (i == 0) {
-                    dp[i][j] = j;
-                } else if (j == 0) {
-                    dp[i][j] = i;
-                } else {
-                    dp[i][j] = Math.min(
-                            Math.min(
-                                    dp[i - 1][j] + 1,
-                                    dp[i][j - 1] + 1
-                            ),
-                            dp[i - 1][j - 1] +
-                                    (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1)
-                    );
-                }
+        // 1️⃣ Vérifier alias exact
+        String aliasKey = normalizedInput.replaceAll("[^a-z0-9]", "");
+        if (ALIASES.containsKey(aliasKey)) {
+            String aliasTarget = ALIASES.get(aliasKey);
+            Skill aliasSkill = skillRepository
+                    .findByNormalizedNameIgnoreCase(aliasTarget);
+            if (aliasSkill != null) {
+                // C'est un alias exact → match parfait, pas une suggestion
+                return new SkillMatchResult(aliasSkill, 1.0, true, false);
             }
         }
 
-        return dp[a.length()][b.length()];
+        SkillMatchResult best = computeBestMatch(normalizedInput);
+        if (best == null) return null;
+
+        double confidence = best.getConfidence();
+
+        // 2️⃣ Match exact (score >= 0.90)
+        if (confidence >= EXACT_MATCH_THRESHOLD) {
+            return new SkillMatchResult(best.getSkill(), confidence, true, false);
+        }
+
+        // 3️⃣ Bon match (0.70 - 0.90) → match mais pas exact
+        if (confidence >= GOOD_MATCH_THRESHOLD) {
+            return new SkillMatchResult(best.getSkill(), confidence, false, false);
+        }
+
+        // 4️⃣ "Did you mean ?" (0.45 - 0.70) → suggestion
+        if (confidence >= SUGGESTION_MIN_THRESHOLD) {
+            return new SkillMatchResult(best.getSkill(), confidence, false, true);
+        }
+
+        // 5️⃣ Trop faible → null
+        return null;
     }
 
-    // ====================================================
-    // NORMALIZATION
-    // ====================================================
-    private String normalize(String input) {
-        return input.toLowerCase()
-                .replaceAll("[^a-z0-9]", "")
-                .trim();
-    }
+    // ════════════════════════════════════════════════════════════
+    // CALCUL DU MEILLEUR MATCH (logique commune)
+    // ════════════════════════════════════════════════════════════
+    private SkillMatchResult computeBestMatch(String normalizedInput) {
 
-    // ====================================================
-    // SIMILARITY CALCULATION
-    // ====================================================
-    private double calculateSimilarity(String input, String skill) {
+        double bestScore = 0.0;
+        Skill bestSkill = null;
 
-        if (input.equals(skill)) {
-            return 1.0;
+        for (Skill skill : skillRepository.findAll()) {
+
+            String normalizedSkill = similarityService.normalize(skill.getName());
+
+            double levenshtein = similarityService.calculateSimilarity(
+                    normalizedInput, normalizedSkill);
+
+            double jaro = similarityService.calculateJaroWinkler(
+                    normalizedInput, normalizedSkill);
+
+            double score = (levenshtein * 0.5) + (jaro * 0.3);
+
+            // Contains boost
+            if (normalizedInput.contains(normalizedSkill)
+                    || normalizedSkill.contains(normalizedInput)) {
+                score += 0.15;
+            }
+
+            // Token overlap
+            Set<String> inputTokens = new HashSet<>(
+                    Arrays.asList(normalizedInput.split(" ")));
+            Set<String> skillTokens = new HashSet<>(
+                    Arrays.asList(normalizedSkill.split(" ")));
+            inputTokens.retainAll(skillTokens);
+            score += inputTokens.size() * 0.05;
+
+            // Pénalité longueur
+            int lengthDiff = Math.abs(
+                    normalizedInput.length() - normalizedSkill.length());
+            score -= (lengthDiff * 0.01);
+
+            if (score > bestScore ||
+                    (score == bestScore && bestSkill != null
+                            && skill.getName().length() > bestSkill.getName().length())) {
+                bestScore = score;
+                bestSkill = skill;
+            }
         }
 
-        if (skill.contains(input)) {
-            return 0.90;
-        }
+        if (bestSkill == null) return null;
 
-        if (input.contains(skill)) {
-            return 0.85;
-        }
-
-        if (skill.startsWith(input)) {
-            return 0.88;
-        }
-
-        int distance = levenshteinDistance(input, skill);
-        int maxLength = Math.max(input.length(), skill.length());
-
-        if (maxLength == 0) {
-            return 0;
-        }
-
-        double levScore = 1.0 - ((double) distance / maxLength);
-
-        if (distance == 1) {
-            levScore += 0.1;
-        }
-
-        return levScore;
-    }
-    private void createPendingSkill(String originalInput,
-                                    String normalized,
-                                    Long userId) {
-
-        boolean alreadyExists =
-                pendingSkillRepository
-                        .existsByNormalizedNameAndStatus(normalized, Status.DRAFT);
-
-        if (alreadyExists) {
-            return;
-        }
-
-        PendingSkill pendingSkill = new PendingSkill(
-                originalInput,
-                normalized,
-                userId,
-                Source.FREELANCER,
-                Status.DRAFT
-        );
-
-        pendingSkillRepository.save(pendingSkill);
+        return new SkillMatchResult(bestSkill, bestScore, false, false);
     }
 }

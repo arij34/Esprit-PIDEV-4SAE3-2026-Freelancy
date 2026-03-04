@@ -7,10 +7,11 @@ public enum EducationDegree {
     BACHELOR,
     MASTER,
     MBA,
-    ENGINEERING,
+    ENGINEER,
     PHD,
     DOCTORATE,
     PROFESSIONAL_CERTIFICATE,
     DIPLOMA,
-    OTHER
+    OTHER,
+    BTS
 }

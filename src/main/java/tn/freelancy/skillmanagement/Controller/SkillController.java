@@ -1,5 +1,7 @@
 package tn.freelancy.skillmanagement.Controller;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.freelancy.skillmanagement.dto.SkillMatchResult;
 import tn.freelancy.skillmanagement.entity.Skill;
@@ -7,6 +9,7 @@ import tn.freelancy.skillmanagement.service.SkillMatcherService;
 import tn.freelancy.skillmanagement.service.SkillService;
 
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/skills")
 public class SkillController {
@@ -38,13 +41,23 @@ public class SkillController {
         return skillService.updateSkill(skill);
     }
 
-
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         skillService.deleteSkill(id);
     }
     @GetMapping("/match")
-    public SkillMatchResult matchSkill(@RequestParam String input) {
-        return skillMatcherService.findMatchingSkill(input);
+    public ResponseEntity<SkillMatchResult> matchSkill(@RequestParam String input) {
+
+        if (input == null || input.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        SkillMatchResult result = skillMatcherService.findMatchOrSuggest(input.trim());
+
+        if (result == null) {
+            return ResponseEntity.ok().build(); 
+        }
+
+        return ResponseEntity.ok(result);
     }
 }
