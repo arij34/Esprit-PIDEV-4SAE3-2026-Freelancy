@@ -12,6 +12,7 @@ export class HeaderComponent implements OnInit {
   isScrolled = false;
   isMobileMenuOpen = false;
   isUserMenuOpen = false;
+isClient = false; 
 
   isLoggedIn = false;
   username?: string;
@@ -47,6 +48,7 @@ export class HeaderComponent implements OnInit {
   async refreshAuthState(): Promise<void> {
     this.isLoggedIn = await this.auth.isLoggedIn();
     this.username = this.isLoggedIn ? this.auth.getDisplayName() : undefined;
+    this.isClient = this.isLoggedIn && this.auth.hasRole(KC_ROLES.CLIENT);
 
     // Role-based UI
     this.isFreelancer = this.isLoggedIn && this.auth.hasRole(KC_ROLES.FREELANCER);

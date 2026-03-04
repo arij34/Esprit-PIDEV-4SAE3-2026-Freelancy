@@ -10,6 +10,7 @@ import {ProjectsViewComponent} from './back-office/components/views/projects-vie
 import { UsersViewComponent } from './back-office/components/views/users-view/users-view.component';
 import { StatsViewComponent } from './back-office/components/views/stats-view/stats-view.component';
 import { FormsModule } from '@angular/forms';
+import { DeleteRequestsComponent } from './back-office/components/views/projects-view/delete-requests/delete-requests.component';
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import { FormsModule } from '@angular/forms';
     ContractsViewComponent,
     ProjectsViewComponent,
     UsersViewComponent,
-    StatsViewComponent
+    StatsViewComponent,
+    DeleteRequestsComponent
   ],
   imports: [
     CommonModule,

@@ -5,5 +5,6 @@ export const environment = {
   challengeTasksPath: '/tasks/challenge/{id}',
   addTaskPath: '/tasks/{id}',
   appName: 'ChallengePro',
-  version: '1.0.0'
+  version: '1.0.0',
+  projectApiUrl: 'http://localhost:8085'
 };

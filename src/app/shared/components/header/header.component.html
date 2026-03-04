@@ -20,6 +20,14 @@
         <a class="nav-link" routerLink="/challenges" routerLinkActive="active" *ngIf="isLoggedIn">
           <span>Challenges</span>
         </a>
+        <a class="nav-link" routerLink="/front-office/projet-client" 
+   routerLinkActive="active" *ngIf="isClient">
+  <span>Projets</span>
+</a>
+<a class="nav-link" routerLink="/front-office/discover" 
+   routerLinkActive="active" *ngIf="isFreelancer">
+  <span>Projets</span>
+</a>
         <a class="nav-link" routerLink="/events" routerLinkActive="active" *ngIf="isFreelancer">
           <span>Event</span>
         </a>
@@ -109,6 +117,14 @@
       <a class="mobile-nav-link" routerLink="/challenges" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isLoggedIn">
         Challenges
       </a>
+      <a class="mobile-nav-link" routerLink="/front-office/projet-client" 
+   routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isClient">
+  Projets
+</a>
+<a class="mobile-nav-link" routerLink="/front-office/discover" 
+   routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isFreelancer">
+  Projets
+</a>
       <a class="mobile-nav-link" routerLink="/events" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isFreelancer">
         Event
       </a>

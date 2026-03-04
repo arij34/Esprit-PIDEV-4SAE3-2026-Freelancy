@@ -122,4 +122,8 @@ export class AuthService {
     const kc = this.keycloak.getKeycloakInstance();
     return kc.login({ redirectUri, action: 'register' } as any);
   }
+  getKeycloakSub(): string {
+  const kc = this.keycloak.getKeycloakInstance();
+  return kc?.tokenParsed?.['sub'] || '';
+}
 }

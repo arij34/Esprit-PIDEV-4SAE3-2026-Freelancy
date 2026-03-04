@@ -72,6 +72,13 @@ const routes: Routes = [
     path: 'challenges',
     loadChildren: () => import('./features/challenges/challenges.module').then(m => m.ChallengesModule)
   },
+ {
+  path: 'projet-client',
+  canActivate: [RoleGuard],
+  data: { roles: [KC_ROLES.CLIENT] },
+  loadChildren: () => import('./features/front-office/front-office.module')
+    .then(m => m.FrontOfficeModule)
+},
   {
     path: 'front',
     loadChildren: () =>
