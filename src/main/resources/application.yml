@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8091
 
 spring:
   application:
@@ -11,7 +11,7 @@ spring:
 
         # Skill Service***
         - id: skill-management
-          uri: lb://skill-management-service
+          uri: lb://skill-management
           predicates:
             - Path=/skills/**
 
