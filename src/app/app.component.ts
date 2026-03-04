@@ -8,7 +8,7 @@ import { MeService } from './core/services/me.service';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'pidev-freelancy';
 
   constructor(

@@ -1,0 +1,35 @@
+<div class="container mt-4">
+  <h2>Pending Skills (Draft)</h2>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Suggested Name</th>
+        <th>Normalized</th>
+        <th>Suggested By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let skill of skills">
+        <td>{{ skill.id }}</td>
+        <td>{{ skill.suggestedName }}</td>
+        <td>{{ skill.normalizedName }}</td>
+        <td>{{ skill.suggestedBy }}</td>
+        <td>
+          <button class="btn btn-success btn-sm me-2"
+                  (click)="approve(skill.id)">
+            Approve
+          </button>
+
+          <button class="btn btn-danger btn-sm"
+                  (click)="reject(skill.id)">
+            Reject
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
