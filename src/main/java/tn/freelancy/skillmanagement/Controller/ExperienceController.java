@@ -2,6 +2,8 @@ package tn.freelancy.skillmanagement.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import tn.freelancy.skillmanagement.clients.UserDto;
+import tn.freelancy.skillmanagement.clients.UserServiceClient;
 import tn.freelancy.skillmanagement.entity.Experience;
 import tn.freelancy.skillmanagement.service.ExperienceService;
 
@@ -14,9 +16,17 @@ public class ExperienceController {
     @Autowired
     private ExperienceService experienceService;
 
-    @PostMapping("/user/{userId}")
-    public Experience create(@PathVariable Long userId,@RequestBody Experience experience) {
-        return experienceService.createExperience(userId,experience);
+    @Autowired
+    private UserServiceClient userServiceClient;
+
+    @PostMapping("/user/me")
+    public Experience createForCurrentUser(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody Experience experience) {
+
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
+        return experienceService.createExperience(userId, experience);
     }
 
     @GetMapping
@@ -38,8 +48,12 @@ public class ExperienceController {
     public void delete(@PathVariable Long id) {
         experienceService.deleteExperience(id);
     }
-    @GetMapping("/user/{userId}/total-years")
-    public long getTotalYears(@PathVariable Long userId) {
+    @GetMapping("/user/me/total-years")
+    public long getTotalYearsForCurrentUser(
+            @RequestHeader("Authorization") String authorization) {
+
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
         return (long) experienceService.calculateTotalYearsByUser(userId);
     }
 }

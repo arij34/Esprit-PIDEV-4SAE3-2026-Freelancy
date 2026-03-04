@@ -29,10 +29,7 @@ public class Experience {
         private String description;
 
         private Boolean extractedByAI;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private User user;
+    Long userId;
 
     public Experience() {
 
@@ -104,11 +101,11 @@ public class Experience {
         this.extractedByAI = extractedByAI;
     }
 
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

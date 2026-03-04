@@ -20,31 +20,21 @@ public class PendingSkillService {
     @Autowired
     private FreelancerSkillRepository freelancerSkillRepository;
 
-    // ✅ AJOUT : injection du service de notification
     @Autowired
     private NotificationService notificationService;
 
-    // ══════════════════════════════════════════════════════════════
-    // GET ALL DRAFTS
-    // ══════════════════════════════════════════════════════════════
+    // ── GET ALL DRAFTS ────────────────────────────────────────────────────────
 
     public List<PendingSkill> getAllDrafts() {
         return pendingSkillRepository.findByStatus(Status.DRAFT);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // APPROVE
-    // ══════════════════════════════════════════════════════════════
+    // ── APPROVE ───────────────────────────────────────────────────────────────
 
     public void approvePendingSkill(Long pendingId) {
+        PendingSkill pending = pendingSkillRepository.findById(pendingId).orElseThrow();
 
-        PendingSkill pending = pendingSkillRepository
-                .findById(pendingId)
-                .orElseThrow();
-
-        // Vérifier si le skill existe déjà dans la table Skill
-        Skill existing = skillRepository
-                .findByNormalizedNameIgnoreCase(pending.getNormalizedName());
+        Skill existing = skillRepository.findByNormalizedNameIgnoreCase(pending.getNormalizedName());
 
         if (existing == null) {
             Skill newSkill = new Skill();
@@ -57,58 +47,54 @@ public class PendingSkillService {
         pending.setStatus(Status.APPROVED);
         pendingSkillRepository.save(pending);
 
-        // Mettre à jour les FreelancerSkill qui utilisaient ce customSkillName
         List<FreelancerSkill> freelancerSkills =
-                freelancerSkillRepository.findByCustomSkillName(
-                        pending.getSuggestedName()
-                );
+                freelancerSkillRepository.findByCustomSkillName(pending.getSuggestedName());
 
         for (FreelancerSkill fs : freelancerSkills) {
             fs.setSkill(existing);
             freelancerSkillRepository.save(fs);
         }
 
-        // ✅ AJOUT : notifier le freelancer que son skill est approuvé
         if (pending.getSuggestedBy() != null) {
             notificationService.notifyFreelancerSkillApproved(
                     pending.getSuggestedName(),
                     pending.getSuggestedBy(),
-                    "User #" + pending.getSuggestedBy()   // remplacez par le vrai nom si disponible
+                    "User #" + pending.getSuggestedBy()
             );
         }
 
-        // Supprimer le pending
         pendingSkillRepository.delete(pending);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // REJECT
-    // ══════════════════════════════════════════════════════════════
+    // ── REJECT ────────────────────────────────────────────────────────────────
 
     public void reject(Long id) {
-
-        PendingSkill pending = pendingSkillRepository
-                .findById(id)
+        PendingSkill pending = pendingSkillRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not found"));
 
         pending.setStatus(Status.REJECTED);
         pendingSkillRepository.save(pending);
 
-        // ✅ AJOUT : notifier le freelancer que son skill est rejeté
         if (pending.getSuggestedBy() != null) {
             notificationService.notifyFreelancerSkillRejected(
                     pending.getSuggestedName(),
                     pending.getSuggestedBy(),
-                    "User #" + pending.getSuggestedBy()   // remplacez par le vrai nom si disponible
+                    "User #" + pending.getSuggestedBy()
             );
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // CREATE PENDING SKILL
-    // ══════════════════════════════════════════════════════════════
+    // ── CREATE PENDING SKILL ──────────────────────────────────────────────────
 
-    public void createPendingSkill(String skillInput, User user, Source source) {
+    /**
+     * ✅ CORRIGÉ : signature changée — plus besoin de l'objet User
+     *              on reçoit directement userId (Long) et freelancerName (String)
+     *              fournis par le service appelant depuis le token JWT via Feign
+     */
+    public void createPendingSkill(String skillInput,
+                                   Long userId,
+                                   String freelancerName,
+                                   Source source) {
 
         String normalized = skillInput.toLowerCase().trim();
 
@@ -116,24 +102,19 @@ public class PendingSkillService {
                 .existsByNormalizedNameAndStatus(normalized, Status.DRAFT);
 
         if (!exists) {
-
             PendingSkill pending = new PendingSkill();
             pending.setSuggestedName(skillInput);
             pending.setNormalizedName(normalized);
-            pending.setSuggestedBy(user.getId());
+            pending.setSuggestedBy(userId);          // ✅ userId directement
             pending.setSource(Source.FREELANCER);
             pending.setStatus(Status.DRAFT);
 
             pendingSkillRepository.save(pending);
 
-            // ✅ AJOUT : notifier l'admin en temps réel via WebSocket
-            String freelancerName = (user.getNom() != null)
-                    ? user.getNom() + " " + user.getNom()
-                    : "User #" + user.getId();
-
+            // ✅ CORRIGÉ : plus de user.getNom() — on utilise freelancerName passé en paramètre
             notificationService.notifyAdminNewPendingSkill(
                     skillInput,
-                    user.getId(),
+                    userId,
                     freelancerName
             );
         }

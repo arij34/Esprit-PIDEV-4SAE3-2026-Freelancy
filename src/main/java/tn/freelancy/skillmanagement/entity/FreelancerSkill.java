@@ -19,10 +19,8 @@ public class FreelancerSkill {
     private Integer yearsExperience;
 
     private Boolean extractedByAI;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private User user;
+
+    Long userId;
 
     @ManyToOne(fetch = FetchType.EAGER)  // ← EAGER au lieu de LAZY
     @JoinColumn(name = "skill_id")
@@ -78,17 +76,14 @@ public class FreelancerSkill {
         this.extractedByAI = extractedByAI;
     }
 
-
-
-
-
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
+
     public Skill getSkill() {
         return skill;
     }

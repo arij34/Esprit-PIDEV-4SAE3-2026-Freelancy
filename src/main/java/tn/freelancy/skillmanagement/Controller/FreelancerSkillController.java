@@ -3,6 +3,8 @@ package tn.freelancy.skillmanagement.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.freelancy.skillmanagement.clients.UserDto;
+import tn.freelancy.skillmanagement.clients.UserServiceClient;
 import tn.freelancy.skillmanagement.dto.DuplicateSkillDTO;
 import tn.freelancy.skillmanagement.dto.SkillCheckResponse;
 import tn.freelancy.skillmanagement.dto.SkillMatchResult;
@@ -31,131 +33,123 @@ public class FreelancerSkillController {
     @Autowired
     private SkillService skillService;
 
-    // ✅ CORRECTION BUG #2 : @Autowired manquant → NullPointerException silencieux
     @Autowired
     private FreelancerSkillRepository freelancerSkillRepository;
 
+    @Autowired
+    private UserServiceClient userServiceClient;
+
     // ✅ CREATE (manuel)
-    @PostMapping("/user/{userId}")
-    public ResponseEntity<?> createFreelancerSkill(
-            @PathVariable Long userId,
+    @PostMapping("/user/me")
+    public ResponseEntity<?> createFreelancerSkillForCurrentUser(
+            @RequestHeader("Authorization") String authorization,
             @RequestParam String skillInput,
             @RequestBody FreelancerSkill freelancerSkill) {
-
         try {
+            UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+            Long userId = currentUser.getId();
             FreelancerSkill saved = freelancerSkillService
                     .createFreelancerSkill(userId, freelancerSkill, skillInput);
-
             return ResponseEntity.ok(buildSkillResponse(saved));
-
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     // ✅ CREATE (depuis CV)
-    @PostMapping("/CV/{userId}")
-    public ResponseEntity<?> createFreelancerSkillCV(
-            @PathVariable Long userId,
+    @PostMapping("/CV/me")
+    public ResponseEntity<?> createFreelancerSkillCVForCurrentUser(
+            @RequestHeader("Authorization") String authorization,
             @RequestParam String skillInput,
             @RequestBody FreelancerSkill freelancerSkill) {
-
         try {
+            UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+            Long userId = currentUser.getId();
             FreelancerSkill saved = freelancerSkillService
                     .createFreelancerSkillCv(userId, freelancerSkill, skillInput);
-
             return ResponseEntity.ok(buildSkillResponse(saved));
-
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // ✅ GET ALL
+    // ✅ AJOUTÉ : GET toutes les skills de l'utilisateur connecté
+    @GetMapping("/user/me")
+    public ResponseEntity<?> getAllForCurrentUser(
+            @RequestHeader("Authorization") String authorization) {
+        try {
+            UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+            Long userId = currentUser.getId();
+            List<FreelancerSkill> skills = freelancerSkillService.getFreelancerSkillsByUserId(userId);
+            return ResponseEntity.ok(skills);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping
     public List<FreelancerSkill> getAll() {
         return freelancerSkillService.getAllFreelancerSkills();
     }
 
-    // ✅ GET BY ID
     @GetMapping("/{id}")
     public FreelancerSkill getById(@PathVariable Long id) {
         return freelancerSkillService.getFreelancerSkillById(id);
     }
 
-    // ✅ UPDATE
     @PutMapping
     public ResponseEntity<?> updateFreelancerSkill(@RequestBody FreelancerSkill freelancerSkill) {
         try {
             FreelancerSkill saved = freelancerSkillService.updateFreelancerSkill(freelancerSkill);
             return ResponseEntity.ok(buildSkillResponse(saved));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // ✅ DELETE
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         freelancerSkillService.deleteFreelancerSkill(id);
+        return ResponseEntity.noContent().build(); // ✅ CORRIGÉ : 204
     }
 
-    // ✅ LEVEL BY YEARS
     @GetMapping("/level/{years}")
     public ResponseEntity<Map<String, Object>> getLevelByYears(@PathVariable int years) {
         level calculatedLevel = freelancerSkillService.calculateLevel(years);
-
         Map<String, Object> response = new HashMap<>();
         response.put("years", years);
         response.put("level", calculatedLevel.ordinal() + 1);
         response.put("label", calculatedLevel.name());
-
         return ResponseEntity.ok(response);
     }
 
-    // ✅ DUPLICATE DETECTION
     @GetMapping("/{id}/duplicate-skills")
     public ResponseEntity<List<DuplicateSkillDTO>> getDuplicateSkills(@PathVariable Long id) {
         return ResponseEntity.ok(freelancerSkillService.detectDuplicates(id));
     }
 
-    /**
-     * ✅ CHECK SKILLS (utilisé par Angular via checkExistingSkillscv)
-     * Délègue entièrement au service pour cohérence et testabilité.
-     */
-    @PostMapping("/check-skills/{userId}")
-    public ResponseEntity<SkillCheckResponse> checkSkills(
-            @PathVariable Long userId,
+    @PostMapping("/check-skills/me")
+    public ResponseEntity<SkillCheckResponse> checkSkillsForCurrentUser(
+            @RequestHeader("Authorization") String authorization,
             @RequestBody List<String> skills) {
-
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
         SkillCheckResponse response = freelancerSkillService.checkExistingSkills(userId, skills);
-
-        System.out.println("✅ [check-skills] existing: " + response.getExisting());
-        System.out.println("✅ [check-skills] newSkills: " + response.getNewSkills());
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * ✅ CHECK EXISTING (endpoint alternatif - gardé pour compatibilité)
-     * Utilise maintenant le repository correctement injecté.
-     */
-    @PostMapping("/check-existing/{userId}")
-    public ResponseEntity<Map<String, Object>> checkExistingSkills(
-            @PathVariable Long userId,
+    @PostMapping("/check-existing/me")
+    public ResponseEntity<Map<String, Object>> checkExistingSkillsForCurrentUser(
+            @RequestHeader("Authorization") String authorization,
             @RequestBody List<String> skills) {
-
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
         List<String> existing = new ArrayList<>();
         List<String> newSkills = new ArrayList<>();
 
         for (String skillInput : skills) {
             skillInput = skillInput.trim();
-
             SkillMatchResult result = skillMatcherService.findMatchingSkill(skillInput);
-
             boolean exists;
             if (result != null && result.getSkill() != null) {
                 exists = freelancerSkillRepository
@@ -164,23 +158,14 @@ public class FreelancerSkillController {
                 exists = freelancerSkillRepository
                         .existsByUserIdAndCustomSkillNameIgnoreCase(userId, skillInput);
             }
-
-            if (exists) {
-                existing.add(skillInput);
-            } else {
-                newSkills.add(skillInput);
-            }
+            if (exists) existing.add(skillInput);
+            else newSkills.add(skillInput);
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("existing", existing);
-        response.put("newSkills", newSkills);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("existing", existing, "newSkills", newSkills));
     }
 
     // =============== HELPER ===============
-
     private Map<String, Object> buildSkillResponse(FreelancerSkill saved) {
         Map<String, Object> response = new HashMap<>();
         response.put("id", saved.getId());

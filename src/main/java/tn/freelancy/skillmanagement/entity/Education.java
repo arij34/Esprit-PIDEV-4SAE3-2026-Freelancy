@@ -30,19 +30,17 @@ public class Education {
 
     private Boolean extractedByAI;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private User user;
+    Long userId;
 
     public Education() {
 
     }
-    public Education( EducationDegree degree, String institution, Integer year, Boolean extractedByAI) {
+    public Education( EducationDegree degree, String institution, Integer year, Boolean extractedByAI, Long userId) {
         this.degree = degree;
         this.institution = institution;
         this.year = year;
         this.extractedByAI = extractedByAI;
+        this.userId = userId;
     }
 
     public Long getId() {
@@ -83,5 +81,13 @@ public class Education {
 
     public void setExtractedByAI(Boolean extractedByAI) {
         this.extractedByAI = extractedByAI;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

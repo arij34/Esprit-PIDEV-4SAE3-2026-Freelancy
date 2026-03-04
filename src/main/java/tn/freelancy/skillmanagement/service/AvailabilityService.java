@@ -6,9 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tn.freelancy.skillmanagement.entity.Availability;
 import tn.freelancy.skillmanagement.entity.Days;
 import tn.freelancy.skillmanagement.entity.Periods;
-import tn.freelancy.skillmanagement.entity.User;
 import tn.freelancy.skillmanagement.repository.AvailabilityRepository;
-import tn.freelancy.skillmanagement.repository.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,8 +17,8 @@ public class AvailabilityService {
 
     @Autowired
     private AvailabilityRepository availabilityRepository;
-    @Autowired
-    private UserRepository userRepository;
+
+    // ✅ SUPPRIMÉ : UserRepository userRepository (n'existe plus)
 
     // ── Calculs ──────────────────────────────────────────────────────────────
 
@@ -60,17 +58,23 @@ public class AvailabilityService {
     // ── Preview (sans sauvegarde) ─────────────────────────────────────────────
     public Availability calculatePreview(Availability availability) {
         applyCalculations(availability);
-        return availability; // retourné tel quel, pas de save()
+        return availability;
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────────────
 
     public Availability createAvailability(Long userId, Availability availability) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-        availability.setUser(user);
+        // ✅ CORRIGÉ : plus besoin de chercher un User en BDD
+        //              on stocke directement le userId dans l'entité
+        availability.setUserId(userId);
         applyCalculations(availability);
         return availabilityRepository.save(availability);
+    }
+
+    // ✅ AJOUTÉ : méthode appelée par GET /user/me dans le controller
+    public Availability getAvailabilityByUserId(Long userId) {
+        return availabilityRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Availability not found for user: " + userId));
     }
 
     public Availability updateAvailability(Long id, Availability incoming) {

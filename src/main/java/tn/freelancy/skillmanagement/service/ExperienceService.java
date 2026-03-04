@@ -3,9 +3,7 @@ package tn.freelancy.skillmanagement.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.freelancy.skillmanagement.entity.Experience;
-import tn.freelancy.skillmanagement.entity.User;
 import tn.freelancy.skillmanagement.repository.ExperienceRepository;
-import tn.freelancy.skillmanagement.repository.UserRepository;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -17,16 +15,11 @@ public class ExperienceService {
     @Autowired
     private ExperienceRepository experienceRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    // ✅ SUPPRIMÉ : UserRepository userRepository (n'existe plus)
 
     public Experience createExperience(Long userId, Experience experience) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        experience.setUser(user);
-
+        // ✅ CORRIGÉ : on stocke directement le userId
+        experience.setUserId(userId);
         return experienceRepository.save(experience);
     }
 
@@ -38,6 +31,11 @@ public class ExperienceService {
         return experienceRepository.findById(id).orElse(null);
     }
 
+    // ✅ AJOUTÉ : toutes les expériences d'un utilisateur (appelé par GET /user/me)
+    public List<Experience> getExperiencesByUserId(Long userId) {
+        return experienceRepository.findByUserId(userId);
+    }
+
     public Experience updateExperience(Experience updatedExperience) {
         return experienceRepository.save(updatedExperience);
     }
@@ -45,8 +43,10 @@ public class ExperienceService {
     public void deleteExperience(Long id) {
         experienceRepository.deleteById(id);
     }
+
     public double calculateTotalYearsByUser(Long userId) {
-        List<Experience> experiences = experienceRepository.findByUser_Id(userId);
+        // ✅ CORRIGÉ : findByUserId au lieu de findByUser_Id (plus de relation JPA)
+        List<Experience> experiences = experienceRepository.findByUserId(userId);
 
         long totalMonths = 0;
         for (Experience exp : experiences) {
@@ -60,6 +60,4 @@ public class ExperienceService {
         }
         return Math.round((totalMonths / 12.0) * 10.0) / 10.0;
     }
-
 }
-

@@ -27,30 +27,61 @@ public class Availability {
 
     private Integer hoursPerWeek;
     private String status;
+    Long userId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", unique = true)
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private User user;
+    public Availability() {
+    }
 
-    public Availability() {}
+    public Long getId() {
+        return id;
+    }
 
-    public Long getId() { return id; }
+    public Integer getHoursPerDay() {
+        return hoursPerDay;
+    }
 
-    public Integer getHoursPerDay() { return hoursPerDay; }
-    public void setHoursPerDay(Integer hoursPerDay) { this.hoursPerDay = hoursPerDay; }
+    public void setHoursPerDay(Integer hoursPerDay) {
+        this.hoursPerDay = hoursPerDay;
+    }
 
-    public List<Days> getSelectedDays() { return selectedDays; }
-    public void setSelectedDays(List<Days> selectedDays) { this.selectedDays = selectedDays; }
+    public List<Days> getSelectedDays() {
+        return selectedDays;
+    }
 
-    public List<Periods> getSelectedPeriods() { return selectedPeriods; }
-    public void setSelectedPeriods(List<Periods> selectedPeriods) { this.selectedPeriods = selectedPeriods; }
+    public void setSelectedDays(List<Days> selectedDays) {
+        this.selectedDays = selectedDays;
+    }
 
-    public Integer getHoursPerWeek() { return hoursPerWeek; }
-    public void setHoursPerWeek(Integer hoursPerWeek) { this.hoursPerWeek = hoursPerWeek; }
+    public List<Periods> getSelectedPeriods() {
+        return selectedPeriods;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setSelectedPeriods(List<Periods> selectedPeriods) {
+        this.selectedPeriods = selectedPeriods;
+    }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }}
+    public Integer getHoursPerWeek() {
+        return hoursPerWeek;
+    }
+
+    public void setHoursPerWeek(Integer hoursPerWeek) {
+        this.hoursPerWeek = hoursPerWeek;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+}
+

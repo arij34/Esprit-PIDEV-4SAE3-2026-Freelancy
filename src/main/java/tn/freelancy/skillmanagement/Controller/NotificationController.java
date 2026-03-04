@@ -2,6 +2,8 @@ package tn.freelancy.skillmanagement.Controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.freelancy.skillmanagement.clients.UserDto;
+import tn.freelancy.skillmanagement.clients.UserServiceClient;
 import tn.freelancy.skillmanagement.dto.NotificationDTO;
 import tn.freelancy.skillmanagement.service.NotificationService;
 
@@ -14,9 +16,12 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final UserServiceClient userServiceClient;
 
-    public NotificationController(NotificationService notificationService) {
+    public NotificationController(NotificationService notificationService,
+                                  UserServiceClient userServiceClient) {
         this.notificationService = notificationService;
+        this.userServiceClient = userServiceClient;
     }
 
     // ── ADMIN ──────────────────────────────────────────────────────
@@ -44,25 +49,35 @@ public class NotificationController {
 
     // ── FREELANCER (frontoffice) ───────────────────────────────────
 
-    /** Toutes les notifs d'un freelancer */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<NotificationDTO>> getUserNotifications(
-            @PathVariable Long userId) {
+    /** Toutes les notifs du freelancer courant */
+    @GetMapping("/user/me")
+    public ResponseEntity<List<NotificationDTO>> getUserNotificationsForCurrentUser(
+            @RequestHeader("Authorization") String authorization) {
+
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
         return ResponseEntity.ok(notificationService.getUserNotifications(userId));
     }
 
-    /** Badge compteur non lu freelancer */
-    @GetMapping("/user/{userId}/unread-count")
-    public ResponseEntity<Map<String, Long>> getUserUnreadCount(
-            @PathVariable Long userId) {
+    /** Badge compteur non lu freelancer courant */
+    @GetMapping("/user/me/unread-count")
+    public ResponseEntity<Map<String, Long>> getUserUnreadCountForCurrentUser(
+            @RequestHeader("Authorization") String authorization) {
+
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
         return ResponseEntity.ok(
                 Map.of("count", notificationService.getUserUnreadCount(userId))
         );
     }
 
-    /** Marquer toutes les notifs d'un freelancer comme lues */
-    @PutMapping("/user/{userId}/mark-all-read")
-    public ResponseEntity<Void> markUserAllRead(@PathVariable Long userId) {
+    /** Marquer toutes les notifs du freelancer courant comme lues */
+    @PutMapping("/user/me/mark-all-read")
+    public ResponseEntity<Void> markUserAllReadForCurrentUser(
+            @RequestHeader("Authorization") String authorization) {
+
+        UserDto currentUser = userServiceClient.getCurrentUser(authorization);
+        Long userId = currentUser.getId();
         notificationService.markUserAllRead(userId);
         return ResponseEntity.ok().build();
     }
