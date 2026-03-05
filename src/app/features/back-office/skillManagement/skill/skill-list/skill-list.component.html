@@ -1,7 +1,7 @@
 <div class="page-container">
   <div class="page-header">
     <h2>Skills Management</h2>
-    <a routerLink="form" class="btn-primary-modern">+ Add Skill</a>
+    <a routerLink="/admin/skills/form" class="btn-primary-modern">+ Add Skill</a>
   </div>
 
   <!-- ✅ BARRE DE RECHERCHE -->
@@ -31,7 +31,7 @@
           <td>{{ skill.normalizedName }}</td>
           <td>{{ skill.createdAt | date:'yyyy-MM-dd' }}</td>
           <td class="actions-cell">
-            <a [routerLink]="['form', skill.idS]" class="action-icon edit-icon">
+            <a [routerLink]="['/admin/skills/form', skill.idS]" class="action-icon edit-icon">
               <i class="bi bi-pencil"></i>
             </a>
             <button (click)="deleteSkill(skill.idS!)" class="action-icon delete-icon">

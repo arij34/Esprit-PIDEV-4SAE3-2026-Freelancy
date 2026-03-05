@@ -149,39 +149,28 @@ export class FreelancerSkillFormComponent implements OnInit {
   }
 
   onSubmit(): void {
+  this.errorMessage = '';
+  this.loading = true;
 
-    this.errorMessage = '';
-    this.loading = true;
-
-    if (!this.skillInput.trim()) {
-      this.errorMessage = 'Skill required';
-      this.loading = false;
-      return;
-    }
-
-    if (!this.userId) {
-      this.errorMessage = 'User ID missing';
-      this.loading = false;
-      return;
-    }
-
-    const payload: any = {
-      yearsExperience: Number(this.item.yearsExperience),
-      extractedByAI: false
-    };
-
-    this.freelancerSkillService
-      .createWithSkillInput(
-        this.userId,
-        this.skillInput.trim(),
-        payload
-      )
-      .subscribe({
-        next: () => this.router.navigate(['/front/freelancer-skills']),
-        error: () => {
-          this.errorMessage = 'Error creating skill';
-          this.loading = false;
-        }
-      });
+  if (!this.skillInput.trim()) {
+    this.errorMessage = 'Skill required';
+    this.loading = false;
+    return;
   }
+
+  const payload: any = {
+    yearsExperience: Number(this.item.yearsExperience),
+    extractedByAI: false
+  };
+
+  // ✅ createWithSkillInput au lieu de createWithSkillInputCV
+  this.freelancerSkillService.createWithSkillInput(this.skillInput, payload)
+    .subscribe({
+      next: () => this.router.navigate(['/front/freelancer-skills']),
+      error: () => {
+        this.errorMessage = 'Error creating skill';
+        this.loading = false;
+      }
+    });
+}
 }

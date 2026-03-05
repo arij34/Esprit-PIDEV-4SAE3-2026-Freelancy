@@ -163,7 +163,7 @@ formatStatus(status: string): string {
         error: (err) => { this.errorMessage = err?.error?.message || 'Error updating'; this.loading = false; }
       });
     } else {
-      this.availabilityService.create(this.userId, this.item).subscribe({
+      this.availabilityService.create(this.item).subscribe({
         next: () => this.router.navigate(['/front/availability']),
         error: (err) => { this.errorMessage = err?.error?.message || 'Error creating'; this.loading = false; }
       });

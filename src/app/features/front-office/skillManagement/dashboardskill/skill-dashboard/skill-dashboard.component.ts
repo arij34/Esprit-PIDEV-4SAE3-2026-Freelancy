@@ -6,6 +6,7 @@ import { ExperienceService } from '../../../../../core/services/skill/experience
 import { Education } from '../../../../../core/models/skill/education.model';
 import { CvuploadService } from '../../../../../core/services/skill/cvupload.service';
 import { NotificationService, AppNotification } from '../../../../../core/services/skill/notification.service';
+import { FreelancerSkill } from '../../../../../core/models/skill/freelancer-skill.model';
 import { catchError, forkJoin, of, Subscription } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -40,7 +41,6 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
   uploading: boolean = false;
   skillsToAdd: string[] = [];
 
-  // ✅ TOAST NOTIFICATION
   toasts: {
     id: number;
     message: string;
@@ -60,21 +60,16 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
     private notifService: NotificationService,
   ) {}
 
-  // ================= INIT =================
-
   ngOnInit(): void {
     this.loadSkills();
     this.loadExperience();
     this.loadLatestEducation();
     this.loadAvailability();
 
-    // ✅ Connexion WebSocket freelancer + écoute des notifications
     this.notifService.connect('USER', this.userId);
 
     this.notifSub = this.notifService.notifications$.subscribe(notifs => {
       if (!notifs.length) return;
-
-      // Prendre seulement la dernière notif non lue
       const latest = notifs[0];
       if (!latest.read) {
         this.showToast(latest);
@@ -87,24 +82,12 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
     this.notifService.disconnect();
   }
 
-  // ================= TOAST =================
-
   showToast(notif: AppNotification): void {
     const id = ++this.toastCounter;
-
     const type = notif.type === 'SKILL_APPROVED' ? 'success'
                : notif.type === 'SKILL_REJECTED' ? 'error'
                : 'info';
-
-    this.toasts.push({
-      id,
-      message: notif.message,
-      type,
-      skillName: notif.skillName,
-      visible: true
-    });
-
-    // Auto-dismiss après 5 secondes
+    this.toasts.push({ id, message: notif.message, type, skillName: notif.skillName, visible: true });
     setTimeout(() => this.dismissToast(id), 5000);
   }
 
@@ -112,10 +95,7 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
     const toast = this.toasts.find(t => t.id === id);
     if (toast) {
       toast.visible = false;
-      // Supprimer après l'animation
-      setTimeout(() => {
-        this.toasts = this.toasts.filter(t => t.id !== id);
-      }, 400);
+      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 400);
     }
   }
 
@@ -130,8 +110,6 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
     if (type === 'error')   return 'Skill Rejected';
     return 'Notification';
   }
-
-  // ================= SKILLS =================
 
   loadSkills(): void {
     this.loadingSkills = true;
@@ -173,14 +151,14 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
         this.latestExperience = this.experiences[0];
       }
     });
-    this.experienceService.getTotalYears(this.userId).subscribe(total => {
+    this.experienceService.getTotalYearsForCurrentUser().subscribe((total: number) => {
       this.totalYears = total || 0;
     });
   }
 
   loadLatestEducation(): void {
-    this.educationService.getLatest(this.userId).subscribe({
-      next: (data) => {
+    this.educationService.getLatestForCurrentUser().subscribe({
+      next: (data: any) => {
         if (data) { this.latestEducation = data; this.highestDegree = data.degree || ''; }
         else { this.loadAllEducations(); }
       },
@@ -258,37 +236,40 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
       Swal.fire('No skills', 'No skills were extracted from the CV.', 'info');
       return;
     }
-    this.freelancerSkillService.checkExistingSkillscv(this.userId, this.extractedData.skills).subscribe({
-      next: (response: { existing: string[]; newSkills: string[] }) => {
-        this.skillsToAdd = Array.isArray(response.newSkills) ? [...response.newSkills] : [];
-        const existingText = response.existing?.length ? response.existing.join(', ') : 'None';
-        const newText = this.skillsToAdd.length ? this.skillsToAdd.join(', ') : 'None';
-        Swal.fire({
-          title: 'Skill Analysis',
-          html: `<div style="text-align:left">
-            <p><b>✅ Already in your profile (${response.existing?.length || 0}):</b><br>
-              <span style="color:#6c757d">${existingText}</span></p>
-            <p><b>🆕 New skills to add (${this.skillsToAdd.length}):</b><br>
-              <span style="color:#198754">${newText}</span></p>
-          </div>`,
-          icon: 'info', showCancelButton: true,
-          confirmButtonText: `Add ${this.skillsToAdd.length} New Skill(s)`,
-          cancelButtonText: 'Cancel',
-          didOpen: () => {
-            if (!this.skillsToAdd.length) {
-              const btn = Swal.getConfirmButton();
-              if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+
+    // ✅ CORRECTION 1 : utiliser extractedData.skills au lieu de extractedSkills
+    this.freelancerSkillService.checkExistingSkillsForCurrentUser(this.extractedData.skills)
+      .subscribe({
+        next: (response: { existing: string[]; newSkills: string[] }) => {
+          this.skillsToAdd = Array.isArray(response.newSkills) ? [...response.newSkills] : [];
+          const existingText = response.existing?.length ? response.existing.join(', ') : 'None';
+          const newText = this.skillsToAdd.length ? this.skillsToAdd.join(', ') : 'None';
+          Swal.fire({
+            title: 'Skill Analysis',
+            html: `<div style="text-align:left">
+              <p><b>✅ Already in your profile (${response.existing?.length || 0}):</b><br>
+                <span style="color:#6c757d">${existingText}</span></p>
+              <p><b>🆕 New skills to add (${this.skillsToAdd.length}):</b><br>
+                <span style="color:#198754">${newText}</span></p>
+            </div>`,
+            icon: 'info', showCancelButton: true,
+            confirmButtonText: `Add ${this.skillsToAdd.length} New Skill(s)`,
+            cancelButtonText: 'Cancel',
+            didOpen: () => {
+              if (!this.skillsToAdd.length) {
+                const btn = Swal.getConfirmButton();
+                if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+              }
             }
-          }
-        }).then(result => {
-          if (result.isConfirmed && this.skillsToAdd.length > 0) this.autoAddSkills();
-        });
-      },
-      error: (err) => {
-        console.error(err);
-        Swal.fire('Error', 'Could not check skills. Please try again.', 'error');
-      }
-    });
+          }).then((result: any) => {
+            if (result.isConfirmed && this.skillsToAdd.length > 0) this.autoAddSkills();
+          });
+        },
+        error: (err: any) => {
+          console.error(err);
+          Swal.fire('Error', 'Could not check skills. Please try again.', 'error');
+        }
+      });
   }
 
   autoAddSkills() {
@@ -296,11 +277,18 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
       Swal.fire({ title: 'Nothing to add', text: 'All skills already exist.', icon: 'info' });
       return;
     }
-    const requests = this.skillsToAdd.map((skill: string) =>
-      this.freelancerSkillService.createWithSkillInputCV(this.userId, skill, {
-        name: skill, category: 'PROGRAMMING', level: 1, yearsExperience: 1
-      }).pipe(catchError(err => { console.warn(`Skipped "${skill}"`); return of(null); }))
-    );
+
+    const requests = this.skillsToAdd.map((skillName: string) =>
+  this.freelancerSkillService.createWithSkillInputCV(skillName, {
+    level: 1,
+    yearsExperience: 1,
+    extractedByAI: true,
+    customSkillName: skillName   // ← champ qui existe dans le modèle
+  } as FreelancerSkill).pipe(
+    catchError(err => { console.warn(`Skipped "${skillName}"`); return of(null); })
+  )
+);
+
     forkJoin(requests).subscribe({
       next: (results) => {
         const added = results.filter(r => r !== null).length;

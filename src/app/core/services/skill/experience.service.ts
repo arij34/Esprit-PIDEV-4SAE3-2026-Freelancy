@@ -19,28 +19,20 @@ export class ExperienceService {
     return this.http.get<Experience>(`${this.url}/${id}`);
   }
 
-  // ✅ CORRIGÉ : POST avec userId dans URL
-  create(userId: number, experience: Experience): Observable<Experience> {
-    return this.http.post<Experience>(
-      `${this.url}/user/${userId}`,
-      experience
-    );
+  // ✅ Token Keycloak injecté automatiquement
+  create(experience: Experience): Observable<Experience> {
+    return this.http.post<Experience>(`${this.url}/user/me`, experience);
   }
 
-  // ✅ CORRIGÉ : PUT sans id dans URL
   update(experience: Experience): Observable<Experience> {
-    return this.http.put<Experience>(
-      this.url,
-      experience
-    );
+    return this.http.put<Experience>(this.url, experience);
   }
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
-  getTotalYears(userId: number) {
-  return this.http.get<number>(`${this.url}/user/${userId}/total-years`);
 
-}
-
+  getTotalYearsForCurrentUser(): Observable<number> {
+    return this.http.get<number>(`${this.url}/user/me/total-years`);
+  }
 }

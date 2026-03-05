@@ -12,9 +12,9 @@ export class AuthService {
    */
   getDefaultRouteByRole(): string {
     const roles = this.getUserRoles();
-    if (roles.includes(KC_ROLES.ADMIN)) return '/back-office';
-    if (roles.includes(KC_ROLES.CLIENT)) return '/client';
-    if (roles.includes(KC_ROLES.FREELANCER)) return '/freelancer';
+  if (roles.includes(KC_ROLES.ADMIN)) return '/admin';
+  if (roles.includes(KC_ROLES.CLIENT)) return '/front';
+  if (roles.includes(KC_ROLES.FREELANCER)) return '/front';
     return '/front';
   }
   constructor(private readonly keycloak: KeycloakService) {}

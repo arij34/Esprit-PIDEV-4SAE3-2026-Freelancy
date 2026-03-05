@@ -34,6 +34,10 @@
         <a class="nav-link" routerLink="/events/participants" routerLinkActive="active" *ngIf="isFreelancer">
           <span>Participant</span>
         </a>
+        <a class="nav-link" routerLink="/front-office/dashboard-skill" 
+         routerLinkActive="active" *ngIf="isFreelancer">
+        <span>my Skills</span>
+        </a>
         <a class="nav-link" href="#about">
           <span>About</span>
         </a>
@@ -82,9 +86,7 @@
 
             <div class="user-dropdown" [class.open]="isUserMenuOpen">
               <button type="button" class="dropdown-item" (click)="goToProfile()">Profile</button>
-              <button class="dropdown-item" routerLink="/project">Project</button>
               <button class="dropdown-item" routerLink="/contract">Contract</button>
-              <button class="dropdown-item" routerLink="/skill">Skill</button>
               <button class="dropdown-item" routerLink="/challenge">Challenge</button>
               <button class="dropdown-item" routerLink="/blog">Blog</button>
               <button type="button" class="dropdown-item" (click)="logout()">Log out</button>

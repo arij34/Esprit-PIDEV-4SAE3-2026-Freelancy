@@ -114,7 +114,7 @@ currentYear: number = new Date().getFullYear();
         id: this.itemId
       };
 
-      this.educationService.update(payload).subscribe({
+      this.educationService.update(this.item.id!, payload).subscribe({
         next: () => this.router.navigate(['/front/education']),
         error: (err: any) => {
           this.errorMessage = err?.error?.message || 'Error while updating';
@@ -124,7 +124,7 @@ currentYear: number = new Date().getFullYear();
 
     } else {
 
-      this.educationService.create(this.userId, this.item).subscribe({
+      this.educationService.create(this.item).subscribe({
         next: () => this.router.navigate(['/front/education']),
         error: (err: any) => {
           this.errorMessage =

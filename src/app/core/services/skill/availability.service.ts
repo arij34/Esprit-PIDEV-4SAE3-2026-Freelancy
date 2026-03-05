@@ -19,15 +19,19 @@ export class AvailabilityService {
     return this.http.get<Availability>(`${this.url}/${id}`);
   }
 
-  create(userId: number, availability: Availability): Observable<Availability> {
-    return this.http.post<Availability>(`${this.url}/user/${userId}`, availability);
+  // ✅ /user/me — token Keycloak injecté automatiquement (enableBearerInterceptor: true)
+  getForCurrentUser(): Observable<Availability> {
+    return this.http.get<Availability>(`${this.url}/user/me`);
+  }
+
+  create(availability: Availability): Observable<Availability> {
+    return this.http.post<Availability>(`${this.url}/user/me`, availability);
   }
 
   update(id: number, availability: Availability): Observable<Availability> {
     return this.http.put<Availability>(`${this.url}/${id}`, availability);
   }
 
-  // Endpoint preview : calcule sans sauvegarder
   preview(availability: Availability): Observable<Availability> {
     return this.http.post<Availability>(`${this.url}/preview`, availability);
   }

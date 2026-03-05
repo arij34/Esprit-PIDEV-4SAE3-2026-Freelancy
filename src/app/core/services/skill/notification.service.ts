@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+
 export interface AppNotification {
   id: number;
   type: 'PENDING_SKILL_ADDED' | 'SKILL_APPROVED' | 'SKILL_REJECTED';
@@ -18,63 +19,54 @@ export interface AppNotification {
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
 
-  private apiUrl = `${environment.apiUrl}/notifications`;
-  private stompClient!: Client;
+  private apiUrl  = `${environment.apiUrl}/notifications`;
+  // ✅ CORRIGÉ : WebSocket pointe directement vers le Gateway :8081
+  private wsUrl   = `${environment.wsUrl}/ws-notifications`;
 
+  private stompClient!: Client;
   private notificationsSubject = new BehaviorSubject<AppNotification[]>([]);
   private unreadCountSubject   = new BehaviorSubject<number>(0);
 
   notifications$ = this.notificationsSubject.asObservable();
   unreadCount$   = this.unreadCountSubject.asObservable();
-  private tempUserId = "admin-test";
 
   constructor(private http: HttpClient) {}
 
   // ══════════════════════════════════════════════════════════════
-  // CONNEXION WEBSOCKET
-  // ✅ FIX : utilise webSocketFactory avec SockJS chargé via require()
-  //          dans une fonction pour éviter le crash au bootstrap
+  // WEBSOCKET
   // ══════════════════════════════════════════════════════════════
 
- connect(role: 'ADMIN' | 'USER', userId?: number): void {
+  connect(role: 'ADMIN' | 'USER', userId?: number): void {
+    this.stompClient = new Client({
+      webSocketFactory: () => new (SockJS as any)(this.wsUrl),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log('✅ WebSocket connecté');
 
-  const wsUrl = `${environment.apiUrl.replace('/api', '')}/ws-notifications`;
+        const topic = role === 'ADMIN'
+          ? '/topic/admin-notifications'
+          : `/topic/user-notifications/${userId}`;
 
-  this.stompClient = new Client({
+        this.stompClient.subscribe(topic, (msg: IMessage) => {
+          const notif: AppNotification = JSON.parse(msg.body);
+          this.onNewNotification(notif);
+        });
 
-    webSocketFactory: () => {
-      return new (SockJS as any)(wsUrl);
-    },
+        this.loadNotifications(role);
+      }
+    });
 
-    reconnectDelay: 5000,
+    this.stompClient.activate();
+  }
 
-    onConnect: () => {
-      console.log('✅ WebSocket connecté');
-
-      const topic = role === 'ADMIN'
-        ? '/topic/admin-notifications'
-        : `/topic/user-notifications/${userId}`;
-
-      this.stompClient.subscribe(topic, (msg: IMessage) => {
-        const notif: AppNotification = JSON.parse(msg.body);
-        this.onNewNotification(notif);
-      });
-
-      this.loadNotifications(role, userId);
-    }
-  });
-
-  this.stompClient.activate();
-}
   disconnect(): void {
     if (this.stompClient?.active) {
       this.stompClient.deactivate();
     }
   }
-  
 
   // ══════════════════════════════════════════════════════════════
-  // GESTION NOTIFICATIONS
+  // INTERNE
   // ══════════════════════════════════════════════════════════════
 
   private onNewNotification(notif: AppNotification): void {
@@ -85,10 +77,11 @@ export class NotificationService {
     }
   }
 
-  private loadNotifications(role: 'ADMIN' | 'USER', userId?: number): void {
+  private loadNotifications(role: 'ADMIN' | 'USER'): void {
+    // ✅ /user/me — token Keycloak injecté automatiquement
     const url = role === 'ADMIN'
       ? `${this.apiUrl}/admin`
-      : `${this.apiUrl}/user/${userId}`;
+      : `${this.apiUrl}/user/me`;
 
     this.http.get<AppNotification[]>(url).subscribe({
       next: (data) => {
@@ -107,16 +100,25 @@ export class NotificationService {
     return this.http.get<AppNotification[]>(`${this.apiUrl}/admin`);
   }
 
-  getUserNotifications(userId: number): Observable<AppNotification[]> {
-    return this.http.get<AppNotification[]>(`${this.apiUrl}/user/${userId}`);
+  getAdminUnreadCount(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/admin/unread-count`);
+  }
+
+  // ✅ /user/me
+  getUserNotificationsForCurrentUser(): Observable<AppNotification[]> {
+    return this.http.get<AppNotification[]>(`${this.apiUrl}/user/me`);
+  }
+
+  getUserUnreadCountForCurrentUser(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.apiUrl}/user/me/unread-count`);
   }
 
   markAllReadAdmin(): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/admin/mark-all-read`, {});
   }
 
-  markAllReadUser(userId: number): Observable<void> {
-    return this.http.put<void>(`${this.apiUrl}/user/${userId}/mark-all-read`, {});
+  markAllReadCurrentUser(): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/user/me/mark-all-read`, {});
   }
 
   markOneRead(id: number): Observable<void> {

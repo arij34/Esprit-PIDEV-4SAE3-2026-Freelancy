@@ -6,33 +6,38 @@ import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class EducationService {
+
   private url = `${environment.apiUrl}/education`;
+
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Education[]> { 
-    return this.http.get<Education[]>(this.url); 
+  getAll(): Observable<Education[]> {
+    return this.http.get<Education[]>(this.url);
   }
-  
-  getById(id: number): Observable<Education> { 
-    return this.http.get<Education>(`${this.url}/${id}`); 
+
+  getById(id: number): Observable<Education> {
+    return this.http.get<Education>(`${this.url}/${id}`);
   }
-  
-  // ← POST /api/education/user/{userId}
-  create(userId: number, e: Education): Observable<Education> { 
-    return this.http.post<Education>(`${this.url}/user/${userId}`, e); 
+
+  // ✅ Token Keycloak injecté automatiquement
+  getAllForCurrentUser(): Observable<Education[]> {
+    return this.http.get<Education[]>(`${this.url}/user/me`);
   }
-  
-  // ← PUT /api/education (ID dans le body, pas dans l'URL)
-  update(e: Education): Observable<Education> { 
-    return this.http.put<Education>(this.url, e); 
+
+  getLatestForCurrentUser(): Observable<Education> {
+    return this.http.get<Education>(`${this.url}/user/me/latest`);
   }
-  
-  delete(id: number): Observable<void> { 
-    return this.http.delete<void>(`${this.url}/${id}`); 
+
+  create(education: Education): Observable<Education> {
+    return this.http.post<Education>(`${this.url}/user/me`, education);
   }
-  getLatest(userId: number) {
-  return this.http.get<Education>(
-    `${this.url}/user/${userId}/latest`
-  );
-}
+
+  // ✅ PUT avec id dans l'URL (corrigé)
+  update(id: number, education: Education): Observable<Education> {
+    return this.http.put<Education>(`${this.url}/${id}`, education);
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}`);
+  }
 }

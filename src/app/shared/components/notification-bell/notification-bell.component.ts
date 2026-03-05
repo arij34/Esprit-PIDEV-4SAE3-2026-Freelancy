@@ -57,8 +57,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
       // Marquer comme lues côté API
       const obs = this.role === 'ADMIN'
         ? this.notifService.markAllReadAdmin()
-        : this.notifService.markAllReadUser(this.userId);
-
+        : this.notifService.markAllReadCurrentUser()
       obs.subscribe(() => this.notifService.markAllReadLocally());
     }
   }

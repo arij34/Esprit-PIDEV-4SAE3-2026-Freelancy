@@ -19,63 +19,52 @@ export class FreelancerSkillService {
     return this.http.get<FreelancerSkill>(`${this.url}/${id}`);
   }
 
-  // ✅ CREATE avec userId
-  create(userId: number, freelancerSkill: FreelancerSkill): Observable<FreelancerSkill> {
-    return this.http.post<FreelancerSkill>(
-      `${this.url}/user/${userId}`,
-      freelancerSkill
+  // ✅ Token Keycloak injecté automatiquement — /user/me
+  getAllForCurrentUser(): Observable<FreelancerSkill[]> {
+    return this.http.get<FreelancerSkill[]>(`${this.url}/user/me`);
+  }
+
+  // ✅ Création manuelle — /user/me?skillInput=...
+  createWithSkillInput(skillInput: string, payload: FreelancerSkill): Observable<any> {
+    return this.http.post<any>(
+      `${this.url}/user/me?skillInput=${encodeURIComponent(skillInput)}`,
+      payload
     );
   }
 
-  // ✅ UPDATE sans id dans URL
-  update(freelancerSkill: FreelancerSkill): Observable<FreelancerSkill> {
-    return this.http.put<FreelancerSkill>(
-      this.url,
-      freelancerSkill
+  // ✅ Création depuis CV — /CV/me?skillInput=...
+  createWithSkillInputCV(skillInput: string, payload: FreelancerSkill): Observable<any> {
+    return this.http.post<any>(
+      `${this.url}/CV/me?skillInput=${encodeURIComponent(skillInput)}`,
+      payload
     );
+  }
+
+  update(freelancerSkill: FreelancerSkill): Observable<any> {
+    return this.http.put<any>(this.url, freelancerSkill);
   }
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
 
-  getLevelByYears(years: number): Observable<{years: number, level: number, label: string}> {
-  return this.http.get<{years: number, level: number, label: string}>(
-    `${this.url}/level/${years}`
-  );
-}
-
-
-createWithSkillInput(userId: number, skillInput: string, payload: any): Observable<any> {
-  return this.http.post<any>(
-    `${this.url}/user/${userId}?skillInput=${encodeURIComponent(skillInput)}`,
-    payload
-  );
-}
-
-createWithSkillInputCV(userId: number, skillInput: string, payload: any): Observable<any> {
-  return this.http.post<any>(
-    `${this.url}/CV/${userId}?skillInput=${encodeURIComponent(skillInput)}`,
-    payload
-  );
-}
- getDuplicateSkills(userId: number): Observable<FreelancerSkill[]> {
-    return this.http.get<FreelancerSkill[]>(
-      `${this.url}/${userId}/duplicate-skills`
+  getLevelByYears(years: number): Observable<{ years: number; level: number; label: string }> {
+    return this.http.get<{ years: number; level: number; label: string }>(
+      `${this.url}/level/${years}`
     );
   }
 
-  checkExistingSkills(userId: number, skills: string[]) {
-  return this.http.post<any>(
-    `${this.url}/check-existing/${userId}`,
-    skills
-  );
-}
-checkExistingSkillscv(userId: number, skills: string[]) {
-  return this.http.post<any>(
-    `${this.url}/check-skills/${userId}`,
-    skills
-  );
-}
+  getDuplicateSkills(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/${id}/duplicate-skills`);
+  }
 
+  // ✅ /check-skills/me — token Keycloak injecté automatiquement
+  checkSkillsForCurrentUser(skills: string[]): Observable<any> {
+    return this.http.post<any>(`${this.url}/check-skills/me`, skills);
+  }
+
+  // ✅ /check-existing/me
+  checkExistingSkillsForCurrentUser(skills: string[]): Observable<any> {
+    return this.http.post<any>(`${this.url}/check-existing/me`, skills);
+  }
 }
