@@ -8,7 +8,7 @@ import tn.freelancy.skillmanagement.service.PendingSkillService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/pending-skills")
+@RequestMapping("/pending-skills")
 public class PendingSkillController {
 
     @Autowired

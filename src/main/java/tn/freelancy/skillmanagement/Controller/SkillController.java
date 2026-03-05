@@ -11,7 +11,7 @@ import tn.freelancy.skillmanagement.service.SkillService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/skills")
+@RequestMapping("/skills")
 public class SkillController {
 
     @Autowired
@@ -36,9 +36,19 @@ public class SkillController {
     }
 
     @PutMapping("/{id}")
-    public Skill update(@PathVariable Long id, @RequestBody Skill skill) {
-        skill.setIdS(id);
-        return skillService.updateSkill(skill);
+    public ResponseEntity<Skill> update(@PathVariable Long id, @RequestBody Skill skill) {
+
+        Skill existing = skillService.getSkillById(id);
+
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        existing.setName(skill.getName());
+        existing.setNormalizedName(skill.getNormalizedName());
+        existing.setCategory(skill.getCategory());
+
+        return ResponseEntity.ok(skillService.updateSkill(existing));
     }
 
     @DeleteMapping("/{id}")

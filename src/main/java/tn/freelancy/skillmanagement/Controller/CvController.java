@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import tn.freelancy.skillmanagement.service.PythonCvService;
 
 @RestController
-@RequestMapping("/api/cv")
+@RequestMapping("/cv")
 @RequiredArgsConstructor
 public class CvController {
 

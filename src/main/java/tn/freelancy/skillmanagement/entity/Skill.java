@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -28,6 +29,8 @@ public class Skill {
 
     private String category;
 
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private Date createdAt;
 
     public Skill(String name, String normalizedName, String category, Date createdAt) {

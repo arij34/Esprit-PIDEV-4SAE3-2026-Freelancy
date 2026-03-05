@@ -10,7 +10,7 @@ import tn.freelancy.skillmanagement.service.ExperienceService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/experience")
+@RequestMapping("/experience")
 public class ExperienceController {
 
     @Autowired
