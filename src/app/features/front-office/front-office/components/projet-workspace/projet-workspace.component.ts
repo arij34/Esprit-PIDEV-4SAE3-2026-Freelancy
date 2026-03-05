@@ -245,7 +245,7 @@ export class ProjetWorkspaceComponent implements OnInit, OnDestroy {
       next: (p: Project) => {
         this.project = p;
         this.isLoading = false;
-        this.loadProposals(id);
+        this.loadProposals(id, p.clientId ?? undefined);
       },
       error: () => {
         this.errorMessage = 'Unable to load the project.';
@@ -254,9 +254,8 @@ export class ProjetWorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadProposals(projectId: number): void {
-    // ← passer le clientKeycloakId récupéré depuis les queryParams
-    this.proposalService.getByProject(projectId, this.clientKeycloakId).subscribe({
+  private loadProposals(projectId: number, clientId?: number): void {
+    this.proposalService.getByProject(projectId, clientId).subscribe({
       next: (data: any[]) => { this.proposals = data; },
       error: () => {}
     });

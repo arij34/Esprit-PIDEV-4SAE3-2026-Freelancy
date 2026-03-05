@@ -100,14 +100,15 @@ export class ProjectService {
   getDeleteHistory(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/delete-history`);
   }
-  getAcceptedProjects(freelancerId: number) {
-  return this.http.get<Project[]>(
-    `http://localhost:8085/proposals/freelancer/${freelancerId}/accepted-projects`
-  );
-}
-getAcceptedProjectsByKeycloak(keycloakId: string): Observable<Project[]> {
-  return this.http.get<Project[]>(
-    `http://localhost:8085/proposals/freelancer/by-keycloak/${keycloakId}/accepted-projects`
-  );
-}
+  getAcceptedProjects(freelancerId: number): Observable<Project[]> {
+    return this.http.get<Project[]>(
+      `${environment.projectApiUrl}/proposals/freelancer/${freelancerId}/accepted-projects`
+    );
+  }
+
+  getAcceptedProjectsByKeycloak(keycloakId: string): Observable<Project[]> {
+    return this.http.get<Project[]>(
+      `${environment.projectApiUrl}/proposals/freelancer/by-keycloak/${keycloakId}/accepted-projects`
+    );
+  }
 }

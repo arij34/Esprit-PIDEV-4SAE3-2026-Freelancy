@@ -1,4 +1,5 @@
 import { Component, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { StatsService } from '../../../../../core/services/stats.service';
 
 @Component({
@@ -8,7 +9,6 @@ import { StatsService } from '../../../../../core/services/stats.service';
 })
 export class StatsComponent implements OnInit, AfterViewInit {
 viewMode: 'admin' | 'client' = 'client';
-  clientId: number = 1; 
   isLoading = true;
   kpis: any = {};
   topSkills: any[] = [];
@@ -24,15 +24,29 @@ viewMode: 'admin' | 'client' = 'client';
     Enterprise: '#dc2626'
   };
 
-  constructor(private statsService: StatsService) {}
+  constructor(
+    private statsService: StatsService,
+    private route: ActivatedRoute
+  ) {}
+
+  private resolveClientId(): number | undefined {
+    const fromRoute = this.route.snapshot.queryParams['clientId'];
+    if (fromRoute != null && fromRoute !== '') {
+      const n = +fromRoute;
+      if (!isNaN(n)) return n;
+    }
+    const fromStorage = localStorage.getItem('userId') || localStorage.getItem('clientId');
+    if (fromStorage) return +fromStorage;
+    return 1;
+  }
 
   ngOnInit(): void {
-    this.loadStats();
+    this.route.queryParams.subscribe(() => this.loadStats());
   }
 
   loadStats(): void {
     this.isLoading = true;
-    const id = this.viewMode === 'client' ? this.clientId : undefined;
+    const id = this.viewMode === 'client' ? (this.resolveClientId() ?? 1) : undefined;
 
     this.statsService.getAllStats(id).subscribe({
       next: (data) => {

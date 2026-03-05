@@ -78,6 +78,11 @@ export class AuthService {
   }
 
   logout(redirectUri: string = window.location.origin + '/front'): Promise<void> {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('freelancerId');
+    localStorage.removeItem('clientId');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
     // Use a route that exists in the Angular app.
     // Keycloak validates post_logout_redirect_uri; we keep it under /front.
     const kc = this.keycloak.getKeycloakInstance();

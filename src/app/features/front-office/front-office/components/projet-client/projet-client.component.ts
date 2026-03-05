@@ -20,8 +20,12 @@ export class ProjetClientComponent implements OnInit {
   sortBy: string = 'newest';
   isLoading: boolean = true;
   errorMessage: string = '';
-  clientId: number = 0;
-  clientKeycloakId: string = ''; // ← ajout pour stocker le keycloakId
+  clientKeycloakId: string = '';
+
+  get clientId(): number {
+    const id = localStorage.getItem('userId') || localStorage.getItem('clientId');
+    return id ? +id : 1;
+  }
   today: string = new Date().toISOString().split('T')[0];
 
   // ── Phases IA par projet ───────────────────────────
@@ -200,14 +204,19 @@ export class ProjetClientComponent implements OnInit {
     if (id) this.router.navigate(['/front-office/projects', id]);
   }
 
-  goToWorkspace(projectId: number | undefined): void {
-    if (projectId) {
-      this.router.navigate(
-        ['/front-office/projects', projectId, 'workspace'],
-        // ← passer le clientKeycloakId dans les queryParams
-        { queryParams: { role: 'CLIENT', name: 'Client Test', clientId: this.clientKeycloakId } }
-      );
-    }
+  goToWorkspace(project: Project): void {
+    if (!project?.id) return;
+    const clientId = project.clientId ?? this.clientId;
+    this.router.navigate(
+      ['/front-office/projects', project.id, 'workspace'],
+      {
+        queryParams: {
+          role: 'CLIENT',
+          userId: clientId,
+          name: localStorage.getItem('userName') || 'Client'
+        }
+      }
+    );
   }
 
   onProjectAdded(): void {
@@ -264,7 +273,8 @@ export class ProjetClientComponent implements OnInit {
   }
 
   goToStats(): void {
-    this.router.navigate(['/front-office/stats']);
+    const cid = this.projects[0]?.clientId ?? this.clientId;
+    this.router.navigate(['/front-office/stats'], { queryParams: { clientId: cid } });
   }
 
   // ── TOAST ─────────────────────────────────────────
@@ -473,8 +483,9 @@ export class ProjetClientComponent implements OnInit {
 
   loadProposals(projectId: number): void {
     this.isLoadingProposals = true;
-    this.projectService.getProjectParticipants(projectId).subscribe({
-      next: (data) => {
+    const clientId = this.selectedProjectForProposals?.clientId ?? this.clientId;
+    this.proposalService.getByProject(projectId, clientId).subscribe({
+      next: (data: any[]) => {
         this.proposals          = data;
         this.isLoadingProposals = false;
       },

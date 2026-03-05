@@ -60,6 +60,8 @@ export class ProjetFreelancerDetailComponent implements OnInit {
  ngOnInit(): void {
   this.authService.getAccessToken().then(() => {
     this.keycloakId = this.authService.getKeycloakSub();
+    const storedId = localStorage.getItem('userId') || localStorage.getItem('freelancerId');
+    if (storedId) this.freelancerId = +storedId;
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -190,18 +192,17 @@ export class ProjetFreelancerDetailComponent implements OnInit {
     this.isSubmitting = true;
     this.submitError  = '';
 
-    // Backend resolves freelancer from Authorization header (same pattern as Project create).
-    // Only send project + proposal fields; optionally freelancerKeycloakId as fallback.
-    const payload = {
+    const payload: any = {
       projectId:        this.project!.id,
+      freelancerId:     this.freelancerId,
       bidAmount:        +this.proposalForm.bidAmount,
       deliveryWeeks:    +this.proposalForm.deliveryWeeks,
       availableFrom:    this.proposalForm.availableFrom || null,
       portfolioUrl:     this.proposalForm.portfolioUrl  || null,
       coverLetter:      this.proposalForm.coverLetter,
-      questionToClient: this.proposalForm.questionToClient || null,
-      ...(this.keycloakId && { freelancerKeycloakId: this.keycloakId })  // fallback if backend doesn't use token
+      questionToClient: this.proposalForm.questionToClient || null
     };
+    if (this.keycloakId) payload.freelancerKeycloakId = this.keycloakId;
 
     this.proposalService.submit(payload).subscribe({
       next: () => {

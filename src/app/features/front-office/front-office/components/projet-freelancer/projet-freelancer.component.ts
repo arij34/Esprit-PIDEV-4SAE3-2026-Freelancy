@@ -25,6 +25,11 @@ export class ProjetFreelancerComponent implements OnInit {
 
   keycloakId: string = '';
 
+  get freelancerId(): number {
+    const id = localStorage.getItem('userId') || localStorage.getItem('freelancerId');
+    return id ? +id : 0;
+  }
+
   constructor(
     private projectService: ProjectService,
     private savedService: SavedProjectService,
@@ -75,15 +80,22 @@ export class ProjetFreelancerComponent implements OnInit {
   }
 
   loadAcceptedProjects(): void {
+    const fid = this.freelancerId;
+    if (!fid || fid <= 0) {
+      this.errorMessage = 'Connectez-vous pour voir vos projets acceptés.';
+      this.isLoading = false;
+      return;
+    }
     this.isLoading = true;
-    this.projectService.getAcceptedProjectsByKeycloak(this.keycloakId).subscribe({
+    this.errorMessage = '';
+    this.projectService.getAcceptedProjects(fid).subscribe({
       next: (data: Project[]) => {
         this.acceptedProjects = data;
         this.filteredProjects = data;
         this.isLoading = false;
       },
       error: (err: any) => {
-        this.errorMessage = 'Error loading discussion projects.';
+        this.errorMessage = 'Erreur lors du chargement des projets en discussion.';
         this.isLoading = false;
         console.error(err);
       }
@@ -161,12 +173,17 @@ export class ProjetFreelancerComponent implements OnInit {
     if (id) this.router.navigate(['/front-office/discover', id]);
   }
 
-  // ← utilise le vrai nom depuis keycloakId
   goToWorkspace(projectId: number | undefined): void {
     if (projectId) {
       this.router.navigate(
         ['/front-office/projects', projectId, 'workspace'],
-        { queryParams: { role: 'FREELANCER', name: this.keycloakId } }
+        {
+          queryParams: {
+            role: 'FREELANCER',
+            userId: this.freelancerId,
+            name: localStorage.getItem('userName') || 'Freelancer'
+          }
+        }
       );
     }
   }

@@ -13,11 +13,12 @@ export class ProposalService {
     return this.http.post(this.api, data);
   }
 
-  // ← clientId optionnel ajouté pour que le backend vérifie l'accès correctement
-  getByProject(projectId: number, clientId?: string): Observable<any[]> {
-    let params = new HttpParams();
-    if (clientId) params = params.set('clientId', clientId);
-    return this.http.get<any[]>(`${this.api}/project/${projectId}`, { params });
+  getByProject(projectId: number, clientId?: number): Observable<any[]> {
+    let url = `${this.api}/project/${projectId}`;
+    if (clientId != null) {
+      url += `?clientId=${clientId}`;
+    }
+    return this.http.get<any[]>(url);
   }
 
   getByFreelancer(freelancerId: number): Observable<any[]> {
