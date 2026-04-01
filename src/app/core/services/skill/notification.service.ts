@@ -19,9 +19,8 @@ export interface AppNotification {
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
 
-  private apiUrl  = `${environment.apiUrl}/notifications`;
-  // ✅ CORRIGÉ : WebSocket pointe directement vers le Gateway :8081
-  private wsUrl   = `${environment.wsUrl}/ws-notifications`;
+  private apiUrl = `${environment.apiUrl}/notifications`;
+  private wsUrl  = `${environment.wsUrl}/ws-notifications`;
 
   private stompClient!: Client;
   private notificationsSubject = new BehaviorSubject<AppNotification[]>([]);
@@ -32,17 +31,22 @@ export class NotificationService {
 
   constructor(private http: HttpClient) {}
 
-  // ══════════════════════════════════════════════════════════════
-  // WEBSOCKET
-  // ══════════════════════════════════════════════════════════════
+  // ✅ CORRIGÉ : userId est string (Keycloak UUID) au lieu de number
+  connect(role: 'ADMIN' | 'USER', userId?: string): void {
 
-  connect(role: 'ADMIN' | 'USER', userId?: number): void {
+    // ✅ Sécurité : ne pas connecter si USER sans userId valide
+    if (role === 'USER' && !userId) {
+      console.warn('NotificationService: userId manquant, connexion WebSocket annulée');
+      return;
+    }
+
     this.stompClient = new Client({
       webSocketFactory: () => new (SockJS as any)(this.wsUrl),
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('✅ WebSocket connecté');
+        console.log('✅ WebSocket connecté — role:', role, '| userId:', userId);
 
+        // ✅ CORRIGÉ : topic avec UUID Keycloak (string)
         const topic = role === 'ADMIN'
           ? '/topic/admin-notifications'
           : `/topic/user-notifications/${userId}`;
@@ -53,6 +57,9 @@ export class NotificationService {
         });
 
         this.loadNotifications(role);
+      },
+      onStompError: (frame) => {
+        console.error('❌ WebSocket erreur STOMP:', frame);
       }
     });
 
@@ -65,10 +72,6 @@ export class NotificationService {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // INTERNE
-  // ══════════════════════════════════════════════════════════════
-
   private onNewNotification(notif: AppNotification): void {
     const current = this.notificationsSubject.getValue();
     this.notificationsSubject.next([notif, ...current]);
@@ -78,7 +81,7 @@ export class NotificationService {
   }
 
   private loadNotifications(role: 'ADMIN' | 'USER'): void {
-    // ✅ /user/me — token Keycloak injecté automatiquement
+    // ✅ /user/me — token JWT injecté automatiquement par AuthTokenInterceptor
     const url = role === 'ADMIN'
       ? `${this.apiUrl}/admin`
       : `${this.apiUrl}/user/me`;
@@ -88,13 +91,9 @@ export class NotificationService {
         this.notificationsSubject.next(data);
         this.unreadCountSubject.next(data.filter(n => !n.read).length);
       },
-      error: (err) => console.error('Failed to load notifications', err)
+      error: (err) => console.error('❌ Notifications non chargées:', err)
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // API REST
-  // ══════════════════════════════════════════════════════════════
 
   getAdminNotifications(): Observable<AppNotification[]> {
     return this.http.get<AppNotification[]>(`${this.apiUrl}/admin`);
@@ -104,7 +103,6 @@ export class NotificationService {
     return this.http.get<{ count: number }>(`${this.apiUrl}/admin/unread-count`);
   }
 
-  // ✅ /user/me
   getUserNotificationsForCurrentUser(): Observable<AppNotification[]> {
     return this.http.get<AppNotification[]>(`${this.apiUrl}/user/me`);
   }

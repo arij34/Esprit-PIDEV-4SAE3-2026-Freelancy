@@ -21,7 +21,6 @@ export class AvailabilityFormComponent implements OnInit {
 
   isEditMode = false;
   itemId?: number;
-  userId!: number;
   errorMessage = '';
   loading = false;
 
@@ -50,25 +49,23 @@ export class AvailabilityFormComponent implements OnInit {
 
   ngOnInit(): void {
     const url = this.route.snapshot.url.map(s => s.path).join('/');
-    if (url.includes('edit')) {
-      this.isEditMode = true;
-      this.itemId = Number(this.route.snapshot.paramMap.get('id'));
-      this.loading = true;
-      this.availabilityService.getById(this.itemId).subscribe({
-        next: (data) => {
-          this.item = {
-            hoursPerDay:     data.hoursPerDay,
-            selectedDays:    data.selectedDays ?? [],
-            selectedPeriods: data.selectedPeriods ?? []
-          };
-          this.preview = data;
-          this.loading = false;
-        },
-        error: () => { this.errorMessage = 'Error loading data'; this.loading = false; }
-      });
-    } else {
-      this.userId = Number(this.route.snapshot.paramMap.get('userId'));
-    }
+  if (url.includes('edit')) {
+    this.isEditMode = true;
+    this.itemId = Number(this.route.snapshot.paramMap.get('id'));
+    this.loading = true;
+    this.availabilityService.getById(this.itemId).subscribe({
+      next: (data) => {
+        this.item = {
+          hoursPerDay:     data.hoursPerDay,
+          selectedDays:    data.selectedDays ?? [],
+          selectedPeriods: data.selectedPeriods ?? []
+        };
+        this.preview = data;
+        this.loading = false;
+      },
+      error: () => { this.errorMessage = 'Error loading data'; this.loading = false; }
+    });
+  }
   }
 
   getMaxHours(): number {

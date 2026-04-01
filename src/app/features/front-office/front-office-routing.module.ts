@@ -43,35 +43,35 @@ const routes: Routes = [
       { path: 'stats',                 component: StatsComponent },
       { path: 'projet-client',         component: ProjetClientComponent },
 
-      // ── Skill Management (local) ──────────────────────────────────
+      // ── Skill Management ──────────────────────────────────────
+
       { path: 'dashboard-skill',       component: SkillDashboardComponent },
 
       // Education
-      { path: 'education',                     component: EducationListComponent },
-      { path: 'education/add/:userId',         component: EducationFormComponent },
-      { path: 'education/edit/:id',            component: EducationFormComponent },
+      { path: 'education',             component: EducationListComponent },
+      { path: 'education/add',         component: EducationFormComponent },   // ✅ retiré /:userId
+      { path: 'education/edit/:id',    component: EducationFormComponent },
 
       // Experience
-      { path: 'experience',                    component: ExperienceListComponent },
-      { path: 'experience/create/:userId',     component: ExperienceFormComponent },
-      { path: 'experience/edit/:id',           component: ExperienceFormComponent },
+      { path: 'experience',            component: ExperienceListComponent },
+      { path: 'experience/create',     component: ExperienceFormComponent },  // ✅ retiré /:userId
+      { path: 'experience/edit/:id',   component: ExperienceFormComponent },
 
       // Availability
-      { path: 'availability',                  component: AvailabilityListComponent },
-      { path: 'availability/add/:userId',      component: AvailabilityFormComponent },
-      { path: 'availability/edit/:id',         component: AvailabilityFormComponent },
+      { path: 'availability',          component: AvailabilityListComponent },
+      { path: 'availability/add',      component: AvailabilityFormComponent }, // ✅ retiré /:userId
+      { path: 'availability/edit/:id', component: AvailabilityFormComponent },
 
       // Freelancer Skills
       { path: 'freelancer-skills',             component: FreelancerSkillListComponent },
-      { path: 'freelancer-skills/add/:userId', component: FreelancerSkillFormComponent },
+      { path: 'freelancer-skills/add',         component: FreelancerSkillFormComponent }, // ✅ retiré /:userId
       { path: 'freelancer-skills/edit/:id',    component: FreelancerSkillFormComponent },
       { path: 'freelancer_skills',             component: FreelancerSkillListComponent },
-      { path: 'freelancer_skills/add/:userId', component: FreelancerSkillFormComponent },
+      { path: 'freelancer_skills/add',         component: FreelancerSkillFormComponent }, // ✅ retiré /:userId
       { path: 'freelancer_skills/edit/:id',    component: FreelancerSkillFormComponent },
-
     ]
-  }
-];
+    }
+  ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],

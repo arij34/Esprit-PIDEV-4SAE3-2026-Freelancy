@@ -8,11 +8,12 @@ import { AvailabilityService } from '../../../../../core/services/skill/availabi
   styleUrl: './availability-list.component.css'
 })
 export class AvailabilityListComponent implements OnInit {
+
   items: Availability[] = [];
   loading = false;
   errorMessage = '';
   successMessage = '';
-  currentUserId = 1;
+  // ✅ SUPPRIMÉ : currentUserId = 1  (inutile, le token JWT gère l'identité)
 
   constructor(private availabilityService: AvailabilityService) {}
 
@@ -21,7 +22,10 @@ export class AvailabilityListComponent implements OnInit {
   loadAll(): void {
     this.loading = true;
     this.availabilityService.getAll().subscribe({
-      next: (data: Availability[]) => { this.items = data; this.loading = false; },
+      next: (data: Availability[]) => {
+        this.items = data;
+        this.loading = false;
+      },
       error: (err: any) => {
         console.error(err);
         this.errorMessage = 'Error loading availability';
@@ -46,22 +50,20 @@ export class AvailabilityListComponent implements OnInit {
     }
   }
 
- 
+  getPeriodLabel(status: string): string {
+    if (!status) return '';
+    let icons = '';
+    if (status.includes('MORNING'))   icons += '🌅';
+    if (status.includes('AFTERNOON')) icons += '☀️';
+    if (status.includes('NIGHT'))     icons += '🌙';
+    if (status.includes('ALL_DAY'))   icons += '🕐';
+    return icons;
+  }
 
-getPeriodLabel(status: string): string {
-  if (!status) return '';
-  let icons = '';
-  if (status.includes('MORNING'))   icons += '🌅';
-  if (status.includes('AFTERNOON')) icons += '☀️';
-  if (status.includes('NIGHT'))     icons += '🌙';
-  if (status.includes('ALL_DAY'))   icons += '🕐';
-  return icons;
-}
-
-getStatusClass(status: string): string {
-  if (!status) return 'bg-secondary';
-  if (status.startsWith('AVAILABLE')) return 'bg-success';
-  if (status.startsWith('PART_TIME')) return 'bg-warning text-dark';
-  return 'bg-secondary';
-}
+  getStatusClass(status: string): string {
+    if (!status) return 'bg-secondary';
+    if (status.startsWith('AVAILABLE')) return 'bg-success';
+    if (status.startsWith('PART_TIME')) return 'bg-warning text-dark';
+    return 'bg-secondary';
+  }
 }

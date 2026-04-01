@@ -4,6 +4,8 @@ GLOBAL PAGE LAYOUT
 
 .page-container {
   padding: 30px;
+  margin-top: 80px; /* AJOUTE ÇA */
+
 }
 
 .page-header {

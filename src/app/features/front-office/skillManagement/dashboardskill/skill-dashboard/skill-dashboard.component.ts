@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { AuthService } from '../../../../../core/auth/auth.service';
 import { FreelancerSkillService } from '../../../../../core/services/skill/freelancer-skill.service';
 import { EducationService } from '../../../../../core/services/skill/education.service';
 import { AvailabilityService } from '../../../../../core/services/skill/availability.service';
@@ -25,7 +26,8 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
   latestEducation?: Education;
   availability: any = null;
 
-  private userId = 1;
+  // ✅ CORRIGÉ : remplace "private userId = 1"
+  private keycloakUserId: string = '';
 
   loadingSkills = false;
   loadingDuplicates = false;
@@ -58,15 +60,20 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
     private experienceService: ExperienceService,
     private cvService: CvuploadService,
     private notifService: NotificationService,
+    private authService: AuthService  // ✅ AJOUTÉ
   ) {}
 
   ngOnInit(): void {
+    // ✅ CORRIGÉ : getKeycloakSub() est déjà dans AuthService de votre projet
+    this.keycloakUserId = this.authService.getKeycloakSub();
+
     this.loadSkills();
     this.loadExperience();
     this.loadLatestEducation();
     this.loadAvailability();
 
-    this.notifService.connect('USER', this.userId);
+    // ✅ CORRIGÉ : keycloakUserId (string UUID) au lieu de userId=1
+    this.notifService.connect('USER', this.keycloakUserId);
 
     this.notifSub = this.notifService.notifications$.subscribe(notifs => {
       if (!notifs.length) return;
@@ -85,7 +92,7 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
   showToast(notif: AppNotification): void {
     const id = ++this.toastCounter;
     const type = notif.type === 'SKILL_APPROVED' ? 'success'
-               : notif.type === 'SKILL_REJECTED' ? 'error'
+               : notif.type === 'SKILL_REJECTED'  ? 'error'
                : 'info';
     this.toasts.push({ id, message: notif.message, type, skillName: notif.skillName, visible: true });
     setTimeout(() => this.dismissToast(id), 5000);
@@ -133,8 +140,12 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
 
   loadDuplicateSkills(): void {
     this.loadingDuplicates = true;
-    this.freelancerSkillService.getDuplicateSkills(this.userId).subscribe({
-      next: (data: any[]) => { this.duplicatePairs = data || []; this.loadingDuplicates = false; },
+    // ✅ CORRIGÉ : plus de this.userId — endpoint /user/me/duplicates
+    this.freelancerSkillService.getDuplicateSkillsForCurrentUser().subscribe({
+      next: (data: any[]) => {
+        this.duplicatePairs = data || [];
+        this.loadingDuplicates = false;
+      },
       error: () => this.loadingDuplicates = false
     });
   }
@@ -237,7 +248,6 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ CORRECTION 1 : utiliser extractedData.skills au lieu de extractedSkills
     this.freelancerSkillService.checkExistingSkillsForCurrentUser(this.extractedData.skills)
       .subscribe({
         next: (response: { existing: string[]; newSkills: string[] }) => {
@@ -279,19 +289,19 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
     }
 
     const requests = this.skillsToAdd.map((skillName: string) =>
-  this.freelancerSkillService.createWithSkillInputCV(skillName, {
-    level: 1,
-    yearsExperience: 1,
-    extractedByAI: true,
-    customSkillName: skillName   // ← champ qui existe dans le modèle
-  } as FreelancerSkill).pipe(
-    catchError(err => { console.warn(`Skipped "${skillName}"`); return of(null); })
-  )
-);
+      this.freelancerSkillService.createWithSkillInputCV(skillName, {
+        level: 1,
+        yearsExperience: 1,
+        extractedByAI: true,
+        customSkillName: skillName
+      } as FreelancerSkill).pipe(
+        catchError(() => { console.warn(`Skipped "${skillName}"`); return of(null); })
+      )
+    );
 
     forkJoin(requests).subscribe({
       next: (results) => {
-        const added = results.filter(r => r !== null).length;
+        const added   = results.filter(r => r !== null).length;
         const skipped = results.length - added;
         let msg = `${added} skill(s) added successfully.`;
         if (skipped > 0) msg += ` ${skipped} were skipped.`;
@@ -305,12 +315,17 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
 
   computeValidationRate(): void {
     if (!this.freelancerSkills.length) { this.validationRate = 0; return; }
-    const expert = this.freelancerSkills.filter(s => s.level === 'EXPERT' || s.level === 'ADVANCED').length;
+    const expert = this.freelancerSkills.filter(
+      s => s.level === 'EXPERT' || s.level === 'ADVANCED'
+    ).length;
     this.validationRate = Math.round((expert / this.freelancerSkills.length) * 100);
   }
 
   getLevelClass(level: string): string {
-    const map: any = { BEGINNER: 'lvl-beginner', ELEMENTARY: 'lvl-elementary', INTERMEDIATE: 'lvl-intermediate', ADVANCED: 'lvl-advanced', EXPERT: 'lvl-expert' };
+    const map: any = {
+      BEGINNER: 'lvl-beginner', ELEMENTARY: 'lvl-elementary',
+      INTERMEDIATE: 'lvl-intermediate', ADVANCED: 'lvl-advanced', EXPERT: 'lvl-expert'
+    };
     return map[level] || 'lvl-beginner';
   }
 

@@ -13,7 +13,7 @@ export class EducationListComponent implements OnInit {
   allItems:      Education[] = [];
   filteredItems: Education[] = [];
   currentQuery = '';
-  currentUserId = 1;
+  // ✅ SUPPRIMÉ : currentUserId = 1  (inutile, le token JWT gère l'identité)
   loading = false;
   errorMessage = '';
   successMessage = '';
@@ -29,7 +29,7 @@ export class EducationListComponent implements OnInit {
         {
           field: 'degree',
           label: 'Degree',
-          options: ['BACHELOR','MASTER','PHD','ENGINEER','MBA','DIPLOMA','OTHER']
+          options: ['BACHELOR', 'MASTER', 'PHD', 'ENGINEER', 'MBA', 'DIPLOMA', 'OTHER']
         }
       ]
     });

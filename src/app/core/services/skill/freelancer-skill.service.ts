@@ -11,21 +11,21 @@ export class FreelancerSkillService {
 
   constructor(private http: HttpClient) {}
 
+  // ✅ CORRIGÉ : appelle /user/me (token JWT envoyé automatiquement par AuthTokenInterceptor)
   getAll(): Observable<FreelancerSkill[]> {
-    return this.http.get<FreelancerSkill[]>(this.url);
+    return this.http.get<FreelancerSkill[]>(`${this.url}/user/me`);
+  }
+
+  getAllForCurrentUser(): Observable<FreelancerSkill[]> {
+    return this.http.get<FreelancerSkill[]>(`${this.url}/user/me`);
   }
 
   getById(id: number): Observable<FreelancerSkill> {
     return this.http.get<FreelancerSkill>(`${this.url}/${id}`);
   }
 
-  // ✅ Token Keycloak injecté automatiquement — /user/me
-  getAllForCurrentUser(): Observable<FreelancerSkill[]> {
-    return this.http.get<FreelancerSkill[]>(`${this.url}/user/me`);
-  }
-
   // ✅ Création manuelle — /user/me?skillInput=...
-  createWithSkillInput(skillInput: string, payload: FreelancerSkill): Observable<any> {
+  createWithSkillInput(skillInput: string, payload: Partial<FreelancerSkill>): Observable<any> {
     return this.http.post<any>(
       `${this.url}/user/me?skillInput=${encodeURIComponent(skillInput)}`,
       payload
@@ -33,7 +33,7 @@ export class FreelancerSkillService {
   }
 
   // ✅ Création depuis CV — /CV/me?skillInput=...
-  createWithSkillInputCV(skillInput: string, payload: FreelancerSkill): Observable<any> {
+  createWithSkillInputCV(skillInput: string, payload: Partial<FreelancerSkill>): Observable<any> {
     return this.http.post<any>(
       `${this.url}/CV/me?skillInput=${encodeURIComponent(skillInput)}`,
       payload
@@ -54,17 +54,21 @@ export class FreelancerSkillService {
     );
   }
 
-  getDuplicateSkills(id: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.url}/${id}/duplicate-skills`);
+  // ✅ CORRIGÉ : /user/me/duplicates — plus de userId dans l'URL
+  getDuplicateSkillsForCurrentUser(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/user/me/duplicates`);
   }
 
-  // ✅ /check-skills/me — token Keycloak injecté automatiquement
-  checkSkillsForCurrentUser(skills: string[]): Observable<any> {
-    return this.http.post<any>(`${this.url}/check-skills/me`, skills);
+  // Pour l'admin uniquement (par userId)
+  getDuplicateSkillsByUserId(userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.url}/user/${userId}/duplicates`);
   }
 
-  // ✅ /check-existing/me
-  checkExistingSkillsForCurrentUser(skills: string[]): Observable<any> {
-    return this.http.post<any>(`${this.url}/check-existing/me`, skills);
+  // ✅ CORRIGÉ : /check-skills/me (correspond exactement au backend)
+  checkExistingSkillsForCurrentUser(skills: string[]): Observable<{ existing: string[]; newSkills: string[] }> {
+    return this.http.post<{ existing: string[]; newSkills: string[] }>(
+      `${this.url}/check-skills/me`,
+      skills
+    );
   }
 }

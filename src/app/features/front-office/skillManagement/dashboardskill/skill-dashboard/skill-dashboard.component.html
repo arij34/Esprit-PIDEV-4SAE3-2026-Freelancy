@@ -47,7 +47,7 @@
         <p class="dashboard-subtitle">Manage your skills, education and availability</p>
       </div>
       <div class="header-actions">
-        <a routerLink="/front/freelancer-skills/add/1" class="btn-add-skill">
+        <a routerLink="/front/freelancer-skills/add" class="btn-add-skill">
           <i class="bi bi-plus-lg"></i>
           Add Skill
         </a>
@@ -161,7 +161,7 @@
           <tr *ngIf="freelancerSkills.length === 0">
             <td colspan="5" class="empty-row">
               <i class="bi bi-inbox me-2"></i>No skills found —
-              <a routerLink="/front/freelancer-skills/add/1">Add your first skill</a>
+              <a routerLink="/front/freelancer-skills/add">Add your first skill</a>
             </td>
           </tr>
         </tbody>

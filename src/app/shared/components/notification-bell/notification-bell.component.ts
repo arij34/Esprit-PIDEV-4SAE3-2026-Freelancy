@@ -31,7 +31,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Connexion WebSocket
-    this.notifService.connect(this.role, this.userId);
+this.notifService.connect(this.role, String(this.userId));
 
     // S'abonner aux streams
     this.subs.push(
