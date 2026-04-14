@@ -1,0 +1,15 @@
+com\smartfreelance\subscription\controller\dto\UpdateSubscriptionStatusRequest.class
+com\smartfreelance\subscription\model\SubscriptionStatus.class
+com\smartfreelance\subscription\model\SubscriptionType.class
+com\smartfreelance\subscription\config\GlobalExceptionHandler.class
+com\smartfreelance\subscription\controller\SubscriptionController.class
+com\smartfreelance\subscription\service\SubscriptionService.class
+com\smartfreelance\subscription\SubscriptionApplication.class
+com\smartfreelance\subscription\config\KeycloakJwtRolesConverter.class
+com\smartfreelance\subscription\controller\PublicSubscriptionMetaController.class
+com\smartfreelance\subscription\config\SecurityConfig.class
+com\smartfreelance\subscription\controller\dto\CreateOrUpdateSubscriptionRequest.class
+com\smartfreelance\subscription\model\Subscription.class
+com\smartfreelance\subscription\repository\SubscriptionRepository.class
+com\smartfreelance\subscription\config\CorsConfig.class
+com\smartfreelance\subscription\controller\dto\UpdateSubscriptionTypeRequest.class
