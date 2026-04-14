@@ -1,7 +1,9 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http'; // ✅ ajouter
 import { AuthService } from '../../../core/auth/auth.service';
 import { KC_ROLES } from '../../../core/auth/roles';
+import { map } from 'rxjs/operators'; // ✅ ajouter
 
 @Component({
   selector: 'app-header',
@@ -12,11 +14,11 @@ export class HeaderComponent implements OnInit {
   isScrolled = false;
   isMobileMenuOpen = false;
   isUserMenuOpen = false;
-isClient = false; 
-
+  isClient = false;
   isLoggedIn = false;
   username?: string;
   isFreelancer = false;
+  pendingInvitationsCount = 0;
 
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
@@ -26,7 +28,6 @@ isClient = false;
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    // close the dropdown when clicking outside
     if (!target.closest('.user-menu')) {
       this.isUserMenuOpen = false;
     }
@@ -34,11 +35,14 @@ isClient = false;
 
   @HostListener('window:focus')
   async onWindowFocus(): Promise<void> {
-    // After returning from Keycloak login/register/logout, refresh UI
     await this.refreshAuthState();
   }
 
-  constructor(private readonly auth: AuthService, private readonly router: Router) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly router: Router,
+    private readonly http: HttpClient // ✅ ajouter
+  ) {}
 
   ngOnInit(): void {
     this.onWindowScroll();
@@ -46,34 +50,48 @@ isClient = false;
   }
 
   async refreshAuthState(): Promise<void> {
-    this.isLoggedIn = await this.auth.isLoggedIn();
-    this.username = this.isLoggedIn ? this.auth.getDisplayName() : undefined;
-    this.isClient = this.isLoggedIn && this.auth.hasRole(KC_ROLES.CLIENT);
-
-    // Role-based UI
+    this.isLoggedIn   = await this.auth.isLoggedIn();
+    this.username     = this.isLoggedIn ? this.auth.getDisplayName() : undefined;
+    this.isClient     = this.isLoggedIn && this.auth.hasRole(KC_ROLES.CLIENT);
     this.isFreelancer = this.isLoggedIn && this.auth.hasRole(KC_ROLES.FREELANCER);
+
+    if (this.isFreelancer) {
+      this.loadPendingCount();
+    } else {
+      this.pendingInvitationsCount = 0;
+    }
   }
 
-  toggleMobileMenu(): void {
-    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  loadPendingCount(): void {
+    // ✅ Récupérer freelancerId depuis localStorage
+    const freelancerId = localStorage.getItem('userId')
+                      || localStorage.getItem('freelancerId');
+
+    if (!freelancerId) {
+      console.warn('freelancerId non trouvé');
+      return;
+    }
+
+    this.http.get<{ count: number }>(
+      `http://localhost:8087/invitations/freelancer/${freelancerId}/pending-count`
+    ).subscribe({
+      next: (res) => {
+        this.pendingInvitationsCount = res.count;
+      },
+      error: () => {
+        this.pendingInvitationsCount = 0;
+      }
+    });
   }
 
-  toggleUserMenu(): void {
-    this.isUserMenuOpen = !this.isUserMenuOpen;
-  }
+  toggleMobileMenu(): void { this.isMobileMenuOpen = !this.isMobileMenuOpen; }
+  toggleUserMenu():   void { this.isUserMenuOpen   = !this.isUserMenuOpen; }
 
   async signIn(): Promise<void> {
-    // IMPORTANT:
-    // Do NOT redirect directly to Keycloak from the header.
-    // We want the user to land on our Angular /signin page first so we can:
-    // - show the "Sign in with Google" button
-    // - ask the user to choose their role (CLIENT/FREELANCER) BEFORE Google login
-    // The /signin page will then redirect to Keycloak with the right parameters.
     await this.router.navigateByUrl('/signin');
   }
 
   async signUp(): Promise<void> {
-    // After Keycloak register, go back to landing page
     await this.auth.register(window.location.origin + '/front');
   }
 
@@ -85,10 +103,9 @@ isClient = false;
   async logout(): Promise<void> {
     await this.auth.logout(window.location.origin + '/front');
     this.isUserMenuOpen = false;
+    this.pendingInvitationsCount = 0;
     await this.refreshAuthState();
   }
 
-  closeMobileMenu(): void {
-    this.isMobileMenuOpen = false;
-  }
+  closeMobileMenu(): void { this.isMobileMenuOpen = false; }
 }

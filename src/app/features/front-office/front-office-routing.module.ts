@@ -19,15 +19,13 @@ import { AvailabilityListComponent } from './skillManagement/availability/availa
 import { AvailabilityFormComponent } from './skillManagement/availability/availability-form/availability-form.component';
 import { FreelancerSkillListComponent } from './skillManagement/freelancer-skill/freelancer-skill-list/freelancer-skill-list.component';
 import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill/freelancer-skill-form/freelancer-skill-form.component';
+import { ClientProjectInvitationsComponent } from './client-project-invitations/client-project-invitations.component';
 
 const routes: Routes = [
   {
     path: '',
     component: FrontOfficeComponent,
     children: [
-
-      // ← Plus de HomeComponent : FrontOfficeComponent gère lui-même la landing page
-      // quand l'URL est exactement /front (voir front-office.component.ts isChildRoute)
 
       // ── Projet (intégration) ──────────────────────────────────────
       { path: 'projects',              component: ProjetClientComponent },
@@ -43,35 +41,50 @@ const routes: Routes = [
       { path: 'stats',                 component: StatsComponent },
       { path: 'projet-client',         component: ProjetClientComponent },
 
-      // ── Skill Management ──────────────────────────────────────
-
+      // ── Skill Management ──────────────────────────────────────────
       { path: 'dashboard-skill',       component: SkillDashboardComponent },
 
       // Education
       { path: 'education',             component: EducationListComponent },
-      { path: 'education/add',         component: EducationFormComponent },   // ✅ retiré /:userId
+      { path: 'education/add',         component: EducationFormComponent },
       { path: 'education/edit/:id',    component: EducationFormComponent },
 
       // Experience
       { path: 'experience',            component: ExperienceListComponent },
-      { path: 'experience/create',     component: ExperienceFormComponent },  // ✅ retiré /:userId
+      { path: 'experience/create',     component: ExperienceFormComponent },
       { path: 'experience/edit/:id',   component: ExperienceFormComponent },
 
       // Availability
       { path: 'availability',          component: AvailabilityListComponent },
-      { path: 'availability/add',      component: AvailabilityFormComponent }, // ✅ retiré /:userId
+      { path: 'availability/add',      component: AvailabilityFormComponent },
       { path: 'availability/edit/:id', component: AvailabilityFormComponent },
 
       // Freelancer Skills
       { path: 'freelancer-skills',             component: FreelancerSkillListComponent },
-      { path: 'freelancer-skills/add',         component: FreelancerSkillFormComponent }, // ✅ retiré /:userId
+      { path: 'freelancer-skills/add',         component: FreelancerSkillFormComponent },
       { path: 'freelancer-skills/edit/:id',    component: FreelancerSkillFormComponent },
       { path: 'freelancer_skills',             component: FreelancerSkillListComponent },
-      { path: 'freelancer_skills/add',         component: FreelancerSkillFormComponent }, // ✅ retiré /:userId
+      { path: 'freelancer_skills/add',         component: FreelancerSkillFormComponent },
       { path: 'freelancer_skills/edit/:id',    component: FreelancerSkillFormComponent },
+
+      // ✅ AJOUTÉ : Matching — lazy loaded depuis matchingModule
+      {
+        path: 'matching',
+        loadChildren: () =>
+          import('./matchingModule/matching.module')
+          .then(m => m.MatchingModule)
+      },
+      {
+        path: 'invitations',
+        loadChildren: () =>
+          import('./invitations/invitations.module')
+        .then(m => m.InvitationsModule)
+      },
+       {
+    path: 'projects/:id/invitations',component: ClientProjectInvitationsComponent},
     ]
-    }
-  ];
+  }
+];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],

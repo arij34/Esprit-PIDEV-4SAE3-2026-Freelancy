@@ -21,7 +21,7 @@ import { SkillListComponent } from './skillManagement/skill/skill-list/skill-lis
 import { SkillFormComponent } from './skillManagement/skill/skill-form/skill-form.component';
 import { PendingSkillListComponent } from './skillManagement/pending-skill/pending-skill-list/pending-skill-list.component';
 import { PendingSkillFormComponent } from './skillManagement/pending-skill/pending-skill-form/pending-skill-form.component';
-
+import { MatchingAdminViewComponent } from './back-office/components/views/matching-admin-view/MatchingAdminViewComponent';
 @NgModule({
   declarations: [
     // Intégration
@@ -38,6 +38,7 @@ import { PendingSkillFormComponent } from './skillManagement/pending-skill/pendi
     SkillFormComponent,
     PendingSkillListComponent,
     PendingSkillFormComponent,
+    MatchingAdminViewComponent,
   ],
   imports: [
     CommonModule,

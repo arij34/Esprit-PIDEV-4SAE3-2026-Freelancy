@@ -27,6 +27,7 @@ import { AvailabilityListComponent } from './skillManagement/availability/availa
 import { AvailabilityFormComponent } from './skillManagement/availability/availability-form/availability-form.component';
 import { FreelancerSkillListComponent } from './skillManagement/freelancer-skill/freelancer-skill-list/freelancer-skill-list.component';
 import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill/freelancer-skill-form/freelancer-skill-form.component';
+import { ClientProjectInvitationsComponent } from './client-project-invitations/client-project-invitations.component';
 
 @NgModule({
   declarations: [
@@ -51,6 +52,8 @@ import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill
     AvailabilityFormComponent,
     FreelancerSkillListComponent,
     FreelancerSkillFormComponent,
+    ClientProjectInvitationsComponent
+
   ],
   imports: [
     CommonModule,
