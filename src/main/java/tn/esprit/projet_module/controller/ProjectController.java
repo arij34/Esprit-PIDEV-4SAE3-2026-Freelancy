@@ -2,18 +2,14 @@ package tn.esprit.projet_module.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.projet_module.clients.InvitationProjectDTO;
 import tn.esprit.projet_module.clients.UserDto;
 import tn.esprit.projet_module.clients.UserServiceClient;
-import tn.esprit.projet_module.entity.Project;
-import tn.esprit.projet_module.entity.ProjectHistory;
-import tn.esprit.projet_module.entity.ProjectStatus;
+import tn.esprit.projet_module.entity.*;
 import tn.esprit.projet_module.service.EmailService;
 import tn.esprit.projet_module.service.ProjectService;
 import tn.esprit.projet_module.service.ProposalService;
 import tn.esprit.projet_module.service.UserContextService;
-
-import tn.esprit.projet_module.entity.Proposal;
-import tn.esprit.projet_module.entity.ProposalStatus;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -328,5 +324,79 @@ public class ProjectController {
         }
         return ResponseEntity.ok(projectService.getAcceptedProjectsByFreelancerId(user.getId()));
     }
-    
+    @GetMapping("/{id}/invitation-data")
+    public ResponseEntity<InvitationProjectDTO> getInvitationData(@PathVariable Long id) {
+
+        Project project = projectService.getProject(id);
+        if (project == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        InvitationProjectDTO dto = new InvitationProjectDTO();
+        dto.setId(project.getId());
+        dto.setTitle(project.getTitle());
+        dto.setDescription(project.getDescription());
+        dto.setDeadline(project.getDeadline() != null
+                ? project.getDeadline().toString() : null);
+
+        String clientName = null;
+        String clientEmail = project.getClientEmail();
+
+        try {
+            Long clientId = project.getClientId();
+            if (clientId != null) {
+                // 🔹 utiliser la méthode existante : getUserById(String id, String token)
+                Map<String, Object> userMap = userServiceClient.getUserById(
+                        clientId,
+                        ""        // ou null / token si tu en as besoin
+                );
+
+                if (userMap != null) {
+                    Object firstObj = userMap.get("firstName");
+                    Object lastObj  = userMap.get("lastName");
+                    Object emailObj = userMap.get("email");
+
+                    String first = firstObj != null ? firstObj.toString() : "";
+                    String last  = lastObj  != null ? lastObj.toString()  : "";
+                    String full  = (first + " " + last).trim();
+                    if (!full.isEmpty()) {
+                        clientName = full;
+                    }
+
+                    if (emailObj != null && !emailObj.toString().isBlank()) {
+                        clientEmail = emailObj.toString();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur récupération client pour invitation-data: " + e.getMessage());
+        }
+
+        if (clientName == null || clientName.isBlank()) {
+            clientName = "Client";
+        }
+
+        dto.setClientName(clientName);
+        dto.setClientEmail(clientEmail);
+
+        // Skills
+        if (project.getSkills() != null) {
+            dto.setRequiredSkills(project.getSkills().stream()
+                    .map(ProjectSkill::getSkillName)
+                    .collect(java.util.stream.Collectors.toList()));
+        }
+
+        // Budget + Duration
+        if (project.getAnalysis() != null) {
+            ProjectAnalysis analysis = project.getAnalysis();
+            dto.setBudgetMin(analysis.getBudgetMin());
+            dto.setBudgetMax(analysis.getBudgetMax());
+            dto.setBudgetRecommended(analysis.getBudgetRecommended());
+            dto.setDurationEstimatedWeeks(analysis.getDurationEstimatedWeeks());
+        }
+
+        return ResponseEntity.ok(dto);
+    }
+
+
 }

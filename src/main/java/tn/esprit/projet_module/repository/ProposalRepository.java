@@ -21,4 +21,5 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
     boolean existsByProjectIdAndFreelancerKeycloakId(Long projectId, String keycloakId);
     Optional<Proposal> findByProjectIdAndFreelancerKeycloakId(Long projectId, String keycloakId);
     List<Proposal> findByFreelancerKeycloakId(String keycloakId);
+    List<Proposal> findByProjectIdAndStatus(Long projectId, ProposalStatus status);
 }
