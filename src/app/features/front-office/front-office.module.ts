@@ -35,6 +35,11 @@ import { ContratFreelancerComponent } from './front-office/components/contrat-fr
 import { ContratFreelancerDetailComponent } from './front-office/components/contrat-freelancer-detail/contrat-freelancer-detail.component';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
+import { SubscriptionPageComponent } from '../subscription/pages/subscription-page/subscription-page.component';
+import { SubscriptionPaymentPageComponent } from '../subscription/pages/subscription-payment-page/subscription-payment-page.component';
+import { PlanningComponent } from '../planningg/planning/planning.component';
+import { TaskComponent } from '../planningg/task/task.component';
+import { QRCodeModule } from 'angularx-qrcode';
 @NgModule({
   declarations: [
     // Intégration
@@ -62,7 +67,11 @@ ContractsComponent,
     FreelancerSkillFormComponent,
     ContratFreelancerComponent,
     ContratFreelancerDetailComponent,
-    ClientProjectInvitationsComponent
+    ClientProjectInvitationsComponent,
+    SubscriptionPageComponent,
+    SubscriptionPaymentPageComponent,
+    PlanningComponent,
+    TaskComponent
 
   ],
   imports: [
@@ -74,6 +83,7 @@ ContractsComponent,
     SharedModule,
      OverlayModule,
     PortalModule,
+    QRCodeModule,
   ]
 })
 export class FrontOfficeModule { }

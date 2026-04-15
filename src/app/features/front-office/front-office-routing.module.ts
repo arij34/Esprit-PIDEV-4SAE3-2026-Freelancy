@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { FrontOfficeComponent } from './front-office/front-office.component';
+import { RoleGuard } from '../../core/auth/role.guard';
+import { KC_ROLES } from '../../core/auth/roles';
 import { ProjetClientComponent } from './front-office/components/projet-client/projet-client.component';
 import { ProjetFreelancerComponent } from './front-office/components/projet-freelancer/projet-freelancer.component';
 import { ProjetDetailComponent } from './front-office/components/projet-detail/projet-detail.component';
@@ -9,6 +11,8 @@ import { AddProjectComponent } from './front-office/components/projet-client/add
 import { StatsComponent } from './front-office/components/stats/stats.component';
 import { ProjetWorkspaceComponent } from './front-office/components/projet-workspace/projet-workspace.component';
 import { WorkspaceAccessGuard } from '../../core/guards/workspace-access.guard';
+import { PlanningComponent } from '../planningg/planning/planning.component';
+import { TaskComponent } from '../planningg/task/task.component';
 
 import { SkillDashboardComponent } from './skillManagement/dashboardskill/skill-dashboard/skill-dashboard.component';
 import { EducationListComponent } from './skillManagement/education/education-list/education-list.component';
@@ -23,6 +27,8 @@ import { ClientProjectInvitationsComponent } from './client-project-invitations/
 import { ContratFreelancerComponent } from './front-office/components/contrat-freelancer/contrat-freelancer.component';
 import { ContratFreelancerDetailComponent } from './front-office/components/contrat-freelancer-detail/contrat-freelancer-detail.component';
 import { ContractsComponent } from './front-office/components/contrat_client/contracts.component';
+import { SubscriptionPageComponent } from '../subscription/pages/subscription-page/subscription-page.component';
+import { SubscriptionPaymentPageComponent } from '../subscription/pages/subscription-payment-page/subscription-payment-page.component';
 const routes: Routes = [
   {
     path: '',
@@ -45,6 +51,20 @@ const routes: Routes = [
 
       // ── Contracts (client view) ───────────────────────────────────────────
       { path: 'contracts',             component: ContractsComponent },
+
+      // ── Planning (FREELANCER only) ───────────────────────────────────────
+      {
+        path: 'plannings',
+        component: PlanningComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [KC_ROLES.FREELANCER] }
+      },
+      {
+        path: 'tasks',
+        component: TaskComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [KC_ROLES.FREELANCER] }
+      },
 
       // ── Skill Management ──────────────────────────────────────────
       { path: 'dashboard-skill',       component: SkillDashboardComponent },
@@ -73,6 +93,8 @@ const routes: Routes = [
       { path: 'freelancer_skills/edit/:id',    component: FreelancerSkillFormComponent },
       { path: 'contracts-freelancer',          component: ContratFreelancerComponent },
       { path: 'contracts-freelancer/:id',      component: ContratFreelancerDetailComponent },
+      { path: 'subscription',                  component: SubscriptionPageComponent },
+      { path: 'subscription/pay',              component: SubscriptionPaymentPageComponent },
       // ✅ AJOUTÉ : Matching — lazy loaded depuis matchingModule
       {
         path: 'matching',

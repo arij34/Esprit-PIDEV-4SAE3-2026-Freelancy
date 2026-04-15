@@ -28,12 +28,24 @@
         <a class="nav-link" routerLink="/events/participants" routerLinkActive="active" *ngIf="isFreelancer">
           <span>Participant</span>
         </a>
+        <a class="nav-link" routerLink="/front-office/plannings" routerLinkActive="active" *ngIf="isFreelancer">
+          <span>Plannings</span>
+        </a>
+        <a class="nav-link" routerLink="/front-office/tasks" routerLinkActive="active" *ngIf="isFreelancer">
+          <span>Tâches</span>
+        </a>
         <a class="nav-link" routerLink="/front-office/dashboard-skill"
            routerLinkActive="active" *ngIf="isFreelancer">
           <span>my Skills</span>
         </a>
         <a class="nav-link" routerLink="/exams" routerLinkActive="active" *ngIf="isLoggedIn">
           <span>Exams</span>
+        </a>
+        <a class="nav-link" [routerLink]="['/', isFreelancer ? 'freelancer' : 'client', 'subscription']" routerLinkActive="active" *ngIf="isLoggedIn">
+          <span>Subscription</span>
+        </a>
+        <a class="nav-link" [routerLink]="['/', isFreelancer ? 'freelancer' : 'client', 'subscription', 'pay']" routerLinkActive="active" *ngIf="isLoggedIn">
+          <span>Payment</span>
         </a>
 
         <!-- ✅ AJOUTÉ : lien Invitations avec badge -->
@@ -121,10 +133,18 @@
          (click)="closeMobileMenu()" *ngIf="isFreelancer">Event</a>
       <a class="mobile-nav-link" routerLink="/events/participants" routerLinkActive="active"
          (click)="closeMobileMenu()" *ngIf="isFreelancer">Participant</a>
+      <a class="mobile-nav-link" routerLink="/front-office/plannings" routerLinkActive="active"
+         (click)="closeMobileMenu()" *ngIf="isFreelancer">Plannings</a>
+      <a class="mobile-nav-link" routerLink="/front-office/tasks" routerLinkActive="active"
+         (click)="closeMobileMenu()" *ngIf="isFreelancer">Tâches</a>
       <a class="mobile-nav-link" routerLink="/front-office/dashboard-skill"
          routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isFreelancer">my Skills</a>
       <a class="mobile-nav-link" routerLink="/exams" routerLinkActive="active"
         (click)="closeMobileMenu()" *ngIf="isLoggedIn">Exams</a>
+      <a class="mobile-nav-link" [routerLink]="['/', isFreelancer ? 'freelancer' : 'client', 'subscription']" routerLinkActive="active"
+         (click)="closeMobileMenu()" *ngIf="isLoggedIn">Subscription</a>
+      <a class="mobile-nav-link" [routerLink]="['/', isFreelancer ? 'freelancer' : 'client', 'subscription', 'pay']" routerLinkActive="active"
+         (click)="closeMobileMenu()" *ngIf="isLoggedIn">Payment</a>
 
       <!-- ✅ AJOUTÉ mobile -->
       <a class="mobile-nav-link mobile-nav-invitations" routerLink="/front/invitations"

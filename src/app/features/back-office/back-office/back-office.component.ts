@@ -41,10 +41,25 @@ export class BackOfficeComponent implements OnInit {
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe((e: any) => {
-      const url = e.urlAfterRedirects;
+      const url = e.urlAfterRedirects as string;
       const match = url.match(/\/admin\/([^/?]+)/);
-      if (match) {
-        this.activeTab = match[1];
+      const pathTab = match ? match[1] : null;
+
+      // If we are on the default child route (/admin -> /admin/dashboard) and a non-routed
+      // tab is provided via query param (?tab=subscriptions, etc.), prefer the query param.
+      const queryTab = this.route.snapshot.queryParamMap.get('tab');
+      if (queryTab && !this.routedTabs.includes(queryTab) && (!pathTab || pathTab === 'dashboard')) {
+        this.activeTab = queryTab;
+        return;
+      }
+
+      if (pathTab) {
+        this.activeTab = pathTab;
+        return;
+      }
+
+      if (queryTab) {
+        this.activeTab = queryTab;
       }
     });
   }
@@ -67,6 +82,13 @@ export class BackOfficeComponent implements OnInit {
     }
     if (tab === 'examQuiz') {
       this.router.navigate(['/admin/exam-quiz']);
+      if (this.isMobile) this.sidebarOpen = false;
+      return;
+    }
+
+    if (tab === 'subscriptions' || tab === 'subscription-stats') {
+      this.router.navigate(['/admin'], { queryParams: { tab } });
+      this.activeTab = tab;
       if (this.isMobile) this.sidebarOpen = false;
       return;
     }

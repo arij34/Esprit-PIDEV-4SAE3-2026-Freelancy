@@ -52,6 +52,10 @@ const routes: Routes = [
     loadChildren: () => import('./features/evenement/evenement.module').then(m => m.EvenementModule)
   },
 
+  // Planning shortcuts (freelancer front-office)
+  { path: 'plannings', redirectTo: 'front-office/plannings', pathMatch: 'full' },
+  { path: 'tasks', redirectTo: 'front-office/tasks', pathMatch: 'full' },
+
   { path: 'not-authorized', component: NotAuthorizedComponent },
 
   // Local signup form (creates user in Keycloak + DB)

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { BaseChartDirective } from 'ng2-charts';
 
 import { BackOfficeRoutingModule } from './back-office-routing.module';
 import { SharedModule } from '../../shared/shared.module';
@@ -22,6 +23,8 @@ import { SkillFormComponent } from './skillManagement/skill/skill-form/skill-for
 import { PendingSkillListComponent } from './skillManagement/pending-skill/pending-skill-list/pending-skill-list.component';
 import { PendingSkillFormComponent } from './skillManagement/pending-skill/pending-skill-form/pending-skill-form.component';
 import { MatchingAdminViewComponent } from './back-office/components/views/matching-admin-view/MatchingAdminViewComponent';
+import { SubscriptionsViewComponent } from './back-office/components/views/subscriptions-view/subscriptions-view.component';
+import { SubscriptionStatsViewComponent } from './back-office/components/views/subscription-stats-view/subscription-stats-view.component';
 @NgModule({
   declarations: [
     // Intégration
@@ -39,6 +42,8 @@ import { MatchingAdminViewComponent } from './back-office/components/views/match
     PendingSkillListComponent,
     PendingSkillFormComponent,
     MatchingAdminViewComponent,
+    SubscriptionsViewComponent,
+    SubscriptionStatsViewComponent,
   ],
   imports: [
     CommonModule,
@@ -46,6 +51,7 @@ import { MatchingAdminViewComponent } from './back-office/components/views/match
     ReactiveFormsModule,
     BackOfficeRoutingModule,
     SharedModule,
+    BaseChartDirective,
     SidebarComponent,   // standalone
     HeaderComponent,    // standalone
   ],
