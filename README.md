@@ -304,7 +304,7 @@ ng serve
 |---|---|
 | Arij Achach | Skill Management · AI Matching |
 | Sirine Bouden | Project Management .  Smart Contract Management |
-| Ameni Benzaghdene | Challenge Management . Quiz Management |
+| Ameni Benzaghdene | Challenge Management . exam Management |
 | Mohamed Jaffel | Event Management . Planning |
 | Malek Ben Said | User Management . Payment|
 | Mohamed Wahebi | Blog Management . Blog Analytics|
