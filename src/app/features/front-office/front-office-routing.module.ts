@@ -20,7 +20,9 @@ import { AvailabilityFormComponent } from './skillManagement/availability/availa
 import { FreelancerSkillListComponent } from './skillManagement/freelancer-skill/freelancer-skill-list/freelancer-skill-list.component';
 import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill/freelancer-skill-form/freelancer-skill-form.component';
 import { ClientProjectInvitationsComponent } from './client-project-invitations/client-project-invitations.component';
-
+import { ContratFreelancerComponent } from './front-office/components/contrat-freelancer/contrat-freelancer.component';
+import { ContratFreelancerDetailComponent } from './front-office/components/contrat-freelancer-detail/contrat-freelancer-detail.component';
+import { ContractsComponent } from './front-office/components/contrat_client/contracts.component';
 const routes: Routes = [
   {
     path: '',
@@ -40,6 +42,9 @@ const routes: Routes = [
       { path: 'discover/:id',          component: ProjetFreelancerDetailComponent },
       { path: 'stats',                 component: StatsComponent },
       { path: 'projet-client',         component: ProjetClientComponent },
+
+      // ── Contracts (client view) ───────────────────────────────────────────
+      { path: 'contracts',             component: ContractsComponent },
 
       // ── Skill Management ──────────────────────────────────────────
       { path: 'dashboard-skill',       component: SkillDashboardComponent },
@@ -66,7 +71,8 @@ const routes: Routes = [
       { path: 'freelancer_skills',             component: FreelancerSkillListComponent },
       { path: 'freelancer_skills/add',         component: FreelancerSkillFormComponent },
       { path: 'freelancer_skills/edit/:id',    component: FreelancerSkillFormComponent },
-
+      { path: 'contracts-freelancer',          component: ContratFreelancerComponent },
+      { path: 'contracts-freelancer/:id',      component: ContratFreelancerDetailComponent },
       // ✅ AJOUTÉ : Matching — lazy loaded depuis matchingModule
       {
         path: 'matching',

@@ -16,7 +16,10 @@ import { ProjetFreelancerDetailComponent } from './front-office/components/proje
 import { StatsComponent } from './front-office/components/stats/stats.component';
 import { ProposalFilterPipe } from './front-office/components/projet-client/proposal-filter.pipe';
 import { ProjetWorkspaceComponent } from './front-office/components/projet-workspace/projet-workspace.component';
+import { ContractsComponent } from './front-office/components/contrat_client/contracts.component';
 
+// ✅ Signature Modal 
+import { SignatureModalComponent } from './components/signature-modal/signature-modal.component';
 // Local - Skill Management
 import { SkillDashboardComponent } from './skillManagement/dashboardskill/skill-dashboard/skill-dashboard.component';
 import { EducationListComponent } from './skillManagement/education/education-list/education-list.component';
@@ -28,7 +31,10 @@ import { AvailabilityFormComponent } from './skillManagement/availability/availa
 import { FreelancerSkillListComponent } from './skillManagement/freelancer-skill/freelancer-skill-list/freelancer-skill-list.component';
 import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill/freelancer-skill-form/freelancer-skill-form.component';
 import { ClientProjectInvitationsComponent } from './client-project-invitations/client-project-invitations.component';
-
+import { ContratFreelancerComponent } from './front-office/components/contrat-freelancer/contrat-freelancer.component';
+import { ContratFreelancerDetailComponent } from './front-office/components/contrat-freelancer-detail/contrat-freelancer-detail.component';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { PortalModule } from '@angular/cdk/portal';
 @NgModule({
   declarations: [
     // Intégration
@@ -41,6 +47,8 @@ import { ClientProjectInvitationsComponent } from './client-project-invitations/
     StatsComponent,
     ProposalFilterPipe,
     ProjetWorkspaceComponent,
+ContractsComponent,
+    SignatureModalComponent,
 
     // Local - Skill Management
     SkillDashboardComponent,
@@ -52,6 +60,8 @@ import { ClientProjectInvitationsComponent } from './client-project-invitations/
     AvailabilityFormComponent,
     FreelancerSkillListComponent,
     FreelancerSkillFormComponent,
+    ContratFreelancerComponent,
+    ContratFreelancerDetailComponent,
     ClientProjectInvitationsComponent
 
   ],
@@ -62,6 +72,8 @@ import { ClientProjectInvitationsComponent } from './client-project-invitations/
     ReactiveFormsModule,
     FrontOfficeRoutingModule,
     SharedModule,
+     OverlayModule,
+    PortalModule,
   ]
 })
 export class FrontOfficeModule { }
