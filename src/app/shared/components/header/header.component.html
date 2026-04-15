@@ -32,6 +32,9 @@
            routerLinkActive="active" *ngIf="isFreelancer">
           <span>my Skills</span>
         </a>
+        <a class="nav-link" routerLink="/exams" routerLinkActive="active" *ngIf="isLoggedIn">
+          <span>Exams</span>
+        </a>
 
         <!-- ✅ AJOUTÉ : lien Invitations avec badge -->
         <a class="nav-link nav-link-invitations" routerLink="/front/invitations"
@@ -120,6 +123,8 @@
          (click)="closeMobileMenu()" *ngIf="isFreelancer">Participant</a>
       <a class="mobile-nav-link" routerLink="/front-office/dashboard-skill"
          routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="isFreelancer">my Skills</a>
+      <a class="mobile-nav-link" routerLink="/exams" routerLinkActive="active"
+        (click)="closeMobileMenu()" *ngIf="isLoggedIn">Exams</a>
 
       <!-- ✅ AJOUTÉ mobile -->
       <a class="mobile-nav-link mobile-nav-invitations" routerLink="/front/invitations"

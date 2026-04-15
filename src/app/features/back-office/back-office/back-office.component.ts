@@ -65,6 +65,11 @@ export class BackOfficeComponent implements OnInit {
       if (this.isMobile) this.sidebarOpen = false;
       return;
     }
+    if (tab === 'examQuiz') {
+      this.router.navigate(['/admin/exam-quiz']);
+      if (this.isMobile) this.sidebarOpen = false;
+      return;
+    }
 
     this.activeTab = tab;
 

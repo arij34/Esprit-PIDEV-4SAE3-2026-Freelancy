@@ -17,6 +17,12 @@ const routes: Routes = [
     data: { roles: [KC_ROLES.ADMIN] },
     loadChildren: () => import('./features/challenges/challenge-admin/challenge-admin.module').then(m => m.ChallengeAdminModule)
   },
+  {
+    path: 'admin/exam-quiz',
+    canActivate: [RoleGuard],
+    data: { roles: [KC_ROLES.ADMIN] },
+    loadChildren: () => import('./features/exam&quiz/exam-quiz.module').then(m => m.ExamQuizModule)
+  },
 
   // Role-based entry points
   {
@@ -71,6 +77,10 @@ const routes: Routes = [
   {
     path: 'challenges',
     loadChildren: () => import('./features/challenges/challenges.module').then(m => m.ChallengesModule)
+  },
+  {
+    path: 'exams',
+    loadChildren: () => import('./features/exams-front.module').then(m => m.ExamsFrontModule)
   },
  {
   path: 'projet-client',
