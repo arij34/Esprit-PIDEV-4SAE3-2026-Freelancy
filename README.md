@@ -15,9 +15,9 @@
 This project was developed as part of the **PIDEV – 4th Year Engineering Program** at **Esprit School of Engineering** (Academic Year 2025–2026).
 
 **Freelancy** is a full-stack web application built on a **microservices architecture**, designed to connect freelancers with clients.  
-It provides intelligent skill-based matching, project management, task planning, technical challenges, blog publishing, subscription-based premium services, and AI-powered smart contract generation.
+It provides intelligent skill-based matching, project management, task planning, technical challenges, blog publishing, subscription-based premium services, AI-powered smart contract generation, and an anti-cheat exam & quiz system.
 
-The platform creates a collaborative ecosystem where freelancers enhance their visibility, improve their skills through challenges, publish blog articles, and access premium features via subscription plans.
+The platform creates a collaborative ecosystem where freelancers enhance their visibility, improve their skills through challenges and exams, publish blog articles, and access premium features via subscription plans.
 
 ---
 
@@ -45,7 +45,7 @@ Serves as the identity backbone consumed by all other microservices via `userId`
 
 ---
 
-### 2. 🧠 Skill Management —
+### 2. 🧠 Skill Management
 
 Manages freelancer competencies, experience levels, and availability.  
 Provides the core data feed for the AI Matching engine.
@@ -63,7 +63,7 @@ Provides the core data feed for the AI Matching engine.
 
 ---
 
-### 3. 🎯 AI Matching — 
+### 3. 🎯 AI Matching
 
 The intelligent core of the platform. Automatically pairs freelancers with projects using a **multi-criteria scoring algorithm**.
 
@@ -197,12 +197,55 @@ Tracks and measures the performance of blog posts through real-time metrics.
 
 ### 10. 🏆 Challenge Management
 
-Hosts technical challenges for freelancers to improve skills and gain visibility on the platform.  
+Hosts technical challenges for freelancers to improve their skills and gain visibility on the platform.  
 Challenge scores contribute to the AI Matching evaluation (10% weight).
 
 ---
 
-### 11. 💳 Subscription (Abonnement)
+### 11. 📋 ExamQuiz Service — Port `8150`
+
+A dedicated Spring Boot microservice responsible for managing the **full exam and quiz lifecycle**, including real-time proctoring and anti-cheat enforcement.
+
+**Exam Management**
+- Create, update, and manage exams with configurable settings: duration, passing score, maximum attempts, scheduling, and exam type
+
+**Question & Answer Handling**
+- Supports multiple question types
+- Manages answer submissions per attempt
+
+**Attempt Tracking**
+- Records candidate exam attempts, submitted answers, and session statuses throughout the exam lifecycle
+
+**Scoring & Results**
+- Automatically evaluates submissions and generates detailed result reports per candidate
+
+**Anti-Cheating & Proctoring**
+- Built-in proctoring system detecting violations: tab switching, phone detection, looking away
+- Configurable violation thresholds per violation type
+- Cheating events logged and stored
+- Auto-submission enforced upon threshold breach
+
+**Admin Live Monitoring**
+- Real-time dashboard for administrators to track active exam sessions and candidate behavior
+
+**Exam Participation Management**
+- Controls which candidates can access specific exams
+- Tracks participation status per candidate
+
+**Technical Details:**
+
+| Property | Value |
+|---|---|
+| Framework | Spring Boot |
+| Database | MySQL (`exam_quiz_db`) |
+| Port | `8150` |
+| Service Discovery | Eureka Client |
+| API Docs | Swagger UI (`/swagger-ui.html`) |
+| Inter-service | Feign Client → User Service |
+
+---
+
+### 12. 💳 Subscription
 
 Controls user access levels and monetization via subscription plans.
 
@@ -222,7 +265,7 @@ Controls user access levels and monetization via subscription plans.
 
 ---
 
-### 12. 💰 Payment
+### 13. 💰 Payment
 
 Handles all payment operations for subscription upgrades (FREE → VIP).
 
@@ -286,7 +329,7 @@ docker-compose up --build
 
 ### Backend (individual microservice)
 ```bash
-cd skill-management
+cd <microservice-folder>
 mvn clean install
 mvn spring-boot:run
 ```
@@ -298,16 +341,30 @@ npm install
 ng serve
 ```
 
+### Application URLs
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:4200 |
+| API Gateway | http://localhost:8080 |
+| Eureka Dashboard | http://localhost:8761 |
+| Keycloak Admin | http://localhost:8180 |
+| Skill Management | http://localhost:8086 |
+| ExamQuiz Service | http://localhost:8150 |
+| ExamQuiz Swagger | http://localhost:8150/swagger-ui.html |
+
+---
+
 ## Contributors
 
-| Name | Module |
+| Name | Modules |
 |---|---|
 | Arij Achach | Skill Management · AI Matching |
-| Sirine Bouden | Project Management .  Smart Contract Management |
-| Ameni Benzaghdene | Challenge Management . exam Management |
-| Mohamed Jaffel | Event Management . Planning |
-| Malek Ben Said | User Management . Payment|
-| Mohamed Wahebi | Blog Management . Blog Analytics|
+| Sirine Bouden | Project Management · Smart Contract Management |
+| Ameni Benzaghdene | Challenge Management · ExamQuiz Service |
+| Mohamed Jaffel | Event Management · Planning |
+| Malek Ben Said | User Management · Payment · Subscription |
+| Mohamed Wahebi | Blog Management · Blog Analytics |
 
 **Supervisors:**  
 Ms. Leila Bendhief – PIDEV Module  
