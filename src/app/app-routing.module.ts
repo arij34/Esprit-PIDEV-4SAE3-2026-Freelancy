@@ -117,6 +117,9 @@ const routes: Routes = [
     path: 'front-office',
     loadChildren: () => import('./features/front-office/front-office.module').then(m => m.FrontOfficeModule)
   },
+
+  { path: 'blog', loadChildren: () => import('./features/blog/blog.module').then(m => m.BlogModule) },
+  { path: 'blog-analytics', loadChildren: () => import('./features/blog-analytics/blog-analytics.module').then(m => m.BlogAnalyticsModule) },
   { 
     path: '**', 
     redirectTo: 'front' 

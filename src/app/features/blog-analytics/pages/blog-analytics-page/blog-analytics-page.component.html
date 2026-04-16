@@ -1,0 +1,94 @@
+<div class="analytics-page">
+  <div class="page-header">
+    <div class="header-row">
+      <a class="blog-button" routerLink="/blog">← Blog</a>
+      <h1>Blog Analytics</h1>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="message success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="message error">
+    {{ errorMessage }}
+  </div>
+
+  <section class="card">
+    <h2>Upsert Metric</h2>
+    <form (ngSubmit)="saveMetric()" class="form-grid">
+      <div class="form-group">
+        <label for="metric">Metric</label>
+        <input
+          id="metric"
+          type="text"
+          [(ngModel)]="upsertForm.metric"
+          name="metric"
+          placeholder="ex: total_views"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="value">Value</label>
+        <input
+          id="value"
+          type="number"
+          [(ngModel)]="upsertForm.value"
+          name="value"
+          min="0"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn primary" [disabled]="submitting">
+        {{ submitting ? 'Saving...' : 'Save Metric' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Get Stat By Metric</h2>
+    <div class="inline-row">
+      <input
+        type="text"
+        [(ngModel)]="statMetric"
+        name="statMetric"
+        placeholder="Enter metric name"
+      />
+      <button type="button" class="btn secondary" (click)="onFetchStat()" [disabled]="loadingStat">
+        {{ loadingStat ? 'Loading...' : 'Fetch Stat' }}
+      </button>
+    </div>
+
+    <div *ngIf="selectedStat" class="stat-result">
+      <p><strong>Metric:</strong> {{ selectedStat.metric }}</p>
+      <p><strong>Value:</strong> {{ selectedStat.value }}</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>All Metrics</h2>
+
+    <div *ngIf="loadingAll" class="muted">Loading metrics...</div>
+    <div *ngIf="!loadingAll && metrics.length === 0" class="muted">No metrics available.</div>
+
+    <div *ngIf="!loadingAll && metrics.length > 0" class="metrics-table-wrapper">
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Metric</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of metrics">
+            <td>{{ item.idAnalytics }}</td>
+            <td>{{ item.metric }}</td>
+            <td>{{ item.value }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

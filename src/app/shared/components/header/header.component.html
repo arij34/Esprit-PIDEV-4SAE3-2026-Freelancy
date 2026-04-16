@@ -60,6 +60,8 @@
         <a class="nav-link" href="#about"><span>About</span></a>
         <a class="nav-link" href="#pricing"><span>Pricing</span></a>
         <a class="nav-link" href="#contact"><span>Contact</span></a>
+        <a class="nav-link" routerLink="/blog" routerLinkActive="active"><span>Blog</span></a>
+        <a class="nav-link" routerLink="/blog-analytics" routerLinkActive="active"><span>Blog Analytics</span></a>
       </div>
 
       <div class="header-actions">
@@ -95,6 +97,7 @@
               <button class="dropdown-item" routerLink="/contract">Contract</button>
               <button class="dropdown-item" routerLink="/challenge">Challenge</button>
               <button class="dropdown-item" routerLink="/blog">Blog</button>
+                    <button class="dropdown-item" routerLink="/blog-analytics">Blog Analytics</button>
               <!-- ✅ AJOUTÉ : raccourci invitations dans le dropdown -->
               <button class="dropdown-item dropdown-item-invitations"
                       routerLink="/front/invitations"
@@ -158,6 +161,8 @@
       <a class="mobile-nav-link" href="#about" (click)="closeMobileMenu()">About</a>
       <a class="mobile-nav-link" href="#pricing" (click)="closeMobileMenu()">Pricing</a>
       <a class="mobile-nav-link" href="#contact" (click)="closeMobileMenu()">Contact</a>
+      <a class="mobile-nav-link" routerLink="/blog" routerLinkActive="active" (click)="closeMobileMenu()">Blog</a>
+      <a class="mobile-nav-link" routerLink="/blog-analytics" routerLinkActive="active" (click)="closeMobileMenu()">Blog Analytics</a>
       <button class="mobile-cta-button" type="button" (click)="closeMobileMenu()">Get Started</button>
     </div>
   </div>
