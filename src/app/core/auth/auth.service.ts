@@ -131,4 +131,9 @@ export class AuthService {
   const kc = this.keycloak.getKeycloakInstance();
   return kc?.tokenParsed?.['sub'] || '';
 }
+getUserId(): number | null {
+  // ✅ Récupérer depuis localStorage (stocké après /api/me/sync)
+  const id = localStorage.getItem('userId');
+  return id ? parseInt(id) : null;
+}
 }

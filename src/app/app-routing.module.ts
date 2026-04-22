@@ -10,66 +10,65 @@ import { SigninComponent } from './core/pages/signin/signin.component';
 
 const routes: Routes = [
 
-  // ADMIN - Challenges
+  // Challenge admin (must be before 'admin' to avoid being swallowed by it)
   {
     path: 'admin/challenges',
     canActivate: [RoleGuard],
     data: { roles: [KC_ROLES.ADMIN] },
-    loadChildren: () => import('./features/challenges/challenge-admin/challenge-admin.module')
-      .then(m => m.ChallengeAdminModule)
+    loadChildren: () => import('./features/challenges/challenge-admin/challenge-admin.module').then(m => m.ChallengeAdminModule)
+  },
+  {
+    path: 'admin/exam-quiz',
+    canActivate: [RoleGuard],
+    data: { roles: [KC_ROLES.ADMIN] },
+    loadChildren: () => import('./features/exam&quiz/exam-quiz.module').then(m => m.ExamQuizModule)
   },
 
-  // ADMIN
+  // Role-based entry points
   {
     path: 'admin',
     canActivate: [RoleGuard],
     data: { roles: [KC_ROLES.ADMIN] },
-    loadChildren: () => import('./features/back-office/back-office.module')
-      .then(m => m.BackOfficeModule)
+    loadChildren: () => import('./features/back-office/back-office.module').then(m => m.BackOfficeModule)
   },
-
-  // CLIENT
   {
     path: 'client',
     canActivate: [RoleGuard],
     data: { roles: [KC_ROLES.CLIENT] },
-    loadChildren: () => import('./features/front-office/front-office.module')
-      .then(m => m.FrontOfficeModule)
+    loadChildren: () => import('./features/front-office/front-office.module').then(m => m.FrontOfficeModule)
   },
-
-  // FREELANCER
   {
     path: 'freelancer',
     canActivate: [RoleGuard],
     data: { roles: [KC_ROLES.FREELANCER] },
-    loadChildren: () => import('./features/front-office/front-office.module')
-      .then(m => m.FrontOfficeModule)
+    loadChildren: () => import('./features/front-office/front-office.module').then(m => m.FrontOfficeModule)
   },
 
-  // EVENTS (FREELANCER)
+  // Events (FREELANCER only)
   {
     path: 'events',
     canActivate: [RoleGuard],
     data: { roles: [KC_ROLES.FREELANCER] },
-    loadChildren: () => import('./features/evenement/evenement.module')
-      .then(m => m.EvenementModule)
+    loadChildren: () => import('./features/evenement/evenement.module').then(m => m.EvenementModule)
   },
 
-  // NOT AUTHORIZED
+  // Planning shortcuts (freelancer front-office)
+  { path: 'plannings', redirectTo: 'front-office/plannings', pathMatch: 'full' },
+  { path: 'tasks', redirectTo: 'front-office/tasks', pathMatch: 'full' },
+
   { path: 'not-authorized', component: NotAuthorizedComponent },
 
-  // PUBLIC ROUTES
+  // Local signup form (creates user in Keycloak + DB)
   { path: 'signup', component: SignupComponent },
+
+  // Local sign-in page (redirects to Keycloak, offers IdP + reset password)
   { path: 'signin', component: SigninComponent },
 
-  // PROFILE (ANY AUTHENTICATED USER)
-  {
-    path: 'profile',
-    canActivate: [RoleGuard],
-    component: ProfileComponent
-  },
+  // Current user profile (works for all logged-in roles)
+  // NOTE: allow any authenticated user to view /profile.
+  // Some users may not have a realm role yet (e.g. first social login before choosing role).
+  { path: 'profile', canActivate: [RoleGuard], component: ProfileComponent },
 
-  // CHALLENGES (AUTH REQUIRED)
   {
     path: 'challenges/create',
     redirectTo: 'challenges/wizard',
@@ -77,66 +76,52 @@ const routes: Routes = [
   },
   {
     path: 'challenges/wizard',
-    canActivate: [RoleGuard],
-    loadChildren: () => import('./features/challenges/challenge-creation/challenge-creation.module')
-      .then(m => m.ChallengeCreationModule)
+    loadChildren: () => import('./features/challenges/challenge-creation/challenge-creation.module').then(m => m.ChallengeCreationModule)
   },
   {
     path: 'challenges',
-    canActivate: [RoleGuard],
-    data: { roles: [KC_ROLES.FREELANCER, KC_ROLES.CLIENT] },
-    loadChildren: () => import('./features/challenges/challenges.module')
-      .then(m => m.ChallengesModule)
+    loadChildren: () => import('./features/challenges/challenges.module').then(m => m.ChallengesModule)
   },
-
-  // CLIENT PROJECT
   {
-    path: 'projet-client',
-    canActivate: [RoleGuard],
-    data: { roles: [KC_ROLES.CLIENT] },
-    loadChildren: () => import('./features/front-office/front-office.module')
-      .then(m => m.FrontOfficeModule)
+    path: 'exams',
+    loadChildren: () => import('./features/exams-front.module').then(m => m.ExamsFrontModule)
   },
-
-  // FRONT (MAIN ENTRY)
+ {
+  path: 'projet-client',
+  canActivate: [RoleGuard],
+  data: { roles: [KC_ROLES.CLIENT] },
+  loadChildren: () => import('./features/front-office/front-office.module')
+    .then(m => m.FrontOfficeModule)
+},
   {
     path: 'front',
-    canActivate: [RoleGuard],
-    data: { roles: [KC_ROLES.FREELANCER, KC_ROLES.CLIENT] },
-    loadChildren: () => import('./features/front-office/front-office.module')
+    loadChildren: () =>
+      import('./features/front-office/front-office.module')
       .then(m => m.FrontOfficeModule)
   },
 
-  // DEFAULT REDIRECT
   {
     path: '',
     redirectTo: 'front',
     pathMatch: 'full'
   },
 
-  // BACK OFFICE (ADMIN)
+  // Keep existing route, but protect it as ADMIN dashboard by default
   {
     path: 'back-office',
     canActivate: [RoleGuard],
     data: { roles: [KC_ROLES.ADMIN] },
-    loadChildren: () => import('./features/back-office/back-office.module')
-      .then(m => m.BackOfficeModule)
+    loadChildren: () => import('./features/back-office/back-office.module').then(m => m.BackOfficeModule)
   },
-
-  // FRONT OFFICE (PROTECTED)
   {
     path: 'front-office',
-    canActivate: [RoleGuard],
-    data: { roles: [KC_ROLES.FREELANCER, KC_ROLES.CLIENT] },
-    loadChildren: () => import('./features/front-office/front-office.module')
-      .then(m => m.FrontOfficeModule)
+    loadChildren: () => import('./features/front-office/front-office.module').then(m => m.FrontOfficeModule)
   },
-
-  // FALLBACK
-  {
-    path: '**',
-    redirectTo: 'front'
+  { 
+    path: '**', 
+    redirectTo: 'front' 
   }
+
 ];
 
 @NgModule({

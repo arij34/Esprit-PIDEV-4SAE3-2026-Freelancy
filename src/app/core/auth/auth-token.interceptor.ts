@@ -16,7 +16,7 @@ export class AuthTokenInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Appliquer uniquement sur les requêtes /api/
-    if (!req.url.includes('/api/'))  {
+    if (!req.url.startsWith('/api/')) {
       return next.handle(req);
     }
 

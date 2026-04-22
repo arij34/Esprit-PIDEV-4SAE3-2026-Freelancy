@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { SignupComponent } from './core/pages/signup/signup.component';
 import { ProfileComponent } from './core/pages/profile/profile.component';
 import { SigninComponent } from './core/pages/signin/signin.component';
+import { AuthTokenInterceptor } from './core/auth/auth-token.interceptor';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 @NgModule({
@@ -38,6 +39,11 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
       useFactory: initializeKeycloak,
       multi: true,
       deps: [KeycloakService]
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthTokenInterceptor,
+      multi: true
     },
     {
       provide: HTTP_INTERCEPTORS,
