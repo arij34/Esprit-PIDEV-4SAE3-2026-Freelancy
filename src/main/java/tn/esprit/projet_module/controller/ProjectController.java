@@ -1,6 +1,7 @@
 package tn.esprit.projet_module.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.projet_module.clients.InvitationProjectDTO;
 import tn.esprit.projet_module.clients.UserDto;
@@ -49,6 +50,7 @@ public class ProjectController {
     public List<Project> getAll() { return projectService.getAllProjects(); }
 
     @PostMapping
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> create(
             @RequestBody Project project,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -75,6 +77,7 @@ public class ProjectController {
      * Uses the real connected user from Authorization header (User Service + Keycloak JWT).
      */
     @PostMapping("/{projectId}/join")
+    @PreAuthorize("hasRole('FREELANCER')")
     public ResponseEntity<?> joinProject(
             @PathVariable Long projectId,
             @RequestBody Map<String, Object> body,
@@ -218,12 +221,14 @@ public class ProjectController {
     public List<Project> getDeleteRequests() { return projectService.getDeleteRequests(); }
 
     @PutMapping("/{id}/delete-request/approve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> approveDelete(@PathVariable Long id) {
         projectService.approveDelete(id);
         return ResponseEntity.ok("Project deleted after admin approval.");
     }
 
     @PutMapping("/{id}/delete-request/reject")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> rejectDelete(@PathVariable Long id) {
         projectService.rejectDelete(id);
         return ResponseEntity.ok("Delete request rejected.");

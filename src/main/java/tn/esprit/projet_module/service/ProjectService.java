@@ -3,11 +3,14 @@ package tn.esprit.projet_module.service;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import tn.esprit.projet_module.entity.*;
+import tn.esprit.projet_module.messaging.ProjectCreatedEvent;
+import tn.esprit.projet_module.messaging.ProjectEventPublisher;
 import tn.esprit.projet_module.repository.ProjectAnalysisRepository;
 import tn.esprit.projet_module.repository.ProjectRepository;
 import tn.esprit.projet_module.repository.ProjectHistoryRepository;
 import tn.esprit.projet_module.repository.ProjectSkillRepository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -19,15 +22,18 @@ public class ProjectService {
     private final ProjectHistoryRepository historyRepository;
     private final ProjectSkillRepository projectSkillRepository;
     private final ProjectAnalysisRepository analysisRepository;
+    private final ProjectEventPublisher projectEventPublisher;
 
     public ProjectService(ProjectRepository projectRepository,
                           ProjectHistoryRepository historyRepository,
                           ProjectSkillRepository projectSkillRepository,
-                          ProjectAnalysisRepository analysisRepository) {
+                          ProjectAnalysisRepository analysisRepository,
+                          ProjectEventPublisher projectEventPublisher) {
         this.projectRepository      = projectRepository;
         this.historyRepository      = historyRepository;
         this.projectSkillRepository = projectSkillRepository;
         this.analysisRepository     = analysisRepository;
+        this.projectEventPublisher  = projectEventPublisher;
     }
 
     // CREATE
@@ -35,7 +41,18 @@ public class ProjectService {
         if (project.getStatus() == null) {
             project.setStatus(ProjectStatus.DRAFT);
         }
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+
+        // Async communication (RabbitMQ): notify other services.
+        projectEventPublisher.publishProjectCreated(new ProjectCreatedEvent(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getClientId(),
+                saved.getKeycloakId(),
+                Instant.now()
+        ));
+
+        return saved;
     }
 
     // READ by id

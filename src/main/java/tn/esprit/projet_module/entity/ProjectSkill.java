@@ -19,7 +19,7 @@ public class ProjectSkill {
     private Integer hourlyRate;
     private String demand;
 
-    @JsonIgnore   // ← AJOUTER CETTE LIGNE
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "project_id")
     private Project project;
