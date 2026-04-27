@@ -12,54 +12,31 @@ export class BackOfficeComponent implements OnInit {
   sidebarOpen: boolean = false;
   isMobile: boolean = false;
 
-  // 🔹 Tabs qui utilisent une route propre /admin/<tab>
-  //    (router-outlet affiche un composant différent)
-  private routedTabs = [
-    'dashboard',
-    'projects',
-    'contracts',
-    'users',
-    'stats',
-    'skills',
-    'pending-skills',
-    'matching-admin'          // <-- important pour afficher la vue Matching
-  ];
+  // Tabs qui utilisent router-outlet (ont des sous-routes comme /form)
+  private routedTabs = ['skills', 'pending-skills'];
 
   constructor(private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit() {
     this.checkMobile();
 
-    // Sync depuis ?tab= (ancien système, conservé pour compatibilité)
+    // Sync depuis ?tab=
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
         this.activeTab = params['tab'];
       }
     });
 
-    // Sync activeTab depuis l'URL (pour /admin/skills/form, /admin/matching-admin, etc.)
+    // Sync activeTab depuis l'URL (pour skills/form, pending-skills/form)
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
     ).subscribe((e: any) => {
-      const url = e.urlAfterRedirects as string;
+      const url = e.urlAfterRedirects;
+      // If URL uses ?tab=, queryParams subscription controls activeTab.
+      if (/[?&]tab=/.test(url)) return;
       const match = url.match(/\/admin\/([^/?]+)/);
-      const pathTab = match ? match[1] : null;
-
-      // If we are on the default child route (/admin -> /admin/dashboard) and a non-routed
-      // tab is provided via query param (?tab=subscriptions, etc.), prefer the query param.
-      const queryTab = this.route.snapshot.queryParamMap.get('tab');
-      if (queryTab && !this.routedTabs.includes(queryTab) && (!pathTab || pathTab === 'dashboard')) {
-        this.activeTab = queryTab;
-        return;
-      }
-
-      if (pathTab) {
-        this.activeTab = pathTab;
-        return;
-      }
-
-      if (queryTab) {
-        this.activeTab = queryTab;
+      if (match) {
+        this.activeTab = match[1];
       }
     });
   }
@@ -74,32 +51,19 @@ export class BackOfficeComponent implements OnInit {
   }
 
   onTabChange(tab: string) {
-    // 🔹 Cas spécial Challenge → route dédiée existante
+    // Challenge → route dédiée
     if (tab === 'Challenge') {
       this.router.navigate(['/admin/challenges']);
-      if (this.isMobile) this.sidebarOpen = false;
-      return;
-    }
-    if (tab === 'examQuiz') {
-      this.router.navigate(['/admin/exam-quiz']);
-      if (this.isMobile) this.sidebarOpen = false;
-      return;
-    }
-
-    if (tab === 'subscriptions' || tab === 'subscription-stats') {
-      this.router.navigate(['/admin'], { queryParams: { tab } });
-      this.activeTab = tab;
-      if (this.isMobile) this.sidebarOpen = false;
       return;
     }
 
     this.activeTab = tab;
 
-    // 🔹 Tabs qui ont une route propre /admin/<tab>
+    // Tabs avec sous-routes → navigation par URL
     if (this.routedTabs.includes(tab)) {
       this.router.navigate(['/admin', tab]);
     } else {
-      // 🔹 Autres tabs → on reste sur la route courante et on change juste ?tab=
+      // Autres tabs → système ?tab=
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { tab },
@@ -107,9 +71,7 @@ export class BackOfficeComponent implements OnInit {
       });
     }
 
-    if (this.isMobile) {
-      this.sidebarOpen = false;
-    }
+    if (this.isMobile) this.sidebarOpen = false;
   }
 
   onMenuClick() {

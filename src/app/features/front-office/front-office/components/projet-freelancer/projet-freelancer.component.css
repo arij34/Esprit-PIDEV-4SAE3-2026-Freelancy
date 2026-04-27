@@ -321,16 +321,3 @@
   color: #5b5bd6;
   border-bottom: 2px solid #5b5bd6;
 }
-/* 🔹 Badge de score de matching (utilisé dans l'onglet Matched Projects) */
-.match-pill {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  margin-left: 6px;
-
-  background: #ecfdf5;     /* vert clair */
-  color: #16a34a;          /* vert */
-  border: 1px solid #bbf7d0;
-  white-space: nowrap;
-}

@@ -23,21 +23,14 @@
         [repoUrl]="state.repoUrl"
         [repoName]="state.repoName"
         [username]="state.githubUsername"
-        (continue)="handleNext()"
+        [isLoading]="state.isLoading"
+        [errorMessage]="state.errorMessage"
+        (continue)="handleConfirmInvitation()"
         (back)="handleBack()"
       ></app-step-2>
 
-      <app-step-3 
-        *ngIf="state.activeStep === 3"
-        [isLoading]="state.isLoading"
-        [invitationAccepted]="state.invitationAccepted"
-        (checkStatus)="handleCheckInvitation()"
-        (continue)="handleNext()"
-        (back)="handleBack()"
-      ></app-step-3>
-
       <app-step-4 
-        *ngIf="state.activeStep === 4"
+        *ngIf="state.activeStep === 3"
         [repoUrl]="state.repoUrl"
         [copied]="state.copiedRepo"
         (continue)="handleNext()"
@@ -46,7 +39,7 @@
       ></app-step-4>
 
       <app-step-5 
-        *ngIf="state.activeStep === 5"
+        *ngIf="state.activeStep === 4"
         [copied]="state.copiedCommands"
         (complete)="handleNext()"
         (back)="handleBack()"

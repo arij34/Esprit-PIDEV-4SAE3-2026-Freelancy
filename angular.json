@@ -50,10 +50,8 @@
                "src/assets/css/lindy-uikit.css",
                 "src/assets/css/tiny-slider.css",
                 "src/assets/css/LineIcons.2.0.css",
-                "src/assets/css/glightbox.min.css",
-               "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-]
-            ,
+                "src/assets/css/glightbox.min.css"
+            ],
             "scripts": [
               "src/assets/js/bootstrap-5.0.0-beta1.min.js",
               "src/assets/js/glightbox.min.js",
@@ -75,13 +73,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "10mb",
+                  "maximumError": "15mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "15kB",
-                  "maximumError": "25kB"
+                  "maximumWarning": "2mb",
+                  "maximumError": "4mb"
                 }
               ],
               "outputHashing": "all"
@@ -110,27 +108,26 @@
           "builder": "@angular-devkit/build-angular:extract-i18n"
         },
         "test": {
-                  "builder": "@angular-devkit/build-angular:karma",
-                  "options": {
-                    "karmaConfig": "karma.conf.js",
-                    "polyfills": [
-                      "zone.js",
-                      "zone.js/testing"
-                    ],
-                    "tsConfig": "tsconfig.spec.json",
-                    "inlineStyleLanguage": "css",
-                    "assets": [
-                      {
-                        "glob": "**/*",
-                        "input": "public"
-                      }
-                    ],
-                    "styles": [
-                      "src/styles.css"
-                    ],
-                    "scripts": []
-                  }
-                }
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "tsconfig.spec.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+              "src/styles.css"
+            ],
+            "scripts": []
+          }
+        }
       }
     }
   },

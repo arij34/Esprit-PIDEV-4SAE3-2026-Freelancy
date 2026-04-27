@@ -9,12 +9,10 @@
 
     <div class="form-body">
 
-      <!-- Loader -->
       <div *ngIf="loading" class="text-center py-3">
         <div class="spinner-border text-primary"></div>
       </div>
 
-      <!-- Error -->
       <div *ngIf="errorMessage" class="alert alert-danger">
         {{ errorMessage }}
       </div>
@@ -30,6 +28,7 @@
           <input type="text"
                  class="form-control"
                  [(ngModel)]="skillInput"
+                 [ngModelOptions]="{standalone: true}"
                  (input)="onSkillTyping()"
                  name="skillInput"
                  required
@@ -76,18 +75,16 @@
                  disabled>
         </div>
 
-        <!-- Buttons -->
         <div class="form-actions">
           <a routerLink="/front/freelancer-skills"
              class="btn btn-secondary">
             Cancel
           </a>
-
-          <button type="submit"
-                  class="btn btn-primary"
-                  [disabled]="f.invalid">
-            {{ isEditMode ? 'Update' : 'Create' }}
-          </button>
+          <button type="button"
+        class="btn btn-primary"
+        (click)="onSubmit()">
+  {{ isEditMode ? 'Update' : 'Create' }}
+</button>
         </div>
 
       </form>

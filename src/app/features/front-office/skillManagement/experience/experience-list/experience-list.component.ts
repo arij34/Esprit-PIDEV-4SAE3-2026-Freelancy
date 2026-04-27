@@ -36,7 +36,7 @@ export class ExperienceListComponent implements OnInit {
 
   loadAll(): void {
     this.loading = true;
-    this.experienceService.getAll().subscribe({
+    this.experienceService.getMyExperiences().subscribe({
       next: (data: Experience[]) => {
         this.allItems = data;
         this.search.setData(data);

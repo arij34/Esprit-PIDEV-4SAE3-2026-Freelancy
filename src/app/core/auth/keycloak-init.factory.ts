@@ -10,9 +10,8 @@ export function initializeKeycloak(keycloak: KeycloakService) {
   return () => {
     const initPromise = keycloak.init({
       config: {
-        // Use HTTPS to make social login (Google) work correctly with cookies.
-        // Keycloak is started with HTTPS on https://localhost:8443
-        url: 'https://localhost:8443',
+        // Keycloak runs locally on port 8081.
+        url: 'http://localhost:8081',
         realm: 'smart-platform',
         clientId: 'angular-app'
       },

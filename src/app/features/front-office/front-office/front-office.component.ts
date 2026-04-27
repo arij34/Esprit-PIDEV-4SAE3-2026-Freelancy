@@ -26,19 +26,4 @@ export class FrontOfficeComponent implements OnInit {
     const url = this.router.url;
     this.isChildRoute = url !== '/front' && url !== '/front/';
   }
-
-  private rolePrefixFromUrl(): 'client' | 'freelancer' {
-    const firstSegment = this.router.url.split('/').filter(Boolean)[0];
-    return firstSegment === 'freelancer' ? 'freelancer' : 'client';
-  }
-
-  goToSubscription(): void {
-    const role = this.rolePrefixFromUrl();
-    this.router.navigate(['/', role, 'subscription']);
-  }
-
-  goToSubscriptionPayment(): void {
-    const role = this.rolePrefixFromUrl();
-    this.router.navigate(['/', role, 'subscription', 'pay']);
-  }
 }

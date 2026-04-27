@@ -43,6 +43,10 @@ export class ParticipationService {
     return this.http.get<InvitationStatusResponse>(`${this.baseUrl}/${participationId}/invitation-status`);
   }
 
+  confirmInvitation(participationId: string): Observable<InvitationStatusResponse> {
+    return this.http.post<InvitationStatusResponse>(`${this.baseUrl}/${participationId}/confirm-invitation`, null);
+  }
+
   getParticipation(id: string): Observable<ParticipationResponse> {
     return this.http.get<ParticipationResponse>(`${this.baseUrl}/${id}`);
   }

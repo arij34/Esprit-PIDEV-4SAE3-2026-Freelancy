@@ -92,19 +92,6 @@
           (click)="switchTab('discussion')">
           Discussion
         </span>
-        <!-- 🔹 NOUVEL ONGLET: projets filtrés par matching -->
-        <span 
-          class="tab-link"
-          [class.active]="activeTab === 'matched'"
-          (click)="switchTab('matched')">
-          Matched Projects
-        </span>
-         <a 
-            routerLink="/front-office/contracts-freelancer"
-            routerLinkActive="active"
-            class="tab-link">
-            My Contracts
-         </a>
 
       </div>
 
@@ -114,7 +101,7 @@
           {{
             activeTab === 'all' ? 'Available Projects' :
             activeTab === 'saved' ? 'Saved Projects' :
-            activeTab === 'matched' ? 'Matched Projects' : 'Discussion Projects'
+            'Discussion Projects'
           }}
         </h2>
 
@@ -140,14 +127,6 @@
                   Client {{ project.clientId }}
                 </span>
                 <span class="status-open">Open</span>
-                <!-- 🔹 Badge score de matching :
-                - affiché uniquement dans l’onglet "Matched Projects"
-                - utilise matchedScoreMap[project.id] rempli dans loadMatchedProjectsFilter() -->
-                <span
-                  class="match-pill"
-                  *ngIf="activeTab === 'matched' && matchedScoreMap[project.id + ''] !== undefined">
-                  {{ matchedScoreMap[project.id + ''] | number:'1.0-1' }}% Match
-                </span>
               </div>
             </div>
 

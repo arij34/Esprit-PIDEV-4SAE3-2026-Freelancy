@@ -7,32 +7,37 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class ExperienceService {
 
-  private url = `${environment.apiUrl}/experience`;
+  private baseUrl = `${environment.apiUrl}/experience`;
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Experience[]> {
-    return this.http.get<Experience[]>(this.url);
+  // 🔒 Récupérer uniquement les expériences de l'utilisateur connecté
+  getMyExperiences(): Observable<Experience[]> {
+    return this.http.get<Experience[]>(`${this.baseUrl}/user/me`);
   }
 
+  // 🔍 Récupérer une expérience par ID (optionnel)
   getById(id: number): Observable<Experience> {
-    return this.http.get<Experience>(`${this.url}/${id}`);
-  }
+  return this.http.get<Experience>(`${this.baseUrl}/user/me/${id}`);
+}
 
-  // ✅ Token Keycloak injecté automatiquement
+  // ✅ Création sécurisée (user récupéré via token backend)
   create(experience: Experience): Observable<Experience> {
-    return this.http.post<Experience>(`${this.url}/user/me`, experience);
+    return this.http.post<Experience>(`${this.baseUrl}/user/me`, experience);
   }
 
+  // 🔄 Mise à jour sécurisée
   update(experience: Experience): Observable<Experience> {
-    return this.http.put<Experience>(this.url, experience);
+    return this.http.put<Experience>(`${this.baseUrl}/user/me`, experience);
   }
 
+  // ❌ Suppression (tu peux aussi sécuriser côté backend)
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.url}/${id}`);
-  }
+  return this.http.delete<void>(`${this.baseUrl}/user/me/${id}`);
+}
 
+  // 📊 Calcul total années d'expérience pour user connecté
   getTotalYearsForCurrentUser(): Observable<number> {
-    return this.http.get<number>(`${this.url}/user/me/total-years`);
+    return this.http.get<number>(`${this.baseUrl}/user/me/total-years`);
   }
 }

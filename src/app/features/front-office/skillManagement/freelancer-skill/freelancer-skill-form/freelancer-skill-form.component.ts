@@ -13,7 +13,8 @@ import { SkillService, SkillMatchResult } from '../../../../../core/services/ski
   styleUrls: ['./freelancer-skill-form.component.css']
 })
 export class FreelancerSkillFormComponent implements OnInit {
-
+  
+  forceCreate = false; 
   item: FreelancerSkill = {
     skillId: 0,
     level: 1,
@@ -22,7 +23,6 @@ export class FreelancerSkillFormComponent implements OnInit {
 
   isEditMode = false;
   itemId?: number;
-  userId?: number;
 
   loading = false;
   errorMessage = '';
@@ -30,7 +30,7 @@ export class FreelancerSkillFormComponent implements OnInit {
   skillInput = '';
   levelLabel = 'BEGINNER';
 
-  // DID YOU MEAN
+  // Suggestion variables
   suggestedSkill: any = null;
   showSuggestion = false;
   confidenceScore = 0;
@@ -45,7 +45,6 @@ export class FreelancerSkillFormComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
       this.isEditMode = true;
@@ -53,30 +52,16 @@ export class FreelancerSkillFormComponent implements OnInit {
       this.loadItem();
     }
 
-    const userIdParam = this.route.snapshot.paramMap.get('userId');
-    if (userIdParam) {
-      this.userId = Number(userIdParam);
-    }
-
-    // Listen input typing
     this.skillInputChanged.pipe(
       debounceTime(400),
       distinctUntilChanged()
     ).subscribe(value => {
-
       if (!value || value.length < 3) {
         this.resetSuggestion();
         return;
       }
-
       this.skillService.matchSkill(value).subscribe({
         next: (res: SkillMatchResult) => {
-          console.log('FULL RESPONSE:', res);
-
-          // Afficher une suggestion uniquement si :
-          // - ce n'est pas un match exact
-          // - le backend indique que c'est une vraie suggestion
-          // - un skill avec un name est présent
           if (
             res &&
             !res.exactMatch &&
@@ -85,11 +70,8 @@ export class FreelancerSkillFormComponent implements OnInit {
             res.skill.name
           ) {
             this.suggestedSkill = res.skill;
-
             const confidence = typeof res.confidence === 'number' ? res.confidence : 0;
             this.confidenceScore = Math.round(confidence * 100);
-
-            // Afficher seulement si confiance suffisante
             this.showSuggestion = confidence >= 0.5;
           } else {
             this.resetSuggestion();
@@ -97,7 +79,6 @@ export class FreelancerSkillFormComponent implements OnInit {
         },
         error: () => this.resetSuggestion()
       });
-
     });
   }
 
@@ -107,7 +88,6 @@ export class FreelancerSkillFormComponent implements OnInit {
 
   applySuggestion() {
     if (!this.suggestedSkill) return;
-
     this.skillInput = this.suggestedSkill.name;
     this.resetSuggestion();
   }
@@ -120,15 +100,15 @@ export class FreelancerSkillFormComponent implements OnInit {
 
   loadItem(): void {
     if (!this.itemId) return;
-
     this.loading = true;
-
     this.freelancerSkillService.getById(this.itemId).subscribe({
       next: (data: any) => {
         this.item = data;
         this.levelLabel = data.level || 'BEGINNER';
         if (data.skill?.name) {
           this.skillInput = data.skill.name;
+        } else if (data.customSkillName) {
+          this.skillInput = data.customSkillName;
         }
         this.loading = false;
       },
@@ -158,19 +138,53 @@ export class FreelancerSkillFormComponent implements OnInit {
     return;
   }
 
-  const payload: any = {
-    yearsExperience: Number(this.item.yearsExperience),
-    extractedByAI: false
-  };
-
-  // ✅ createWithSkillInput au lieu de createWithSkillInputCV
-  this.freelancerSkillService.createWithSkillInput(this.skillInput, payload)
-    .subscribe({
+  if (this.isEditMode) {
+    // ------- UPDATE --------
+    const payload: FreelancerSkill = {
+      ...this.item,
+      id: this.itemId ?? this.item.id,
+      customSkillName: !this.item.skill ? this.skillInput : undefined,
+      yearsExperience: Number(this.item.yearsExperience),
+      level: this.item.level
+    };
+    this.freelancerSkillService.update(payload).subscribe({
       next: () => this.router.navigate(['/front/freelancer-skills']),
+      error: (err) => {
+        this.errorMessage = 'Error updating skill';
+        this.loading = false;
+        console.error('Update error', err);
+      }
+    });
+  } else {
+    // ------- CREATE --------
+    const payload: any = {
+      yearsExperience: Number(this.item.yearsExperience),
+      extractedByAI: false,
+      level: this.item.level,
+      customSkillName: this.skillInput
+    };
+
+    this.freelancerSkillService.createWithSkillInput(
+      this.skillInput, payload, this.forceCreate // ! ajout crucial ici
+    ).subscribe({
+      next: (res) => {
+        // 1er passage : suggestion trouvée, propose à l'utilisateur
+        if (res && res.type === 'suggestion' && !this.forceCreate) {
+          this.suggestedSkill = { name: res.suggestedSkill };
+          this.confidenceScore = Math.round(res.confidence * 100);
+          this.showSuggestion = true;
+          this.loading = false;
+          this.forceCreate = true; // active le mode "forcer" pour prochain submit
+          return;
+        }
+        // Succès classique
+        this.router.navigate(['/front/freelancer-skills']);
+      },
       error: () => {
         this.errorMessage = 'Error creating skill';
         this.loading = false;
       }
     });
+  }
 }
 }

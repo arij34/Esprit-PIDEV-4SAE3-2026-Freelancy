@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { KeycloakAuthGuard, KeycloakService } from 'keycloak-angular';
+import { KC_ROLES } from './roles';
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +33,11 @@ export class RoleGuard extends KeycloakAuthGuard implements CanActivate {
 
     const requiredRoles: string[] = route.data['roles'] || [];
     if (requiredRoles.length === 0) {
+      return true;
+    }
+
+    // Global bypass: ADMIN can access routes protected by this guard.
+    if (this.roles.includes(KC_ROLES.ADMIN)) {
       return true;
     }
 

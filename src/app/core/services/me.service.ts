@@ -9,7 +9,6 @@ export interface MeDto {
   email: string;
   role?: string;
   enabled: boolean;
-  experiencePoints?: number;
 }
 
 @Injectable({

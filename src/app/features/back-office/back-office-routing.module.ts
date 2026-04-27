@@ -14,9 +14,6 @@ import { SkillFormComponent } from './skillManagement/skill/skill-form/skill-for
 import { PendingSkillListComponent } from './skillManagement/pending-skill/pending-skill-list/pending-skill-list.component';
 import { PendingSkillFormComponent } from './skillManagement/pending-skill/pending-skill-form/pending-skill-form.component';
 
-import { MatchingAdminViewComponent } from './back-office/components/views/matching-admin-view/MatchingAdminViewComponent';
-
-
 const routes: Routes = [
   {
     path: '',
@@ -30,8 +27,6 @@ const routes: Routes = [
       { path: 'contracts',   component: ContractsViewComponent },
       { path: 'users',       component: UsersViewComponent },
       { path: 'stats',       component: StatsViewComponent },
-      // 🔹 NOUVELLE VUE ADMIN MATCHING / INVITATIONS
-      { path: 'matching-admin', component: MatchingAdminViewComponent },
 
       // Local - Skill Management
       { path: 'skills',                component: SkillListComponent },

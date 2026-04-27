@@ -352,7 +352,6 @@ export class ProjetClientComponent implements OnInit {
     this.showEditModal       = true;
     document.body.style.overflow = 'hidden';
   }
-  
 
   closeEditModal(): void {
     this.showEditModal    = false;
@@ -541,28 +540,4 @@ export class ProjetClientComponent implements OnInit {
   countByStatus(status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN'): number {
     return this.proposals?.filter(p => p.status === status).length ?? 0;
   }
-  goToContracts(project: any): void {
-  this.router.navigate(['/front/contracts'], {
-    queryParams: { 
-      projectId: project.id,
-      clientKeycloakId: this.clientKeycloakId
-    }
-  });
 }
-  
-  //////////////////////////////
-  goToMatching(projectId: number | undefined): void {
-  if (projectId) {
-    this.router.navigate(['/front/matching'], { 
-      queryParams: { projectId: projectId } 
-    });
-  }}
-    goToInvitations(project: Project): void {
-  if (!project.id) { return; }
-  this.router.navigate(['/front-office/projects', project.id, 'invitations']);
-  
-}
-
-
-}
-
