@@ -1,87 +1,111 @@
 server:
-  port: 8080
+  port: 8091
 
 spring:
   application:
     name: api-gateway
-
   cloud:
     gateway:
       routes:
-
-        # Skill Service***
         - id: skill-management
           uri: lb://skill-management-service
           predicates:
-            - Path=/skills/**
+            - Path=/api/skills/**
+          filters:
+            - StripPrefix=1
 
-        # AI Service
         - id: ai-service
           uri: lb://ai-matching-service
           predicates:
-            - Path=/ai/**
+            - Path=/api/ai/**
+          filters:
+            - StripPrefix=1
 
-        # Project Service
         - id: project-service
           uri: lb://project-service
           predicates:
-            - Path=/projects/**
+            - Path=/api/projects/**
+          filters:
+            - StripPrefix=1
 
-        # Contract Service
         - id: contract-service
           uri: lb://contract-service
           predicates:
-            - Path=/contracts/**
+            - Path=/api/contracts/**
+          filters:
+            - StripPrefix=1
 
-        # Challenge Service**
         - id: challenge-service
           uri: lb://challenge-service
           predicates:
-            - Path=/challenges/**
+            - Path=/api/challenges/**
+          filters:
+            - StripPrefix=1
 
-        # Roadmap Service**
+        - id: participation-service
+          uri: lb://challenge-service
+          predicates:
+            - Path=/api/participations/**
+          filters:
+            - StripPrefix=1
+
+        - id: task-service
+          uri: lb://challenge-service
+          predicates:
+            - Path=/api/tasks/**
+          filters:
+            - StripPrefix=1
+
         - id: RoadMap-Carrer
           uri: lb://roadmap-service
           predicates:
-            - Path=/roadmaps/**
+            - Path=/api/roadmaps/**
+          filters:
+            - StripPrefix=1
 
-        # User Service
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/users/**
-
-        # Blog Service
         - id: blog-service
           uri: lb://blog-service
           predicates:
-            - Path=/blogs/**
+            - Path=/api/blogs/**
+          filters:
+            - StripPrefix=1
 
-        # Blog Analytic Service
         - id: blog-analytic-service
           uri: lb://blog-analytic-service
           predicates:
-            - Path=/blog-analytics/**
+            - Path=/api/blog-analytics/**
+          filters:
+            - StripPrefix=1
 
-        # Event Service**
         - id: evenment
           uri: lb://event-service
           predicates:
-            - Path=/events/**
+            - Path=/api/events/**
+          filters:
+            - StripPrefix=1
 
-        # Planning Service
         - id: planning-service
           uri: lb://planning-service
           predicates:
-            - Path=/planning/**
+            - Path=/api/planning/**
+          filters:
+            - StripPrefix=1
 
-        # Subscribe Service
         - id: subscribe-service
           uri: lb://subscribe-service
           predicates:
-            - Path=/subscribe/**
+            - Path=/api/subscribe/**
+          filters:
+            - StripPrefix=1
+
+        - id: user-service
+          uri: lb://SMART-FREELANCE-BACKEND
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=1
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
