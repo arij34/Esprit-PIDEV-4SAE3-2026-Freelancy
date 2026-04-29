@@ -8,10 +8,6 @@
     <div class="card__body">
       <h2 class="card__title">Step 2 — Repository Created!</h2>
       <p class="card__text">Your private repository has been successfully created.</p>
-
-      <div *ngIf="errorMessage" class="info-box info-box--red" style="margin-top: 12px;">
-        <p style="color: #991B1B; font-size: 0.875rem; margin: 0;">{{ errorMessage }}</p>
-      </div>
       
       <div class="repo-details">
         <div class="repo-details__item">
@@ -50,7 +46,7 @@
           <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
         </svg>
         <p style="color: #92400E; font-size: 0.875rem; margin: 0;">
-          A GitHub invitation has been sent to your email. Please accept it before continuing.
+          You must accept the GitHub invitation before cloning the repository.
         </p>
       </div>
 
@@ -61,8 +57,8 @@
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" (click)="onContinue()" [disabled]="isLoading">
-          {{ isLoading ? 'Checking...' : 'I Have Accepted the Invitation' }}
+        <button class="btn btn--primary" (click)="onContinue()">
+          Continue
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
           </svg>

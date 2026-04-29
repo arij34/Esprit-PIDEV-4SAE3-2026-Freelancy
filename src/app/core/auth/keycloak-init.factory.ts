@@ -10,7 +10,7 @@ export function initializeKeycloak(keycloak: KeycloakService) {
   return () => {
     const initPromise = keycloak.init({
       config: {
-        // Keycloak runs locally on port 8081.
+        // Local Keycloak is exposed over HTTP on port 8081 by docker-compose.
         url: 'http://localhost:8081',
         realm: 'smart-platform',
         clientId: 'angular-app'

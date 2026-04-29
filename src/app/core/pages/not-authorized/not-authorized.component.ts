@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
-import { KC_ROLES } from '../../auth/roles';
 
 @Component({
   selector: 'app-not-authorized',
@@ -14,13 +13,6 @@ import { KC_ROLES } from '../../auth/roles';
         </p>
 
         <div class="flex flex-col gap-2">
-          <button
-            *ngIf="isAdmin"
-            class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm"
-            (click)="goAsAdmin()">
-            Continue as Admin
-          </button>
-
           <button
             class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm"
             (click)="chooseRole()">
@@ -43,14 +35,6 @@ import { KC_ROLES } from '../../auth/roles';
 })
 export class NotAuthorizedComponent {
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
-
-  get isAdmin(): boolean {
-    return this.auth.hasRole(KC_ROLES.ADMIN);
-  }
-
-  async goAsAdmin(): Promise<void> {
-    await this.router.navigateByUrl('/admin');
-  }
 
   async chooseRole(): Promise<void> {
     // Send the user to the same role picker used by Google sign-in.

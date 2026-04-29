@@ -3,6 +3,8 @@ export const environment = {
 
   // API Gateway (proxy Angular)
   apiUrl: '/api',
+  apiBaseUrl: 'http://localhost:8150',
+  userApiBaseUrl: 'http://localhost:8090',
 
   // Challenges
   challengeTasksPath: '/tasks/challenge/{id}',
@@ -11,6 +13,6 @@ export const environment = {
   version: '1.0.0',
   projectApiUrl: 'http://localhost:8085',
 
-  // WebSocket skill-management
-  wsUrl: 'http://localhost:8081'
+  // WebSocket skill-management (proxied through Angular dev server)
+  wsUrl: ''
 };

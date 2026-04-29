@@ -151,7 +151,7 @@ export class SkillDashboardComponent implements OnInit, OnDestroy {
   }
 
   loadExperience(): void {
-    this.experienceService.getMyExperiences().subscribe(data => {
+    this.experienceService.getAll().subscribe(data => {
       this.experiences = data || [];
       if (this.experiences.length > 0) {
         this.experiences.sort((a, b) => {

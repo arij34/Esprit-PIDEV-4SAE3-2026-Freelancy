@@ -16,11 +16,10 @@ import { ProjetFreelancerDetailComponent } from './front-office/components/proje
 import { StatsComponent } from './front-office/components/stats/stats.component';
 import { ProposalFilterPipe } from './front-office/components/projet-client/proposal-filter.pipe';
 import { ProjetWorkspaceComponent } from './front-office/components/projet-workspace/projet-workspace.component';
+import { ContractsComponent } from './front-office/components/contrat_client/contracts.component';
 
-// Subscription / Payment
-import { SubscriptionPageComponent } from '../subscription/pages/subscription-page/subscription-page.component';
-import { SubscriptionPaymentPageComponent } from '../subscription/pages/subscription-payment-page/subscription-payment-page.component';
-
+// ✅ Signature Modal 
+import { SignatureModalComponent } from './components/signature-modal/signature-modal.component';
 // Local - Skill Management
 import { SkillDashboardComponent } from './skillManagement/dashboardskill/skill-dashboard/skill-dashboard.component';
 import { EducationListComponent } from './skillManagement/education/education-list/education-list.component';
@@ -31,7 +30,16 @@ import { AvailabilityListComponent } from './skillManagement/availability/availa
 import { AvailabilityFormComponent } from './skillManagement/availability/availability-form/availability-form.component';
 import { FreelancerSkillListComponent } from './skillManagement/freelancer-skill/freelancer-skill-list/freelancer-skill-list.component';
 import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill/freelancer-skill-form/freelancer-skill-form.component';
-
+import { ClientProjectInvitationsComponent } from './client-project-invitations/client-project-invitations.component';
+import { ContratFreelancerComponent } from './front-office/components/contrat-freelancer/contrat-freelancer.component';
+import { ContratFreelancerDetailComponent } from './front-office/components/contrat-freelancer-detail/contrat-freelancer-detail.component';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { PortalModule } from '@angular/cdk/portal';
+import { SubscriptionPageComponent } from '../subscription/pages/subscription-page/subscription-page.component';
+import { SubscriptionPaymentPageComponent } from '../subscription/pages/subscription-payment-page/subscription-payment-page.component';
+import { PlanningComponent } from '../planningg/planning/planning.component';
+import { TaskComponent } from '../planningg/task/task.component';
+import { QRCodeModule } from 'angularx-qrcode';
 @NgModule({
   declarations: [
     // Intégration
@@ -44,10 +52,8 @@ import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill
     StatsComponent,
     ProposalFilterPipe,
     ProjetWorkspaceComponent,
-
-    // Subscription / Payment
-    SubscriptionPageComponent,
-    SubscriptionPaymentPageComponent,
+ContractsComponent,
+    SignatureModalComponent,
 
     // Local - Skill Management
     SkillDashboardComponent,
@@ -59,6 +65,14 @@ import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill
     AvailabilityFormComponent,
     FreelancerSkillListComponent,
     FreelancerSkillFormComponent,
+    ContratFreelancerComponent,
+    ContratFreelancerDetailComponent,
+    ClientProjectInvitationsComponent,
+    SubscriptionPageComponent,
+    SubscriptionPaymentPageComponent,
+    PlanningComponent,
+    TaskComponent
+
   ],
   imports: [
     CommonModule,
@@ -67,6 +81,9 @@ import { FreelancerSkillFormComponent } from './skillManagement/freelancer-skill
     ReactiveFormsModule,
     FrontOfficeRoutingModule,
     SharedModule,
+     OverlayModule,
+    PortalModule,
+    QRCodeModule,
   ]
 })
 export class FrontOfficeModule { }

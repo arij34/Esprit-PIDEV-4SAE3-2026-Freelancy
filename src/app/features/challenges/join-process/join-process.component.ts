@@ -6,6 +6,7 @@ import { ParticipationService, ParticipationResponse } from '../../../core/servi
 import { StepIndicatorComponent } from './step-indicator/step-indicator.component';
 import { Step1Component } from './step-1/step-1.component';
 import { Step2Component } from './step-2/step-2.component';
+import { Step3Component } from './step-3/step-3.component';
 import { Step4Component } from './step-4/step-4.component';
 import { Step5Component } from './step-5/step-5.component';
 import { SuccessStateComponent } from './success-state/success-state.component';
@@ -18,6 +19,7 @@ import { SuccessStateComponent } from './success-state/success-state.component';
     StepIndicatorComponent,
     Step1Component,
     Step2Component,
+    Step3Component,
     Step4Component,
     Step5Component,
     SuccessStateComponent
@@ -44,8 +46,9 @@ export class JoinProcessComponent implements OnInit {
   steps: Step[] = [
     { id: 1, title: 'GitHub Username' },
     { id: 2, title: 'Repo Creation' },
-    { id: 3, title: 'Clone' },
-    { id: 4, title: 'Develop' }
+    { id: 3, title: 'Accept Invitation' },
+    { id: 4, title: 'Clone' },
+    { id: 5, title: 'Develop' }
   ];
 
   constructor(
@@ -124,39 +127,31 @@ export class JoinProcessComponent implements OnInit {
       });
   }
 
-  handleConfirmInvitation(): void {
+  handleCheckInvitation(): void {
     if (!this.state.participationId) return;
 
-    this.state = { ...this.state, isLoading: true, errorMessage: '' };
+    this.state = { ...this.state, isLoading: true };
 
-    this.participationService.confirmInvitation(this.state.participationId)
+    this.participationService.checkInvitationStatus(this.state.participationId)
       .subscribe({
-        next: () => {
+        next: (response) => {
           this.state = {
             ...this.state,
             isLoading: false,
-            invitationAccepted: true,
-            activeStep: 3
+            invitationAccepted: response.accepted
           };
+          if (response.accepted) {
+            this.state = { ...this.state, activeStep: 4 };
+          }
         },
-        error: (err) => {
-          const backendMessage =
-            typeof err?.error === 'string'
-              ? err.error
-              : err?.error?.message || err?.message || '';
-
-          const message =
-            err?.status === 400 && backendMessage.includes('Invitation not yet accepted')
-              ? 'Please accept the GitHub invitation first'
-              : 'Unable to confirm invitation right now. Please try again.';
-
-          this.state = { ...this.state, isLoading: false, errorMessage: message };
+        error: () => {
+          this.state = { ...this.state, isLoading: false };
         }
       });
   }
 
   handleNext(): void {
-    if (this.state.activeStep < 4) {
+    if (this.state.activeStep < 5) {
       this.state = { ...this.state, activeStep: this.state.activeStep + 1 };
     } else {
       this.state = { ...this.state, currentView: 'success' };

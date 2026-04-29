@@ -4,6 +4,8 @@ import { SavedProjectService } from '../../../../../core/services/saved-project.
 import { Project } from '../../../../../core/models/project.model';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../../core/auth/auth.service';
+import { MatchingService } from '../../../../../core/services/skill/matching.service';
+
 
 @Component({
   selector: 'app-projet-freelancer',
@@ -12,11 +14,23 @@ import { AuthService } from '../../../../../core/auth/auth.service';
 })
 export class ProjetFreelancerComponent implements OnInit {
 
-  activeTab: 'all' | 'saved' | 'discussion' = 'all';
+  // 🔹 AVANT: 'all' | 'saved' | 'discussion'
+  // 🔹 APRES: on ajoute un onglet 'matched' pour les projets matchés par le moteur de matching
+  activeTab: 'all' | 'saved' | 'discussion' | 'matched' = 'all';
+
   allProjects: Project[] = [];
   savedProjects: Project[] = [];
-  filteredProjects: Project[] = [];
   acceptedProjects: Project[] = [];
+
+  // 🔹 Liste des projets filtrés actuellement affichés dans la grille
+  filteredProjects: Project[] = [];
+
+  // 🔹 NOUVEAU: projets matchés (ids reçus du backend) et map projectId -> score
+ // 🔹 Liste brute {projectId, score} renvoyée par l’API matching
+matchedProjectScores: { projectId: number; matchScore: number }[] = [];
+
+// 🔹 Map projectId -> score, indexée par string pour éviter les soucis de type dans le template
+matchedScoreMap: { [projectId: string]: number } = {};
 
   searchQuery: string = '';
   sortBy: string = 'newest';
@@ -34,15 +48,20 @@ export class ProjetFreelancerComponent implements OnInit {
     private projectService: ProjectService,
     private savedService: SavedProjectService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private matchingService: MatchingService
   ) {}
 
   ngOnInit(): void {
     this.authService.getAccessToken().then(() => {
       this.keycloakId = this.authService.getKeycloakSub();
-      this.loadAllProjects();
+      this.loadAllProjects(); // on charge d'abord tous les projets
     });
   }
+
+  // ============================
+  // CHARGEMENT DES LISTES DE BASE
+  // ============================
 
   loadAllProjects(): void {
     this.isLoading = true;
@@ -102,9 +121,71 @@ export class ProjetFreelancerComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'all' | 'saved' | 'discussion'): void {
+  // 🔹 NOUVEAU: charger la liste des ids de projets matchés + score pour ce freelancer,
+  // puis filtrer allProjects avec ces ids
+  loadMatchedProjectsFilter(): void {
+    const fid = this.freelancerId;
+    if (!fid || fid <= 0) {
+      this.errorMessage = 'Connectez-vous pour voir les projets qui vous correspondent.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    // Cette méthode doit être ajoutée dans ProjectService:
+    // getMatchedProjectScoresForFreelancer(freelancerId: number)
+    this.matchingService
+  .getMatchedProjectScoresForFreelancer(fid)
+  .subscribe({ 
+        next: (data: { projectId: number; matchScore: number }[]) => {
+          this.matchedProjectScores = data || [];
+          this.matchedScoreMap = {};
+          for (const item of this.matchedProjectScores) {
+  // 🔹 on convertit l'id en string pour être cohérent avec le type de clé
+  this.matchedScoreMap[String(item.projectId)] = item.matchScore;
+}
+
+          // On filtre allProjects pour ne garder que ceux qui ont un match
+          const ids = new Set(this.matchedProjectScores.map(m => m.projectId));
+          let result = this.allProjects.filter(p => ids.has(p.id!));
+
+          // On réutilise la logique de tri existante
+          if (this.sortBy === 'deadline') {
+            result = result.sort(
+              (a, b) =>
+                new Date(a.deadline).getTime() -
+                new Date(b.deadline).getTime()
+            );
+          } else {
+            result = result.sort(
+              (a, b) =>
+                new Date(b.createdAt || '').getTime() -
+                new Date(a.createdAt || '').getTime()
+            );
+          }
+
+          this.filteredProjects = result;
+          this.isLoading = false;
+        },
+        error: (err: any) => {
+          console.error(err);
+          this.errorMessage = 'Erreur lors du chargement des projets qui vous correspondent.';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  // ============================
+  // TABS
+  // ============================
+
+  // 🔹 AVANT: switchTab('all' | 'saved' | 'discussion')
+  // 🔹 APRES: on ajoute 'matched' qui applique le filtre basé sur la liste d’ids renvoyée par le backend
+  switchTab(tab: 'all' | 'saved' | 'discussion' | 'matched'): void {
     this.activeTab = tab;
     this.searchQuery = '';
+
     if (tab === 'all') {
       if (this.allProjects.length === 0) {
         this.loadAllProjects();
@@ -116,14 +197,31 @@ export class ProjetFreelancerComponent implements OnInit {
       this.loadSavedProjects();
     } else if (tab === 'discussion') {
       this.loadAcceptedProjects();
+    } else if (tab === 'matched') {
+      // On suppose que allProjects est déjà chargé via ngOnInit
+      this.loadMatchedProjectsFilter();
     }
   }
 
+  // ============================
+  // FILTRES (search + tri)
+  // ============================
+
   applyFilters(): void {
+    // 🔹 Pour l’onglet Saved: on garde la logique d’origine
     if (this.activeTab === 'saved') {
       this.filteredProjects = this.savedProjects;
       return;
     }
+
+    // 🔹 Pour l’onglet Discussion / Matched, on n’applique pas ici de filtre,
+    //     car loadAcceptedProjects() et loadMatchedProjectsFilter()
+    //     remplissent déjà filteredProjects.
+    if (this.activeTab === 'discussion' || this.activeTab === 'matched') {
+      return;
+    }
+
+    // 🔹 Pour l’onglet All: code original
     let result = [...this.allProjects];
     if (this.searchQuery) {
       result = result.filter(p =>
@@ -142,6 +240,10 @@ export class ProjetFreelancerComponent implements OnInit {
 
   onSearchChange(): void { this.applyFilters(); }
   onSortChange(): void   { this.applyFilters(); }
+
+  // ============================
+  // UTILITAIRES D'AFFICHAGE
+  // ============================
 
   formatDate(date: string | undefined): string {
     if (!date) return '-';

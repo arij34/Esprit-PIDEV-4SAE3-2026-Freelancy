@@ -12,8 +12,6 @@ export class Step2Component {
   @Input() repoUrl = '';
   @Input() repoName = '';
   @Input() username = '';
-  @Input() isLoading = false;
-  @Input() errorMessage = '';
   @Output() continue = new EventEmitter<void>();
   @Output() back = new EventEmitter<void>();
 
