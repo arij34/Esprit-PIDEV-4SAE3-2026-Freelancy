@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tn.freelancy.skillmanagement.clients.UserDto;
 import tn.freelancy.skillmanagement.clients.UserServiceClient;
+import tn.freelancy.skillmanagement.dto.ExperienceDTO;
+import tn.freelancy.skillmanagement.dto.ExperienceMatchingResponse;
 import tn.freelancy.skillmanagement.entity.Experience;
 import tn.freelancy.skillmanagement.service.ExperienceService;
 
@@ -55,5 +57,24 @@ public class ExperienceController {
         UserDto currentUser = userServiceClient.getCurrentUser(authorization);
         Long userId = currentUser.getId();
         return (long) experienceService.calculateTotalYearsByUser(userId);
+    }
+
+    @GetMapping("/user/{userId}/matching")
+    public ExperienceMatchingResponse getExperiencesForMatching(@PathVariable Long userId) {
+
+        List<Experience> experiences = experienceService.getExperiencesByUserId(userId);
+
+        List<ExperienceDTO> experienceDTOs = experiences.stream()
+                .map(exp -> new ExperienceDTO(
+                        exp.getId(),
+                        exp.getTitle(),
+                        exp.getDescription(),
+                        exp.getUserId()
+                ))
+                .toList();
+
+        Double totalYears = experienceService.calculateTotalYearsByUser(userId);
+
+        return new ExperienceMatchingResponse(experienceDTOs, totalYears);
     }
 }

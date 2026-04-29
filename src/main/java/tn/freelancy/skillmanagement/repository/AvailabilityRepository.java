@@ -11,4 +11,5 @@ public interface AvailabilityRepository extends JpaRepository<Availability, Long
 
     // ✅ AJOUTÉ : recherche par userId (colonne simple Long, plus de relation JPA vers User)
     Optional<Availability> findByUserId(Long userId);
+
 }

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.freelancy.skillmanagement.clients.UserDto;
 import tn.freelancy.skillmanagement.clients.UserServiceClient;
+import tn.freelancy.skillmanagement.dto.AvailabilityDTO;
 import tn.freelancy.skillmanagement.entity.Availability;
 import tn.freelancy.skillmanagement.service.AvailabilityService;
 
@@ -81,6 +82,19 @@ public class AvailabilityController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         availabilityService.deleteAvailability(id);
-        return ResponseEntity.noContent().build(); // ✅ CORRIGÉ : 204 au lieu de void
+        return ResponseEntity.noContent().build(); //
+    }
+
+    @GetMapping("/user/{userId}/matching")
+    public AvailabilityDTO getAvailabilityForMatching(@PathVariable Long userId) {
+
+        Availability availability = availabilityService.getAvailabilityByUserId(userId);
+
+        return new AvailabilityDTO(
+                availability.getHoursPerDay(),
+                availability.getHoursPerWeek(),
+                availability.getStatus(),
+                availability.getUserId()
+        );
     }
 }

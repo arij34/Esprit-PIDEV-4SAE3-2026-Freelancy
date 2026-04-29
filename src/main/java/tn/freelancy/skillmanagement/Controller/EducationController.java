@@ -93,4 +93,9 @@ public class EducationController {
         educationService.deleteEducation(id);
         return ResponseEntity.noContent().build(); // ✅ CORRIGÉ : 204
     }
+
+    @GetMapping("/user/{userId}/matching")
+    public Education getLatestEducationForMatching(@PathVariable Long userId) {
+        return educationService.getLatestEducation(userId);
+    }
 }

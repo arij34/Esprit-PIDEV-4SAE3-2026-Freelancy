@@ -52,7 +52,7 @@ public class FreelancerSkill {
     }
 
 
-    public tn.freelancy.skillmanagement.entity.level getLevel() {
+    public level getLevel() {
         return level;
     }
 

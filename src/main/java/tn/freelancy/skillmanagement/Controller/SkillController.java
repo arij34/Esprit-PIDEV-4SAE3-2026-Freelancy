@@ -9,6 +9,7 @@ import tn.freelancy.skillmanagement.service.SkillMatcherService;
 import tn.freelancy.skillmanagement.service.SkillService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/skills")
@@ -21,8 +22,12 @@ public class SkillController {
     private SkillMatcherService skillMatcherService;
 
     @PostMapping
-    public Skill create(@RequestBody Skill skill) {
-        return skillService.createSkill(skill);
+    public ResponseEntity<?> create(@RequestBody Skill skill) {
+        try {
+            return ResponseEntity.ok(skillService.createSkill(skill));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping
@@ -31,12 +36,16 @@ public class SkillController {
     }
 
     @GetMapping("/{id}")
-    public Skill getById(@PathVariable Long id) {
-        return skillService.getSkillById(id);
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        Skill skill = skillService.getSkillById(id);
+        if (skill == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(skill);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Skill> update(@PathVariable Long id, @RequestBody Skill skill) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Skill skill) {
 
         Skill existing = skillService.getSkillById(id);
 
@@ -52,22 +61,34 @@ public class SkillController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        skillService.deleteSkill(id);
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            skillService.deleteSkill(id);
+            return ResponseEntity.ok(Map.of("message", "Skill deleted"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
+
+    // ✅ MATCH / DID YOU MEAN
     @GetMapping("/match")
-    public ResponseEntity<SkillMatchResult> matchSkill(@RequestParam String input) {
+    public ResponseEntity<?> matchSkill(@RequestParam String input) {
 
         if (input == null || input.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "Input is empty"));
         }
 
         SkillMatchResult result = skillMatcherService.findMatchOrSuggest(input.trim());
 
         if (result == null) {
-            return ResponseEntity.ok().build(); 
+            return ResponseEntity.ok(Map.of("type", "no_match"));
         }
 
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(Map.of(
+                "type", result.isSuggestion() ? "suggestion" : "match",
+                "skill", result.getSkill() != null ? result.getSkill().getName() : null,
+                "confidence", result.getConfidence(),
+                "exact", result.isExactMatch()
+        ));
     }
 }

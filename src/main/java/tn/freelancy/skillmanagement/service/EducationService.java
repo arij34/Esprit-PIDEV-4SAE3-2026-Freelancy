@@ -2,6 +2,7 @@ package tn.freelancy.skillmanagement.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tn.freelancy.skillmanagement.dto.EducationMatchingResponse;
 import tn.freelancy.skillmanagement.entity.Education;
 import tn.freelancy.skillmanagement.repository.EducationRepository;
 
@@ -46,5 +47,20 @@ public class EducationService {
     //              au lieu de User_Id (relation JPA vers entité User supprimée)
     public Education getLatestEducation(Long userId) {
         return educationRepository.findTopByUserIdOrderByYearDesc(userId);
+    }
+    public EducationMatchingResponse getLatestEducationForMatching(Long userId) {
+
+        Education education = educationRepository.findTopByUserIdOrderByYearDesc(userId);
+
+        if (education == null) {
+            return null;
+        }
+
+        EducationMatchingResponse dto = new EducationMatchingResponse();
+        dto.setUserId(userId); // 👈 ajouté
+        dto.setDegree(education.getDegree().name());
+        dto.setFieldOfStudy(education.getFieldOfStudy());
+
+        return dto;
     }
 }

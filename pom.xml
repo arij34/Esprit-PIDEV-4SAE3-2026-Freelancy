@@ -41,7 +41,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <dependencies>
+    <>
 
         <!-- Spring Web -->
         <dependency>
@@ -126,6 +126,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
+
+            <!-- Dépendance de base Spring Boot pour les tests -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <scope>test</scope>
+            </dependency>
+
 
         <!-- WebSocket STOMP -->
         <dependency>

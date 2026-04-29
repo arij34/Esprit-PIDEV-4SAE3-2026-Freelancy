@@ -26,8 +26,8 @@ public class SkillMatcherService {
     // ════════════════════════════════════════════════════════════
     // SEUILS
     // ════════════════════════════════════════════════════════════
-    private static final double EXACT_MATCH_THRESHOLD    = 0.95;
-    private static final double GOOD_MATCH_THRESHOLD     = 0.80;
+    private static final double EXACT_MATCH_THRESHOLD = 0.95;
+    private static final double GOOD_MATCH_THRESHOLD = 0.80;
     private static final double SUGGESTION_MIN_THRESHOLD = 0.45;
 
     // ════════════════════════════════════════════════════════════
@@ -36,25 +36,41 @@ public class SkillMatcherService {
     private static final Map<String, String> ALIASES = new HashMap<>();
 
     static {
-        putAlias("js", "javascript");       putAlias("javascript", "javascript");
-        putAlias("ts", "typescript");       putAlias("typescript", "typescript");
-        putAlias("python", "python");       putAlias("py", "python");
-        putAlias("java", "java");           putAlias("jdk", "java");
-        putAlias("spring", "springboot");   putAlias("springboot", "springboot");
+        putAlias("js", "javascript");
+        putAlias("javascript", "javascript");
+        putAlias("ts", "typescript");
+        putAlias("typescript", "typescript");
+        putAlias("python", "python");
+        putAlias("py", "python");
+        putAlias("java", "java");
+        putAlias("jdk", "java");
+        putAlias("spring", "springboot");
+        putAlias("springboot", "springboot");
         putAlias("spring boot", "springboot");
-        putAlias("node", "nodejs");         putAlias("nodejs", "nodejs");
-        putAlias("react", "react");         putAlias("reactjs", "react");
-        putAlias("vue", "vuejs");           putAlias("vuejs", "vuejs");
-        putAlias("angular", "angular");     putAlias("angularjs", "angular");
+        putAlias("node", "nodejs");
+        putAlias("nodejs", "nodejs");
+        putAlias("react", "react");
+        putAlias("reactjs", "react");
+        putAlias("vue", "vuejs");
+        putAlias("vuejs", "vuejs");
+        putAlias("angular", "angular");
+        putAlias("angularjs", "angular");
         putAlias("mysql", "mysql");
-        putAlias("postgres", "postgresql"); putAlias("postgresql", "postgresql");
-        putAlias("mongo", "mongodb");       putAlias("mongodb", "mongodb");
-        putAlias("k8s", "kubernetes");      putAlias("kubernetes", "kubernetes");
-        putAlias("docker", "docker");       putAlias("git", "git");
+        putAlias("postgres", "postgresql");
+        putAlias("postgresql", "postgresql");
+        putAlias("mongo", "mongodb");
+        putAlias("mongodb", "mongodb");
+        putAlias("k8s", "kubernetes");
+        putAlias("kubernetes", "kubernetes");
+        putAlias("docker", "docker");
+        putAlias("git", "git");
         putAlias("aws", "aws");
-        putAlias("c#", "csharp");           putAlias("csharp", "csharp");
-        putAlias("c++", "cplusplus");       putAlias("cpp", "cplusplus");
-        putAlias("php", "php");             putAlias("laravel", "laravel");
+        putAlias("c#", "csharp");
+        putAlias("csharp", "csharp");
+        putAlias("c++", "cplusplus");
+        putAlias("cpp", "cplusplus");
+        putAlias("php", "php");
+        putAlias("laravel", "laravel");
     }
 
     private static void putAlias(String key, String value) {
@@ -71,17 +87,29 @@ public class SkillMatcherService {
     public SkillMatchResult findMatchingSkill(String input) {
 
         String normalizedInput = similarityService.normalize(input);
-        SkillMatchResult best = computeBestMatch(normalizedInput);
 
-        if (best == null) return null;
+        String aliasKey = normalizedInput.replaceAll("[^a-z0-9]", "");
+        if (ALIASES.containsKey(aliasKey)) {
+            String aliasTarget = ALIASES.get(aliasKey);
+            Skill aliasSkill = skillRepository.findByNormalizedNameIgnoreCase(aliasTarget);
 
-        // ✅ Bon match → on associe directement le skill
-        if (best.getConfidence() >= GOOD_MATCH_THRESHOLD) {
-            return new SkillMatchResult(best.getSkill(), best.getConfidence(), false, false);
+            // ✅ AJOUTEZ ICI
+            System.out.println("=== ALIAS DEBUG ===");
+            System.out.println("INPUT: " + input);
+            System.out.println("ALIAS KEY: " + aliasKey);
+            System.out.println("ALIAS TARGET: " + aliasTarget);
+            System.out.println("SKILL FOUND: " + aliasSkill);
+            System.out.println("===================");
+
+            if (aliasSkill != null) {
+                return new SkillMatchResult(aliasSkill, 1.0, true, false);
+            }
         }
 
-        return null;
+        SkillMatchResult best = computeBestMatch(normalizedInput);
+        return best;
     }
+
 
     // ════════════════════════════════════════════════════════════
     // DID YOU MEAN — utilisée par le controller /match

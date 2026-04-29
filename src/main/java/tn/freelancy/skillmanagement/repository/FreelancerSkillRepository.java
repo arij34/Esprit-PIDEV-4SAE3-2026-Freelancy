@@ -37,4 +37,6 @@ public interface FreelancerSkillRepository extends JpaRepository<FreelancerSkill
     boolean existsByUserIdAndSkillIdS(Long userId, Long skillId);
 
     boolean existsByUserIdAndCustomSkillNameIgnoreCase(Long userId, String customSkillName);
+    // ✅ AJOUT : compter combien d'autres freelancers utilisent ce customSkillName (hors id donné)
+    long countByCustomSkillNameIgnoreCaseAndIdNot(String customSkillName, Long id);
 }

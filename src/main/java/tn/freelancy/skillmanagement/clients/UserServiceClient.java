@@ -18,4 +18,6 @@ public interface UserServiceClient {
 
     @GetMapping("/api/admin/users")
     List<Map<String, Object>> getAllUsers(@RequestHeader("Authorization") String bearerToken);
+    @GetMapping("/api/users/freelancers")
+    List<Map<String, Object>> getFreelancers(@RequestHeader("Authorization") String bearerToken);
 }
