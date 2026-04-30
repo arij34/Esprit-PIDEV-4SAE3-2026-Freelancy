@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import tn.esprit.blogservice.entities.BlogPost;
+import tn.esprit.blogservice.entities.BlogStatus;
 import tn.esprit.blogservice.repositories.BlogPostRepository;
 
 @Service
@@ -18,6 +19,15 @@ public class BlogPostServiceImpl implements IBlogPostService {
 
     @Override
     public BlogPost addPost(BlogPost post) {
+        if (post.getStatus() == null) {
+            post.setStatus(BlogStatus.APPROVED);
+        }
+        if (post.getLikes() == null) {
+            post.setLikes(0);
+        }
+        if (post.getDislikes() == null) {
+            post.setDislikes(0);
+        }
         return blogPostRepository.save(post);
     }
 
@@ -45,6 +55,15 @@ public class BlogPostServiceImpl implements IBlogPostService {
         existingPost.setTitle(post.getTitle());
         existingPost.setContent(post.getContent());
         existingPost.setAuthor(post.getAuthor());
+        if (post.getStatus() != null) {
+            existingPost.setStatus(post.getStatus());
+        }
+        if (post.getLikes() != null) {
+            existingPost.setLikes(post.getLikes());
+        }
+        if (post.getDislikes() != null) {
+            existingPost.setDislikes(post.getDislikes());
+        }
 
         return blogPostRepository.save(existingPost);
 

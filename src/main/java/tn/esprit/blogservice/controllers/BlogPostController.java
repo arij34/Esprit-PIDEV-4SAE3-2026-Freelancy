@@ -18,7 +18,7 @@ import tn.esprit.blogservice.services.IBlogPostService;
 
 @RestController
 @RequestMapping("/posts")
-@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = {"Content-Type", "Authorization"}, methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+@CrossOrigin(origins = {"http://localhost:4200", "http://localhost:4201"}, allowedHeaders = {"Content-Type", "Authorization"}, methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class BlogPostController {
 
     private final IBlogPostService blogPostService;

@@ -16,6 +16,7 @@ import tn.esprit.blogservice.services.IBlogService;
 
 @RestController
 @RequestMapping("/blogs")
+@org.springframework.web.bind.annotation.CrossOrigin(origins = {"http://localhost:4200", "http://localhost:4201"})
 public class BlogController {
 
     private final IBlogService blogService;

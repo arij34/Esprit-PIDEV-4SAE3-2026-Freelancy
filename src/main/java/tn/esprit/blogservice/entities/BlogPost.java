@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,6 +34,16 @@ public class BlogPost {
     @Column(nullable = false, length = 80)
     private String author;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private BlogStatus status;
+
+    @Column(nullable = false)
+    private Integer dislikes;
+
+    @Column(nullable = false)
+    private Integer likes;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -57,6 +69,18 @@ public class BlogPost {
         return createdAt;
     }
 
+    public Integer getDislikes() {
+        return dislikes;
+    }
+
+    public Integer getLikes() {
+        return likes;
+    }
+
+    public BlogStatus getStatus() {
+        return status;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
@@ -78,6 +102,18 @@ public class BlogPost {
         this.author = author;
     }
 
+    public void setStatus(BlogStatus status) {
+        this.status = status;
+    }
+
+    public void setDislikes(Integer dislikes) {
+        this.dislikes = dislikes;
+    }
+
+    public void setLikes(Integer likes) {
+        this.likes = likes;
+    }
+
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
@@ -88,6 +124,15 @@ public class BlogPost {
 
     @PrePersist
     public void onCreate() {
+        if (this.status == null) {
+            this.status = BlogStatus.APPROVED;
+        }
+        if (this.dislikes == null) {
+            this.dislikes = 0;
+        }
+        if (this.likes == null) {
+            this.likes = 0;
+        }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
