@@ -1,5 +1,5 @@
 <div class="blog-page">
-  <a class="back-button" routerLink="/" aria-label="Go to front page" title="Go to front page">
+  <a class="back-button" [routerLink]="getHomeRoute()" aria-label="Go back" title="Go back">
     <span class="back-icon">←</span>
   </a>
 
@@ -8,7 +8,7 @@
       <h1>Blog Management</h1>
     </div>
     <div class="hero-actions">
-      <a class="analytics-nav-button" routerLink="/blog-analytics">
+      <a class="analytics-nav-button" [routerLink]="getAnalyticsRoute()">
         <span>📊</span>
         <span>Blog Analytics</span>
       </a>
@@ -76,13 +76,85 @@
           <span>{{ submitting ? 'Publishing...' : 'Add Post' }}</span>
         </button>
       </form>
+
+      <section class="likes-board">
+        <div class="section-header likes-board-header">
+          <div>
+            <span class="section-kicker">❤️ Likes</span>
+            <h2>Likes Counter</h2>
+          </div>
+        </div>
+
+        <div *ngIf="likesRanking.length === 0" class="likes-empty">
+          No posts available yet.
+        </div>
+
+        <ul *ngIf="likesRanking.length > 0" class="likes-list">
+          <li *ngFor="let item of likesRanking" class="likes-item">
+            <span class="likes-title">{{ item.title }}</span>
+            <span class="likes-values">
+              <span class="likes-value">❤️ {{ item.likes }}</span>
+              <span class="dislikes-value">👎 {{ item.dislikes }}</span>
+            </span>
+          </li>
+        </ul>
+      </section>
     </article>
 
     <article class="panel-card posts-panel">
       <div class="section-header">
         <div>
-          <span class="section-kicker">📚 Feed</span>
-          <h2>Published posts</h2>
+          <span class="section-kicker">📚 </span>
+          <h2 class="section-title-inline">
+            <span>Published posts</span>
+            <span class="posts-count-badge">{{ posts.length }}</span>
+          </h2>
+        </div>
+
+        <div class="calendar-filter">
+          <button type="button" class="btn btn-secondary calendar-toggle" (click)="toggleCalendar()">
+            <span class="btn-icon">📅</span>
+            <span>{{ selectedDate ? selectedDate : 'Filter by date' }}</span>
+          </button>
+
+          <div *ngIf="isCalendarOpen" class="calendar-popover">
+            <label for="post-date-filter">Choose a day</label>
+            <input
+              id="post-date-filter"
+              type="date"
+              [ngModel]="selectedDate"
+              (ngModelChange)="onDateFilterChange($event)"
+              name="postDateFilter"
+            />
+            <button
+              *ngIf="selectedDate"
+              type="button"
+              class="btn btn-secondary calendar-clear"
+              (click)="clearDateFilter()"
+            >
+              Clear date
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && posts.length > 0" class="blog-form compact-form">
+        <div class="form-group">
+          <label for="searchTitle">Search by title</label>
+          <input
+            id="searchTitle"
+            type="text"
+            [(ngModel)]="searchTitle"
+            name="searchTitle"
+            placeholder="Type a post title..."
+            (input)="onSearchInput()"
+          />
+        </div>
+
+        <div class="post-actions">
+          <button type="button" class="btn btn-secondary" (click)="toggleSortOrder()">
+            {{ sortOrder === 'latest' ? 'Sort: Latest first' : 'Sort: Oldest first' }}
+          </button>
         </div>
       </div>
 
@@ -97,14 +169,23 @@
         <p>Use the form to add your first blog post.</p>
       </div>
 
-      <div *ngIf="!loading && posts.length > 0" class="posts-grid">
-        <div *ngFor="let post of posts" class="post-card">
+      <div *ngIf="!loading && posts.length > 0 && filteredPostsCount === 0" class="empty-state">
+        <div class="empty-icon">🔎</div>
+        <h3>No matching posts</h3>
+        <p>No posts match "{{ searchTitle }}".</p>
+      </div>
+
+      <div *ngIf="!loading && filteredPostsCount > 0" class="posts-grid">
+        <div *ngFor="let post of visiblePosts" class="post-card">
           <div *ngIf="editPostId !== post.idPost" class="post-content">
             <div class="post-head">
-              <h3 class="post-title">{{ post.title }}</h3>
-              <div class="post-date-badge" *ngIf="post.createdAt">
+              <div class="post-title-wrap">
+                <h3 class="post-title">{{ post.title }}</h3>
+                <span *ngIf="isPinned(post.idPost)" class="pinned-badge">📌 Pinned</span>
+              </div>
+              <div class="post-date-badge" *ngIf="post.updatedAt || post.createdAt">
                 <span class="badge-icon">📅</span>
-                <span>{{ formatDate(post.createdAt) }}</span>
+                <span>{{ formatDate(post.updatedAt || post.createdAt) }}</span>
               </div>
             </div>
 
@@ -116,15 +197,37 @@
                 <span class="author-name">{{ post.author }}</span>
               </div>
 
-              <div class="post-actions">
-                <button class="btn btn-secondary" (click)="startEdit(post)" [disabled]="submitting">
-                  <span class="btn-icon">✎</span>
-                  <span>Edit</span>
-                </button>
-                <button class="btn btn-danger" (click)="deletePost(post.idPost)" [disabled]="submitting">
-                  <span class="btn-icon">🗑️</span>
-                  <span>Delete</span>
-                </button>
+              <div class="card-actions">
+                <div class="reaction-row">
+                  <div class="reaction-chip">
+                    <span class="reaction-label">❤️ Like</span>
+                    <button type="button" class="mini-btn" (click)="decrementLikes(post)" [disabled]="submitting">-</button>
+                    <span class="reaction-count">{{ getLikes(post.idPost) }}</span>
+                    <button type="button" class="mini-btn" (click)="incrementLikes(post)" [disabled]="submitting">+</button>
+                  </div>
+
+                  <div class="reaction-chip">
+                    <span class="reaction-label">👎 Dislike</span>
+                    <button type="button" class="mini-btn" (click)="decrementDislikes(post)" [disabled]="submitting">-</button>
+                    <span class="reaction-count">{{ getDislikes(post.idPost) }}</span>
+                    <button type="button" class="mini-btn" (click)="incrementDislikes(post)" [disabled]="submitting">+</button>
+                  </div>
+                </div>
+
+                <div class="post-actions manage-actions">
+                  <button class="btn btn-secondary" type="button" (click)="togglePinPost(post)" [disabled]="submitting">
+                    <span class="btn-icon">📌</span>
+                    <span>{{ isPinned(post.idPost) ? 'Unpin' : 'Pin' }}</span>
+                  </button>
+                  <button class="btn btn-secondary" type="button" (click)="startEdit(post)" [disabled]="submitting">
+                    <span class="btn-icon">✎</span>
+                    <span>Edit</span>
+                  </button>
+                  <button class="btn btn-danger" type="button" (click)="deletePost(post.idPost)" [disabled]="submitting">
+                    <span class="btn-icon">🗑️</span>
+                    <span>Delete</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -181,6 +284,22 @@
               </div>
             </form>
           </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && filteredPostsCount > 0" class="post-footer page-footer">
+        <div class="post-author">
+          <span class="author-label">Page</span>
+          <span class="author-name">{{ currentPage }} / {{ totalPages }}</span>
+        </div>
+
+        <div class="post-actions">
+          <button type="button" class="btn btn-secondary" (click)="goToPreviousPage()" [disabled]="currentPage === 1">
+            Previous
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="goToNextPage()" [disabled]="currentPage === totalPages">
+            Next
+          </button>
         </div>
       </div>
     </article>

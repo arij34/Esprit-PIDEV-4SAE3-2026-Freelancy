@@ -1,4 +1,5 @@
 import { KeycloakService } from 'keycloak-angular';
+import { environment } from '../../../environments/environment';
 
 /**
  * Initializes Keycloak before Angular bootstraps.
@@ -10,11 +11,9 @@ export function initializeKeycloak(keycloak: KeycloakService) {
   return () => {
     const initPromise = keycloak.init({
       config: {
-        // Use HTTPS to make social login (Google) work correctly with cookies.
-        // Keycloak is started with HTTPS on https://localhost:8443
-        url: 'https://localhost:8443',
-        realm: 'smart-platform',
-        clientId: 'angular-app'
+        url: environment.keycloakUrl,
+        realm: environment.keycloakRealm,
+        clientId: environment.keycloakClientId
       },
       initOptions: {
         // Do NOT force login on first load (so /front can be visited anonymously).
@@ -30,7 +29,10 @@ export function initializeKeycloak(keycloak: KeycloakService) {
         // static assets
         '/assets',
         // backend public endpoints (no token required)
-        'http://localhost:8090/api/public'
+        'http://localhost:8090/api/public',
+        // Exclude blog and analytics services from Keycloak bearer interceptor
+        'http://localhost:8050',
+        'http://localhost:8053'
       ]
     });
 

@@ -18,6 +18,7 @@ export class HeaderComponent implements OnInit {
   isLoggedIn = false;
   username?: string;
   isFreelancer = false;
+  canAccessBlogFeatures = false;
   pendingInvitationsCount = 0;
 
   @HostListener('window:scroll', [])
@@ -44,6 +45,11 @@ export class HeaderComponent implements OnInit {
     private readonly http: HttpClient // ✅ ajouter
   ) {}
 
+  get isBlogRoute(): boolean {
+    const url = this.router.url || '';
+    return url.startsWith('/front/blog') || url.startsWith('/front/blog-analytics') || url.startsWith('/blog');
+  }
+
   ngOnInit(): void {
     this.onWindowScroll();
     this.refreshAuthState();
@@ -54,6 +60,7 @@ export class HeaderComponent implements OnInit {
     this.username     = this.isLoggedIn ? this.auth.getDisplayName() : undefined;
     this.isClient     = this.isLoggedIn && this.auth.hasRole(KC_ROLES.CLIENT);
     this.isFreelancer = this.isLoggedIn && this.auth.hasRole(KC_ROLES.FREELANCER);
+    this.canAccessBlogFeatures = this.isClient || this.isFreelancer;
 
     if (this.isFreelancer) {
       this.loadPendingCount();

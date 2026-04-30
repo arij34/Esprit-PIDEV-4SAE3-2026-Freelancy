@@ -16,7 +16,8 @@ export interface SignupPayload {
   providedIn: 'root'
 })
 export class SignupService {
-  private readonly baseUrl = 'http://localhost:8090/api/public/signup';
+  // Use direct user backend service (port 8083), not API gateway
+  private readonly baseUrl = 'http://localhost:8083/api/public/signup';
 
   constructor(private readonly http: HttpClient) {}
 

@@ -108,8 +108,19 @@ const routes: Routes = [
           import('./invitations/invitations.module')
         .then(m => m.InvitationsModule)
       },
-       {
-    path: 'projects/:id/invitations',component: ClientProjectInvitationsComponent},
+      {
+        path: 'blog',
+        loadChildren: () =>
+          import('../blog/blog.module').then(m => m.BlogModule)
+      },
+      {
+        path: 'blog-analytics',
+        loadChildren: () =>
+          import('../blog-analytics/blog-analytics.module').then(m => m.BlogAnalyticsModule)
+      },
+      {
+        path: 'projects/:id/invitations',component: ClientProjectInvitationsComponent
+      },
     ]
   }
 ];

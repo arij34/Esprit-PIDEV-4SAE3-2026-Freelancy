@@ -12,7 +12,7 @@ export interface BlogAnalyticsMetric {
   providedIn: 'root'
 })
 export class BlogAnalyticsService {
-  private readonly apiUrl = 'http://localhost:8091/analytics';
+  private readonly apiUrl = 'http://localhost:8053/analytics';
 
   constructor(private http: HttpClient) {}
 
@@ -24,11 +24,10 @@ export class BlogAnalyticsService {
     return this.http.get<BlogAnalyticsMetric>(`${this.apiUrl}/stat/${encodeURIComponent(metric)}`);
   }
 
-  upsertMetric(metric: string, value: number): Observable<string> {
-    return this.http.post(
+  upsertMetric(metric: string, value: number): Observable<BlogAnalyticsMetric> {
+    return this.http.post<BlogAnalyticsMetric>(
       `${this.apiUrl}/upsert?metric=${encodeURIComponent(metric)}&value=${value}`,
-      null,
-      { responseType: 'text' }
+      null
     );
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { KeycloakAuthGuard, KeycloakService } from 'keycloak-angular';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -8,7 +9,8 @@ import { KeycloakAuthGuard, KeycloakService } from 'keycloak-angular';
 export class RoleGuard extends KeycloakAuthGuard implements CanActivate {
   constructor(
     protected override readonly router: Router,
-    protected override readonly keycloakAngular: KeycloakService
+    protected override readonly keycloakAngular: KeycloakService,
+    private readonly authService: AuthService
   ) {
     super(router, keycloakAngular);
   }
@@ -37,7 +39,7 @@ export class RoleGuard extends KeycloakAuthGuard implements CanActivate {
 
     const hasRole = requiredRoles.some((role) => this.roles.includes(role));
     if (!hasRole) {
-      return this.router.parseUrl('/not-authorized');
+      return this.router.parseUrl(this.authService.getDefaultRouteByRole());
     }
 
     return true;

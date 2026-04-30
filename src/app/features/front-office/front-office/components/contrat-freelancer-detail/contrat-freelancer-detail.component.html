@@ -55,7 +55,7 @@
           <div style="font-weight:600;color:#1e293b;margin-bottom:6px;">{{ contract.title }}</div>
           <div style="font-size:13px;color:#64748b;">
             💰 {{ formatAmount(contract.totalAmount, contract.currency) }} &nbsp;·&nbsp;
-            🎯 {{ contract.milestones?.length || 0 }} milestones
+            🎯 {{ milestonesCount }} milestones
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
@@ -371,7 +371,7 @@
             </button>
             <button class="cd-ptab" [class.active]="activeTab==='milestones'" (click)="setTab('milestones')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              Milestones <span class="cd-ptab-count">{{ contract.milestones.length || 0 }}</span>
+              Milestones <span class="cd-ptab-count">{{ milestonesCount }}</span>
             </button>
             <button class="cd-ptab" [class.active]="activeTab==='clauses'" (click)="setTab('clauses')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -423,7 +423,7 @@
               </div>
               <div class="cd-amount-right">
                 <div class="cd-amount-check"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Amount validated</div>
-                <div class="cd-amount-sub">Payment in {{ contract.milestones.length || 0 }} milestones</div>
+                <div class="cd-amount-sub">Payment in {{ milestonesCount }} milestones</div>
               </div>
             </div>
 
@@ -566,7 +566,7 @@
         <div class="cd-rp-section">
           <div class="cd-rp-title">Progress</div>
           <div class="cd-metric-row">
-            <div class="cd-metric-top"><span class="cd-metric-lbl">Milestones</span><span class="cd-metric-val">{{ milestonesCompletedCount }} / {{ contract.milestones.length || 0 }}</span></div>
+            <div class="cd-metric-top"><span class="cd-metric-lbl">Milestones</span><span class="cd-metric-val">{{ milestonesCompletedCount }} / {{ milestonesCount }}</span></div>
             <div class="cd-metric-track"><div class="cd-metric-fill cd-mf-blue" [style.width.%]="milestonesProgress"></div></div>
           </div>
           <div class="cd-metric-row">

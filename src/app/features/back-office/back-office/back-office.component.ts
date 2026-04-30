@@ -20,6 +20,8 @@ export class BackOfficeComponent implements OnInit {
     'contracts',
     'users',
     'stats',
+    'blog',
+    'blog-analytics',
     'skills',
     'pending-skills',
     'matching-admin'          // <-- important pour afficher la vue Matching

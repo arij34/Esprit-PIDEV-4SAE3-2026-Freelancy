@@ -1,4 +1,4 @@
-<header class="modern-header" [class.scrolled]="isScrolled">
+<header *ngIf="!isBlogRoute" class="modern-header" [class.scrolled]="isScrolled">
   <div class="header-container">
     <nav class="nav-wrapper">
       <!-- Logo -->
@@ -60,8 +60,8 @@
         <a class="nav-link" href="#about"><span>About</span></a>
         <a class="nav-link" href="#pricing"><span>Pricing</span></a>
         <a class="nav-link" href="#contact"><span>Contact</span></a>
-        <a class="nav-link" routerLink="/blog" routerLinkActive="active"><span>Blog</span></a>
-        <a class="nav-link" routerLink="/blog-analytics" routerLinkActive="active"><span>Blog Analytics</span></a>
+        <a class="nav-link" routerLink="/front/blog" routerLinkActive="active" *ngIf="canAccessBlogFeatures"><span>Blog</span></a>
+        <a class="nav-link" routerLink="/front/blog-analytics" routerLinkActive="active" *ngIf="canAccessBlogFeatures"><span>Blog Analytics</span></a>
       </div>
 
       <div class="header-actions">
@@ -96,8 +96,8 @@
               <button type="button" class="dropdown-item" (click)="goToProfile()">Profile</button>
               <button class="dropdown-item" routerLink="/contract">Contract</button>
               <button class="dropdown-item" routerLink="/challenge">Challenge</button>
-              <button class="dropdown-item" routerLink="/blog">Blog</button>
-                    <button class="dropdown-item" routerLink="/blog-analytics">Blog Analytics</button>
+              <button class="dropdown-item" routerLink="/front/blog" *ngIf="canAccessBlogFeatures">Blog</button>
+              <button class="dropdown-item" routerLink="/front/blog-analytics" *ngIf="canAccessBlogFeatures">Blog Analytics</button>
               <!-- ✅ AJOUTÉ : raccourci invitations dans le dropdown -->
               <button class="dropdown-item dropdown-item-invitations"
                       routerLink="/front/invitations"
@@ -161,8 +161,8 @@
       <a class="mobile-nav-link" href="#about" (click)="closeMobileMenu()">About</a>
       <a class="mobile-nav-link" href="#pricing" (click)="closeMobileMenu()">Pricing</a>
       <a class="mobile-nav-link" href="#contact" (click)="closeMobileMenu()">Contact</a>
-      <a class="mobile-nav-link" routerLink="/blog" routerLinkActive="active" (click)="closeMobileMenu()">Blog</a>
-      <a class="mobile-nav-link" routerLink="/blog-analytics" routerLinkActive="active" (click)="closeMobileMenu()">Blog Analytics</a>
+      <a class="mobile-nav-link" routerLink="/front/blog" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="canAccessBlogFeatures">Blog</a>
+      <a class="mobile-nav-link" routerLink="/front/blog-analytics" routerLinkActive="active" (click)="closeMobileMenu()" *ngIf="canAccessBlogFeatures">Blog Analytics</a>
       <button class="mobile-cta-button" type="button" (click)="closeMobileMenu()">Get Started</button>
     </div>
   </div>

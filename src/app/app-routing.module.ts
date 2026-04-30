@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { FrontAccessGuard } from './core/auth/front-access.guard';
 import { RoleGuard } from './core/auth/role.guard';
 import { KC_ROLES } from './core/auth/roles';
 import { NotAuthorizedComponent } from './core/pages/not-authorized/not-authorized.component';
@@ -95,6 +96,8 @@ const routes: Routes = [
 },
   {
     path: 'front',
+    canActivate: [FrontAccessGuard],
+    canActivateChild: [FrontAccessGuard],
     loadChildren: () =>
       import('./features/front-office/front-office.module')
       .then(m => m.FrontOfficeModule)
@@ -118,8 +121,8 @@ const routes: Routes = [
     loadChildren: () => import('./features/front-office/front-office.module').then(m => m.FrontOfficeModule)
   },
 
-  { path: 'blog', loadChildren: () => import('./features/blog/blog.module').then(m => m.BlogModule) },
-  { path: 'blog-analytics', loadChildren: () => import('./features/blog-analytics/blog-analytics.module').then(m => m.BlogAnalyticsModule) },
+  { path: 'blog', redirectTo: 'front/blog', pathMatch: 'full' },
+  { path: 'blog-analytics', redirectTo: 'front/blog-analytics', pathMatch: 'full' },
   { 
     path: '**', 
     redirectTo: 'front' 

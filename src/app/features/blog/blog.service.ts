@@ -7,6 +7,7 @@ export interface BlogPost {
   title: string;
   content: string;
   author: string;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }
@@ -19,19 +20,28 @@ export class BlogService {
 
   constructor(private http: HttpClient) {}
 
+  private toPayload(post: BlogPost): Pick<BlogPost, 'title' | 'content' | 'author' | 'status'> {
+    return {
+      title: post.title.trim(),
+      content: post.content.trim(),
+      author: post.author.trim(),
+      ...(post.status ? { status: post.status } : {})
+    };
+  }
+
   getAllPosts(): Observable<BlogPost[]> {
     return this.http.get<BlogPost[]>(`${this.apiUrl}/all`);
   }
 
   addPost(post: BlogPost): Observable<BlogPost> {
-    return this.http.post<BlogPost>(`${this.apiUrl}/add`, post);
+    return this.http.post<BlogPost>(`${this.apiUrl}/add`, this.toPayload(post));
   }
 
   updatePost(id: number, post: BlogPost): Observable<BlogPost> {
-    return this.http.put<BlogPost>(`${this.apiUrl}/update/${id}`, post);
+    return this.http.put<BlogPost>(`${this.apiUrl}/update/${id}`, this.toPayload(post));
   }
 
   deletePost(id: number): Observable<string> {
-    return this.http.delete<string>(`${this.apiUrl}/delete/${id}`);
+    return this.http.delete(`${this.apiUrl}/delete/${id}`, { responseType: 'text' });
   }
 }

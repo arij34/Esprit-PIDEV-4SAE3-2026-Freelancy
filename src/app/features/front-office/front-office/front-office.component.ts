@@ -8,23 +8,28 @@ import { filter } from 'rxjs/operators';
   styleUrl: './front-office.component.css'
 })
 export class FrontOfficeComponent implements OnInit {
-
   isChildRoute = false;
+  showChildHeader = true;
 
   constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
-    // Vérifie à chaque changement de route
     this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      const url = event.urlAfterRedirects;
-      this.isChildRoute = url !== '/front' && url !== '/front/';
+      filter((event) => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.updateRouteState(event.urlAfterRedirects);
     });
 
-    // Vérifie aussi au chargement initial
-    const url = this.router.url;
+    this.updateRouteState(this.router.url);
+  }
+
+  private updateRouteState(url: string): void {
     this.isChildRoute = url !== '/front' && url !== '/front/';
+    this.showChildHeader = !this.isBlogRoute(url);
+  }
+
+  private isBlogRoute(url: string): boolean {
+    return url.startsWith('/front/blog') || url.startsWith('/front/blog-analytics');
   }
 
   private rolePrefixFromUrl(): 'client' | 'freelancer' {

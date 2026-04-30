@@ -1,6 +1,6 @@
 <!-- Route enfant (dashboard-skill, education, etc.) -->
 <ng-container *ngIf="isChildRoute">
-  <app-header></app-header>
+  <app-header *ngIf="showChildHeader"></app-header>
   <router-outlet></router-outlet>
 </ng-container>
 

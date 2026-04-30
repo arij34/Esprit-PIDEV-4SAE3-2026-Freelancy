@@ -700,6 +700,10 @@ export class ContratFreelancerDetailComponent implements OnInit, OnDestroy {
     return this.contract?.milestones?.reduce((s, m) => s + (m.amount || 0), 0) || 0;
   }
 
+  get milestonesCount(): number {
+    return this.contract?.milestones?.length || 0;
+  }
+
   get getSortedMilestones(): ContractMilestone[] {
     if (!this.contract?.milestones) return [];
     return [...this.contract.milestones].sort((a, b) =>

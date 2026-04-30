@@ -6,6 +6,11 @@ export const environment = {
   apiBaseUrl: 'http://localhost:8150',
   userApiBaseUrl: 'http://localhost:8090',
 
+  // Keycloak (local dev)
+  keycloakUrl: 'http://localhost:8081',
+  keycloakRealm: 'smart-platform',
+  keycloakClientId: 'angular-app',
+
   // Challenges
   challengeTasksPath: '/tasks/challenge/{id}',
   addTaskPath: '/tasks/{id}',

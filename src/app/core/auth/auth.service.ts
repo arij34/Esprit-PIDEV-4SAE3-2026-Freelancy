@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { KeycloakService } from 'keycloak-angular';
 import { KcRole } from './roles';
 import { KC_ROLES } from './roles';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -9,12 +10,15 @@ import { KC_ROLES } from './roles';
 export class AuthService {
   /**
    * Default route after login depending on the user's realm role.
+   * Priority: ADMIN > CLIENT/FREELANCER > default to /front
    */
   getDefaultRouteByRole(): string {
     const roles = this.getUserRoles();
-  if (roles.includes(KC_ROLES.ADMIN)) return '/admin';
-  if (roles.includes(KC_ROLES.CLIENT)) return '/front';
-  if (roles.includes(KC_ROLES.FREELANCER)) return '/front';
+    // ADMIN users go to admin dashboard
+    if (roles.includes(KC_ROLES.ADMIN)) return '/admin/dashboard';
+    // CLIENT and FREELANCER go to front office
+    if (roles.includes(KC_ROLES.CLIENT)) return '/front';
+    if (roles.includes(KC_ROLES.FREELANCER)) return '/front';
     return '/front';
   }
   constructor(private readonly keycloak: KeycloakService) {}
@@ -109,9 +113,9 @@ export class AuthService {
    */
   resetPassword(redirectUri: string = window.location.origin + '/front'): void {
     const kc: any = this.keycloak.getKeycloakInstance();
-    const authServerUrl: string = kc.authServerUrl || 'http://localhost:8081';
-    const realm: string = kc.realm || 'smart-platform';
-    const clientId: string = kc.clientId || 'angular-app';
+    const authServerUrl: string = kc.authServerUrl || environment.keycloakUrl;
+    const realm: string = kc.realm || environment.keycloakRealm;
+    const clientId: string = kc.clientId || environment.keycloakClientId;
 
     const url =
       `${authServerUrl}/realms/${encodeURIComponent(realm)}` +
