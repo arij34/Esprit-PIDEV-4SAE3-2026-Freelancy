@@ -16,6 +16,7 @@ import tn.esprit.challengeservice.repositories.participationRepository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -289,5 +290,171 @@ class ParticipationServiceImplTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> participationService.saveSonarPoints("p-001", "sr-001", 150));
+    }
+
+    @Test
+    void checkInvitationStatus_whenAccepted_shouldReturnTrue() {
+        when(participationRepository.findById("p-001")).thenReturn(Optional.of(participation));
+        when(gitHubService.isCollaboratorAccepted("Docker-Challenge-ameni-dev", "ameni-dev"))
+                .thenReturn(true);
+
+        boolean accepted = participationService.checkInvitationStatus("p-001");
+
+        assertTrue(accepted);
+    }
+
+    @Test
+    void checkInvitationStatus_whenNotFound_shouldThrow() {
+        when(participationRepository.findById("bad-id")).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> participationService.checkInvitationStatus("bad-id"));
+    }
+
+    @Test
+    void submitChallenge_whenSonarSetupFails_shouldThrow() {
+        when(participationRepository.findById("p-001")).thenReturn(Optional.of(participation));
+        doThrow(new RuntimeException("setup failed"))
+                .when(gitHubService).ensureSonarSetupOrThrow("Docker-Challenge-ameni-dev");
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> participationService.submitChallenge("p-001", "feature"));
+
+        assertTrue(ex.getMessage().contains("Submission blocked"));
+    }
+
+    @Test
+    void fetchSonarResults_whenExistingResult_shouldUpdateAndSave() {
+        SonarCloudResult existing = new SonarCloudResult();
+        existing.setId("sr-1");
+
+        when(participationRepository.findById("p-001")).thenReturn(Optional.of(participation));
+        when(gitHubService.getLatestPullRequestNumber("Docker-Challenge-ameni-dev")).thenReturn("12");
+        when(gitHubService.fetchSonarCloudMetrics("Docker-Challenge-ameni-dev", "12"))
+                .thenReturn(Map.of(
+                        "alert_status", "OK",
+                        "bugs", "1",
+                        "code_smells", "2",
+                        "vulnerabilities", "3",
+                        "security_hotspots", "4",
+                        "coverage", "80.5",
+                        "duplicated_lines_density", "1.0",
+                        "ncloc", "100"
+                ));
+        when(sonarCloudResultRepository.findByParticipationId("p-001"))
+                .thenReturn(Optional.of(existing));
+        when(sonarCloudResultRepository.save(existing)).thenReturn(existing);
+
+        SonarCloudResult result = participationService.fetchSonarResults("p-001");
+
+        assertEquals("OK", result.getQualityGateStatus());
+        assertEquals("12", result.getPullRequestKey());
+        verify(sonarCloudResultRepository).save(existing);
+    }
+
+    @Test
+    void fetchSonarResults_whenNotFound_shouldThrow() {
+        when(participationRepository.findById("bad-id")).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> participationService.fetchSonarResults("bad-id"));
+    }
+
+    @Test
+    void getSonarResultsIfPresent_shouldReturnOptional() {
+        SonarCloudResult sonarResult = new SonarCloudResult();
+        when(sonarCloudResultRepository.findByParticipationId("p-001"))
+                .thenReturn(Optional.of(sonarResult));
+
+        Optional<SonarCloudResult> result = participationService.getSonarResultsIfPresent("p-001");
+
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void getMyParticipations_shouldReturnCurrentUserParticipations() {
+        when(userServiceClient.getCurrentUser("Bearer token")).thenReturn(currentUser);
+        when(participationRepository.findByUserId(42L)).thenReturn(List.of(participation));
+
+        List<ChallengeParticipation> result = participationService.getMyParticipations("Bearer token");
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getMyParticipationForChallenge_whenExists_shouldReturnParticipation() {
+        when(userServiceClient.getCurrentUser("Bearer token")).thenReturn(currentUser);
+        when(participationRepository.findByChallengeIdChallengeAndUserId("ch-001", 42L))
+                .thenReturn(Optional.of(participation));
+
+        ChallengeParticipation result = participationService.getMyParticipationForChallenge("ch-001", "Bearer token");
+
+        assertEquals("p-001", result.getId());
+    }
+
+    @Test
+    void getMyParticipationForChallenge_whenMissing_shouldThrow() {
+        when(userServiceClient.getCurrentUser("Bearer token")).thenReturn(currentUser);
+        when(participationRepository.findByChallengeIdChallengeAndUserId("ch-001", 42L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> participationService.getMyParticipationForChallenge("ch-001", "Bearer token"));
+    }
+
+    @Test
+    void updateSonarResults_whenFound_shouldPersistUpdatedFields() {
+        SonarCloudResult existing = new SonarCloudResult();
+        SonarCloudResult incoming = new SonarCloudResult();
+        incoming.setQualityGateStatus("OK");
+        incoming.setBugs(1);
+        incoming.setCodeSmells(2);
+        incoming.setVulnerabilities(3);
+        incoming.setSecurityHotspots(4);
+        incoming.setCoverage(85.0);
+        incoming.setDuplication(1.2);
+        incoming.setLinesOfCode(200);
+
+        when(sonarCloudResultRepository.findByParticipationId("p-001"))
+                .thenReturn(Optional.of(existing));
+        when(sonarCloudResultRepository.save(existing)).thenReturn(existing);
+
+        SonarCloudResult result = participationService.updateSonarResults("p-001", incoming);
+
+        assertEquals("OK", result.getQualityGateStatus());
+        assertEquals(1, result.getBugs());
+        verify(sonarCloudResultRepository).save(existing);
+    }
+
+    @Test
+    void updateSonarResults_whenMissing_shouldThrow() {
+        SonarCloudResult incoming = new SonarCloudResult();
+        when(sonarCloudResultRepository.findByParticipationId("p-404"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> participationService.updateSonarResults("p-404", incoming));
+    }
+
+    @Test
+    void saveSonarPoints_whenResultParticipationMismatch_shouldThrow() {
+        ChallengeParticipation otherParticipation = ChallengeParticipation.builder()
+                .id("p-other")
+                .build();
+        SonarCloudResult sonarResult = new SonarCloudResult();
+        sonarResult.setParticipation(otherParticipation);
+
+        when(sonarCloudResultRepository.findById("sr-001")).thenReturn(Optional.of(sonarResult));
+
+        assertThrows(SonarResultsNotFoundException.class,
+                () -> participationService.saveSonarPoints("p-001", "sr-001", 10));
+    }
+
+    @Test
+    void saveSonarPoints_whenResultMissing_shouldThrow() {
+        when(sonarCloudResultRepository.findById("missing")).thenReturn(Optional.empty());
+
+        assertThrows(SonarResultsNotFoundException.class,
+                () -> participationService.saveSonarPoints("p-001", "missing", 10));
     }
 }

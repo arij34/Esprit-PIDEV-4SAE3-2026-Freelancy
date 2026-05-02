@@ -1,4 +1,13 @@
-D:\Vagrant\ubunto\pidev\challenge-service\challenge-service\src\test\java\tn\esprit\challengeservice\ChallengeServiceApplicationTests.java
-D:\Vagrant\ubunto\pidev\challenge-service\challenge-service\src\test\java\tn\esprit\challengeservice\services\ChallengeServiceImplTest.java
-D:\Vagrant\ubunto\pidev\challenge-service\challenge-service\src\test\java\tn\esprit\challengeservice\services\ParticipationServiceImplTest.java
-D:\Vagrant\ubunto\pidev\challenge-service\challenge-service\src\test\java\tn\esprit\challengeservice\services\TaskServiceImplTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\ChallengeServiceApplicationTests.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\config\GlobalExceptionHandlerTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\config\KeycloakRealmRoleConverterTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\config\SecurityConfigTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\controllers\ChallengeControllerTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\controllers\ParticipationControllerTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\controllers\TaskControllerTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\controllers\UserTestControllerTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\services\ChallengeServiceImplTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\services\GitHubServiceTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\services\ParticipationServiceImplTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\services\PipelineStatusSchedulerTest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\test\java\tn\esprit\challengeservice\services\TaskServiceImplTest.java

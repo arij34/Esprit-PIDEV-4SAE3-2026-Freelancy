@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChallengeController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">challenge-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.challengeservice.controllers</a> &gt; <span class="el_source">ChallengeController.java</span></div><h1>ChallengeController.java</h1><pre class="source lang-java linenums">package tn.esprit.challengeservice.controllers;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import tn.esprit.challengeservice.entities.Challenge;
+import tn.esprit.challengeservice.services.ichallengeService;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/challenges&quot;)
+@CrossOrigin(origins = &quot;http://localhost:4200&quot;)
+@RequiredArgsConstructor
+public class ChallengeController {
+
+    private final ichallengeService challengeService;
+
+    @PostMapping
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public Challenge addChallenge(@RequestBody Challenge challenge) {
+<span class="fc" id="L23">        return challengeService.addChallenge(challenge);</span>
+    }
+
+    @GetMapping
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
+    public List&lt;Challenge&gt; getAllChallenges() {
+<span class="fc" id="L29">        return challengeService.getAllChallenges();</span>
+    }
+
+    @GetMapping(&quot;/count/active&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
+    public Map&lt;String, Long&gt; getActiveChallengesCount() {
+<span class="fc" id="L35">        return Map.of(&quot;count&quot;, challengeService.countActiveChallenges());</span>
+    }
+
+    @GetMapping(&quot;/count/completed&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
+    public Map&lt;String, Long&gt; getCompletedChallengesCount() {
+<span class="fc" id="L41">        return Map.of(&quot;count&quot;, challengeService.countCompletedChallenges());</span>
+    }
+
+    @GetMapping(&quot;/stats/technology-counts&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
+    public Map&lt;String, Long&gt; getTechnologyCounts() {
+<span class="fc" id="L47">        return challengeService.getTechnologyCounts();</span>
+    }
+
+    @GetMapping(&quot;/stats/category-counts&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
+    public Map&lt;String, Long&gt; getCategoryCounts() {
+<span class="fc" id="L53">        return challengeService.getCategoryCounts();</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
+    public Challenge getChallengeById(@PathVariable String id) {
+<span class="fc" id="L59">        return challengeService.getChallengeById(id);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public Challenge updateChallenge(@PathVariable String id,
+                                     @RequestBody Challenge challenge) {
+<span class="fc" id="L66">        return challengeService.updateChallenge(id, challenge);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public void deleteChallenge(@PathVariable String id) {
+<span class="fc" id="L72">        challengeService.deleteChallenge(id);</span>
+<span class="fc" id="L73">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

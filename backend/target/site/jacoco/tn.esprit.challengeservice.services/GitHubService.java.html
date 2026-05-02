@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GitHubService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">challenge-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.challengeservice.services</a> &gt; <span class="el_source">GitHubService.java</span></div><h1>GitHubService.java</h1><pre class="source lang-java linenums">package tn.esprit.challengeservice.services;
+
+import com.goterl.lazysodium.SodiumJava;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+<span class="fc" id="L15">@Slf4j</span>
+@Service
+<span class="fc" id="L17">public class GitHubService {</span>
+
+    private static final String TEMPLATE_URL =
+            &quot;https://api.github.com/repos/challenge-org-Freelancy/challenge-Test/generate&quot;;
+    private static final String ORG_OWNER = &quot;challenge-org-Freelancy&quot;;
+    private static final String SONAR_ORG = &quot;challenge-org-freelancy&quot;;
+    private static final int SEAL_BYTES = 48;
+
+    @Value(&quot;${github.token}&quot;)
+    private String githubToken;
+
+    @Value(&quot;${sonar.token}&quot;)
+    private String sonarToken;
+
+<span class="fc" id="L31">    private final RestTemplate restTemplate = new RestTemplate();</span>
+
+    public String createRepository(String repoName) {
+<span class="nc" id="L34">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L35">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="nc" id="L36">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+<span class="nc" id="L37">        headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="nc" id="L39">        Map&lt;String, Object&gt; body = Map.of(</span>
+                &quot;owner&quot;, ORG_OWNER,
+                &quot;name&quot;, repoName,
+<span class="nc" id="L42">                &quot;private&quot;, true</span>
+        );
+
+<span class="nc" id="L45">        HttpEntity&lt;Map&lt;String, Object&gt;&gt; request = new HttpEntity&lt;&gt;(body, headers);</span>
+
+<span class="nc" id="L47">        ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+                TEMPLATE_URL,
+                HttpMethod.POST,
+                request,
+                Map.class
+        );
+
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        if (response.getStatusCode().is2xxSuccessful() &amp;&amp; response.getBody() != null) {</span>
+<span class="nc" id="L55">            String htmlUrl = (String) response.getBody().get(&quot;html_url&quot;);</span>
+<span class="nc" id="L56">            log.info(&quot;GitHub repository created successfully: {}&quot;, htmlUrl);</span>
+<span class="nc" id="L57">            return htmlUrl;</span>
+        }
+
+<span class="nc" id="L60">        throw new RuntimeException(&quot;Failed to create GitHub repository: &quot; + response.getStatusCode());</span>
+    }
+
+    public void addCollaborator(String repoName, String usernameGithub) {
+<span class="nc" id="L64">        String url = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/collaborators/&quot; + usernameGithub;</span>
+
+<span class="nc" id="L66">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L67">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="nc" id="L68">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+<span class="nc" id="L69">        headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="nc" id="L71">        Map&lt;String, String&gt; body = Map.of(&quot;permission&quot;, &quot;push&quot;);</span>
+
+<span class="nc" id="L73">        HttpEntity&lt;Map&lt;String, String&gt;&gt; request = new HttpEntity&lt;&gt;(body, headers);</span>
+
+        try {
+<span class="nc" id="L76">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+                    url,
+                    HttpMethod.PUT,
+                    request,
+                    Map.class
+            );
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (response.getStatusCode().is2xxSuccessful()) {</span>
+<span class="nc" id="L84">                log.info(&quot;Collaborator {} added to repo {}&quot;, usernameGithub, repoName);</span>
+            } else {
+<span class="nc" id="L86">                throw new RuntimeException(&quot;Failed to add collaborator: &quot; + response.getStatusCode());</span>
+            }
+<span class="nc" id="L88">        } catch (HttpClientErrorException.NotFound e) {</span>
+<span class="nc" id="L89">            throw new RuntimeException(</span>
+                    &quot;GitHub collaborator invite failed (404). Verify repo '&quot; + repoName + &quot;' exists under org '&quot;
+                            + ORG_OWNER + &quot;' and user '&quot; + usernameGithub + &quot;' exists.&quot;,
+                    e
+            );
+<span class="nc" id="L94">        }</span>
+<span class="nc" id="L95">    }</span>
+
+    /**
+     * Checks if a branch exists in a GitHub repository.
+     * @param repoUrl Full repo URL (e.g. https://github.com/challenge-org-Freelancy/repo-name or .../repo-name.git)
+     * @param branchName Branch name to check
+     * @return true if branch exists, false otherwise
+     */
+    public boolean doesBranchExist(String repoUrl, String branchName) {
+<span class="pc bpc" id="L104" title="2 of 8 branches missed.">        if (repoUrl == null || repoUrl.isBlank() || branchName == null || branchName.isBlank()) {</span>
+<span class="fc" id="L105">            return false;</span>
+        }
+<span class="fc" id="L107">        String ownerRepo = extractOwnerRepoFromUrl(repoUrl);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (ownerRepo == null) {</span>
+<span class="fc" id="L109">            return false;</span>
+        }
+<span class="fc" id="L111">        String url = &quot;https://api.github.com/repos/&quot; + ownerRepo + &quot;/branches/&quot; + branchName;</span>
+
+<span class="fc" id="L113">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L114">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="fc" id="L115">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+
+<span class="fc" id="L117">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+
+        try {
+<span class="fc" id="L120">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);</span>
+<span class="fc" id="L121">            return response.getStatusCode().is2xxSuccessful();</span>
+<span class="fc" id="L122">        } catch (HttpClientErrorException.NotFound e) {</span>
+<span class="fc" id="L123">            return false;</span>
+        }
+    }
+
+    private String extractOwnerRepoFromUrl(String repoUrl) {
+        try {
+<span class="fc" id="L129">            String normalized = repoUrl.trim().replace(&quot;.git&quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (normalized.contains(&quot;github.com/&quot;)) {</span>
+<span class="fc" id="L131">                String path = normalized.substring(normalized.indexOf(&quot;github.com/&quot;) + 11);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">                if (path.endsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L133">                    path = path.substring(0, path.length() - 1);</span>
+                }
+<span class="fc" id="L135">                return path;</span>
+            }
+<span class="fc" id="L137">            return null;</span>
+<span class="nc" id="L138">        } catch (Exception e) {</span>
+<span class="nc" id="L139">            log.warn(&quot;Failed to extract owner/repo from url: {}&quot;, repoUrl);</span>
+<span class="nc" id="L140">            return null;</span>
+        }
+    }
+
+    public boolean doesUserExist(String usernameGithub) {
+<span class="fc" id="L145">        String url = &quot;https://api.github.com/users/&quot; + usernameGithub;</span>
+
+<span class="fc" id="L147">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L148">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+
+<span class="fc" id="L150">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+
+        try {
+<span class="fc" id="L153">            ResponseEntity&lt;Void&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, Void.class);</span>
+<span class="fc" id="L154">            return response.getStatusCode().is2xxSuccessful();</span>
+<span class="fc" id="L155">        } catch (HttpClientErrorException.NotFound e) {</span>
+<span class="fc" id="L156">            return false;</span>
+        }
+    }
+
+    public boolean isCollaboratorAccepted(String repoName, String usernameGithub) {
+<span class="fc" id="L161">        String url = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/collaborators/&quot; + usernameGithub;</span>
+
+<span class="fc" id="L163">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L164">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="fc" id="L165">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+
+<span class="fc" id="L167">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+
+        try {
+<span class="fc" id="L170">            ResponseEntity&lt;Void&gt; response = restTemplate.exchange(</span>
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    Void.class
+            );
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">            return response.getStatusCode().value() == 204;</span>
+<span class="fc" id="L177">        } catch (HttpClientErrorException.NotFound e) {</span>
+<span class="fc" id="L178">            return false;</span>
+        }
+    }
+
+    public void createSonarCloudProject(String repoName) {
+<span class="pc bpc" id="L183" title="1 of 4 branches missed.">        if (sonarToken == null || sonarToken.isEmpty()) {</span>
+<span class="fc" id="L184">            log.warn(&quot;SONAR_TOKEN not configured, skipping SonarCloud project creation for repo: {}&quot;, repoName);</span>
+<span class="fc" id="L185">            return;</span>
+        }
+
+<span class="fc" id="L188">        String projectKey = toSonarProjectKey(repoName);</span>
+<span class="fc" id="L189">        String url = UriComponentsBuilder.fromHttpUrl(&quot;https://sonarcloud.io/api/projects/create&quot;)</span>
+<span class="fc" id="L190">                .queryParam(&quot;name&quot;, repoName)</span>
+<span class="fc" id="L191">                .queryParam(&quot;organization&quot;, SONAR_ORG)</span>
+<span class="fc" id="L192">                .queryParam(&quot;project&quot;, projectKey)</span>
+<span class="fc" id="L193">                .toUriString();</span>
+
+<span class="fc" id="L195">        HttpHeaders headers = buildSonarHeaders();</span>
+
+<span class="fc" id="L197">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+
+        try {
+<span class="nc" id="L200">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (response.getStatusCode().is2xxSuccessful()) {</span>
+<span class="nc" id="L202">                log.info(&quot;SonarCloud project created: {}&quot;, projectKey);</span>
+            }
+<span class="fc" id="L204">        } catch (HttpClientErrorException e) {</span>
+<span class="pc bpc" id="L205" title="2 of 4 branches missed.">            if (e.getStatusCode().value() == 400 &amp;&amp; e.getResponseBodyAsString().contains(&quot;already exists&quot;)) {</span>
+<span class="fc" id="L206">                log.info(&quot;SonarCloud project already exists: {}&quot;, projectKey);</span>
+            } else {
+<span class="nc" id="L208">                log.error(&quot;Failed to create SonarCloud project {}: status={}, body={}&quot;,</span>
+<span class="nc" id="L209">                        projectKey, e.getStatusCode(), e.getResponseBodyAsString());</span>
+<span class="nc" id="L210">                throw new RuntimeException(&quot;Failed to create SonarCloud project: status=&quot;</span>
+<span class="nc" id="L211">                        + e.getStatusCode().value() + &quot;, body=&quot; + e.getResponseBodyAsString());</span>
+            }
+<span class="nc" id="L213">        }</span>
+<span class="fc" id="L214">    }</span>
+
+    public void ensureSonarSetupOrThrow(String repoName) {
+<span class="pc bpc" id="L217" title="2 of 4 branches missed.">        if (sonarToken == null || sonarToken.isBlank()) {</span>
+<span class="fc" id="L218">            throw new RuntimeException(&quot;SONAR_TOKEN is not configured on challenge-service.&quot;);</span>
+        }
+
+<span class="nc" id="L221">        addSonarTokenSecret(repoName);</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (!hasRepoSecret(repoName, &quot;SONAR_TOKEN&quot;)) {</span>
+<span class="nc" id="L223">            throw new RuntimeException(&quot;SONAR_TOKEN secret was not added to GitHub repo &quot; + repoName);</span>
+        }
+
+<span class="nc" id="L226">        createSonarCloudProject(repoName);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (!doesSonarCloudProjectExist(repoName)) {</span>
+<span class="nc" id="L228">            throw new RuntimeException(&quot;SonarCloud project was not created/found for key &quot; + toSonarProjectKey(repoName));</span>
+        }
+<span class="nc" id="L230">    }</span>
+
+    public String createPullRequest(String repoName, String branchName) {
+<span class="fc" id="L233">        String url = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/pulls&quot;;</span>
+
+<span class="fc" id="L235">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L236">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="fc" id="L237">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+<span class="fc" id="L238">        headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="fc" id="L240">        String baseBranch = getDefaultBranch(repoName);</span>
+
+<span class="fc" id="L242">        Map&lt;String, Object&gt; body = Map.of(</span>
+                &quot;title&quot;, &quot;Challenge Submission&quot;,
+                &quot;head&quot;, branchName,
+                &quot;base&quot;, baseBranch,
+                &quot;body&quot;, &quot;Automated challenge submission from branch &quot; + branchName
+        );
+
+<span class="fc" id="L249">        HttpEntity&lt;Map&lt;String, Object&gt;&gt; request = new HttpEntity&lt;&gt;(body, headers);</span>
+
+        try {
+<span class="nc bnc" id="L252" title="All 4 branches missed.">            if (githubToken == null || githubToken.isBlank()) {</span>
+<span class="nc" id="L253">                throw new RuntimeException(&quot;GitHub token is not configured. Set GITHUB_TOKEN environment variable.&quot;);</span>
+            }
+<span class="nc" id="L255">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);</span>
+
+<span class="nc bnc" id="L257" title="All 4 branches missed.">            if (response.getStatusCode().is2xxSuccessful() &amp;&amp; response.getBody() != null) {</span>
+<span class="nc" id="L258">                String prUrl = (String) response.getBody().get(&quot;html_url&quot;);</span>
+<span class="nc" id="L259">                log.info(&quot;Pull request created for repo {}: {}&quot;, repoName, prUrl);</span>
+<span class="nc" id="L260">                return prUrl;</span>
+            }
+<span class="nc" id="L262">            throw new RuntimeException(&quot;Failed to create pull request: &quot; + response.getStatusCode());</span>
+<span class="fc" id="L263">        } catch (HttpClientErrorException e) {</span>
+<span class="fc" id="L264">            String errorBody = e.getResponseBodyAsString();</span>
+<span class="fc" id="L265">            int status = e.getStatusCode().value();</span>
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">            if (status == 401) {</span>
+<span class="nc" id="L267">                throw new RuntimeException(&quot;Invalid or missing GitHub token. Check GITHUB_TOKEN is set correctly.&quot;);</span>
+            }
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">            if (status == 404) {</span>
+<span class="nc" id="L270">                throw new RuntimeException(&quot;Repository or branch not found. Ensure the branch '&quot; + branchName + &quot;' exists and is pushed.&quot;);</span>
+            }
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">            if (status == 422) {</span>
+<span class="fc" id="L273">                log.warn(&quot;GitHub 422 creating PR for repo {} branch {}: {}&quot;, repoName, branchName, errorBody);</span>
+<span class="pc bpc" id="L274" title="2 of 4 branches missed.">                if (errorBody != null &amp;&amp; errorBody.contains(&quot;A pull request already exists&quot;)) {</span>
+<span class="fc" id="L275">                    throw new RuntimeException(&quot;A pull request already exists for branch '&quot; + branchName + &quot;'. Check GitHub.&quot;);</span>
+                }
+<span class="nc bnc" id="L277" title="All 4 branches missed.">                if (errorBody != null &amp;&amp; errorBody.contains(&quot;Reference does not exist&quot;)) {</span>
+<span class="nc" id="L278">                    throw new RuntimeException(&quot;Branch '&quot; + branchName + &quot;' not found. Ensure it exists and is pushed to the remote.&quot;);</span>
+                }
+<span class="nc bnc" id="L280" title="All 4 branches missed.">                throw new RuntimeException(&quot;Cannot create pull request: &quot; + (errorBody != null &amp;&amp; errorBody.length() &lt; 200 ? errorBody : &quot;Validation failed. Check branch name and that it is pushed.&quot;));</span>
+            }
+<span class="nc bnc" id="L282" title="All 4 branches missed.">            throw new RuntimeException(&quot;Failed to create pull request: &quot; + (errorBody != null &amp;&amp; !errorBody.isBlank() ? errorBody : e.getMessage()));</span>
+        }
+    }
+
+    private String getDefaultBranch(String repoName) {
+<span class="fc" id="L287">        String url = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName;</span>
+<span class="fc" id="L288">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L289">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="fc" id="L290">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+<span class="fc" id="L291">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+        try {
+<span class="fc" id="L293">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);</span>
+<span class="pc bpc" id="L294" title="2 of 4 branches missed.">            if (response.getStatusCode().is2xxSuccessful() &amp;&amp; response.getBody() != null) {</span>
+<span class="fc" id="L295">                String defaultBranch = (String) response.getBody().get(&quot;default_branch&quot;);</span>
+<span class="pc bpc" id="L296" title="2 of 4 branches missed.">                return defaultBranch != null &amp;&amp; !defaultBranch.isBlank() ? defaultBranch : &quot;main&quot;;</span>
+            }
+<span class="nc" id="L298">        } catch (Exception e) {</span>
+<span class="nc" id="L299">            log.warn(&quot;Could not fetch default branch for repo {}, using main: {}&quot;, repoName, e.getMessage());</span>
+<span class="nc" id="L300">        }</span>
+<span class="nc" id="L301">        return &quot;main&quot;;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Map&lt;String, Object&gt; fetchSonarCloudMetrics(String repoName, String pullRequestKey) {
+<span class="fc" id="L306">        String projectKey = toSonarProjectKey(repoName);</span>
+<span class="fc" id="L307">        String url = &quot;https://sonarcloud.io/api/measures/component&quot;</span>
+                + &quot;?component=&quot; + projectKey
+                + &quot;&amp;pullRequest=&quot; + pullRequestKey
+                + &quot;&amp;metricKeys=bugs,code_smells,vulnerabilities,security_hotspots,coverage,duplicated_lines_density,ncloc,alert_status&quot;;
+
+<span class="fc" id="L312">        HttpHeaders headers = buildSonarHeaders();</span>
+
+<span class="fc" id="L314">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+<span class="fc" id="L315">        ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);</span>
+
+<span class="pc bpc" id="L317" title="2 of 4 branches missed.">        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {</span>
+<span class="nc" id="L318">            throw new RuntimeException(&quot;Failed to fetch SonarCloud metrics for: &quot; + projectKey);</span>
+        }
+
+<span class="fc" id="L321">        Map&lt;String, Object&gt; component = (Map&lt;String, Object&gt;) response.getBody().get(&quot;component&quot;);</span>
+<span class="fc" id="L322">        List&lt;Map&lt;String, String&gt;&gt; measures = (List&lt;Map&lt;String, String&gt;&gt;) component.get(&quot;measures&quot;);</span>
+
+<span class="fc" id="L324">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        for (Map&lt;String, String&gt; measure : measures) {</span>
+<span class="fc" id="L326">            result.put(measure.get(&quot;metric&quot;), measure.get(&quot;value&quot;));</span>
+<span class="fc" id="L327">        }</span>
+
+<span class="fc" id="L329">        log.info(&quot;Fetched SonarCloud metrics for project {}, PR {}: {}&quot;, projectKey, pullRequestKey, result);</span>
+<span class="fc" id="L330">        return result;</span>
+    }
+
+    /**
+     * Fetches SonarCloud metrics for a GitHub pull request URL.
+     * Example: https://github.com/challenge-org-Freelancy/AI-Task-Manager-with-Smart-Suggestions-Ameny323/pull/1
+     */
+    public Map&lt;String, Object&gt; fetchSonarCloudMetricsByPrUrl(String prUrl) {
+<span class="fc" id="L338">        var parsed = parsePrUrl(prUrl);</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        if (parsed == null) {</span>
+<span class="fc" id="L340">            throw new IllegalArgumentException(&quot;Invalid GitHub PR URL. Expected format: https://github.com/owner/repo/pull/number&quot;);</span>
+        }
+<span class="fc" id="L342">        String repoName = parsed.get(&quot;repoName&quot;);</span>
+<span class="fc" id="L343">        String pullNumber = parsed.get(&quot;pullNumber&quot;);</span>
+<span class="fc" id="L344">        return fetchSonarCloudMetrics(repoName, pullNumber);</span>
+    }
+
+    private Map&lt;String, String&gt; parsePrUrl(String prUrl) {
+<span class="pc bpc" id="L348" title="1 of 4 branches missed.">        if (prUrl == null || !prUrl.contains(&quot;github.com/&quot;)) {</span>
+<span class="fc" id="L349">            return null;</span>
+        }
+        try {
+<span class="fc" id="L352">            String path = prUrl.trim().replace(&quot;.git&quot;, &quot;&quot;);</span>
+<span class="fc" id="L353">            int idx = path.indexOf(&quot;github.com/&quot;);</span>
+<span class="pc bpc" id="L354" title="1 of 2 branches missed.">            if (idx &lt; 0) return null;</span>
+<span class="fc" id="L355">            path = path.substring(idx + 11);</span>
+<span class="pc bpc" id="L356" title="1 of 2 branches missed.">            if (path.endsWith(&quot;/&quot;)) path = path.substring(0, path.length() - 1);</span>
+<span class="fc" id="L357">            String[] parts = path.split(&quot;/&quot;);</span>
+<span class="pc bpc" id="L358" title="2 of 4 branches missed.">            if (parts.length &gt;= 4 &amp;&amp; &quot;pull&quot;.equalsIgnoreCase(parts[2])) {</span>
+<span class="fc" id="L359">                String repoName = parts[1];</span>
+<span class="fc" id="L360">                String pullNumber = parts[3];</span>
+<span class="fc" id="L361">                return Map.of(&quot;repoName&quot;, repoName, &quot;pullNumber&quot;, pullNumber);</span>
+            }
+<span class="nc" id="L363">        } catch (Exception e) {</span>
+<span class="nc" id="L364">            log.warn(&quot;Failed to parse PR URL: {}&quot;, prUrl);</span>
+<span class="nc" id="L365">        }</span>
+<span class="nc" id="L366">        return null;</span>
+    }
+
+    public String getLatestPullRequestNumber(String repoName) {
+<span class="fc" id="L370">        String url = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/pulls?state=all&amp;sort=created&amp;direction=desc&amp;per_page=1&quot;;</span>
+
+<span class="fc" id="L372">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L373">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="fc" id="L374">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+
+<span class="fc" id="L376">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+<span class="fc" id="L377">        ResponseEntity&lt;List&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, List.class);</span>
+
+<span class="pc bpc" id="L379" title="2 of 6 branches missed.">        if (response.getStatusCode().is2xxSuccessful() &amp;&amp; response.getBody() != null &amp;&amp; !response.getBody().isEmpty()) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L381">            Map&lt;String, Object&gt; pr = (Map&lt;String, Object&gt;) response.getBody().get(0);</span>
+<span class="fc" id="L382">            return String.valueOf(pr.get(&quot;number&quot;));</span>
+        }
+
+<span class="fc" id="L385">        throw new RuntimeException(&quot;No pull requests found for repo: &quot; + repoName);</span>
+    }
+
+    public void addSonarTokenSecret(String repoName) {
+<span class="nc bnc" id="L389" title="All 4 branches missed.">        if (sonarToken == null || sonarToken.isEmpty()) {</span>
+<span class="nc" id="L390">            log.warn(&quot;SONAR_TOKEN not configured, skipping secret creation for repo: {}&quot;, repoName);</span>
+<span class="nc" id="L391">            return;</span>
+        }
+<span class="nc" id="L393">        addRepoSecret(repoName, &quot;SONAR_TOKEN&quot;, sonarToken);</span>
+<span class="nc" id="L394">    }</span>
+
+    public boolean hasRepoSecret(String repoName, String secretName) {
+<span class="fc" id="L397">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L398">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="fc" id="L399">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+
+<span class="fc" id="L401">        String url = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/actions/secrets/&quot; + secretName;</span>
+<span class="fc" id="L402">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(headers);</span>
+
+        try {
+<span class="nc" id="L405">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);</span>
+<span class="nc" id="L406">            return response.getStatusCode().is2xxSuccessful();</span>
+<span class="fc" id="L407">        } catch (HttpClientErrorException.NotFound e) {</span>
+<span class="fc" id="L408">            return false;</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public boolean doesSonarCloudProjectExist(String repoName) {
+<span class="fc" id="L414">        String projectKey = toSonarProjectKey(repoName);</span>
+<span class="fc" id="L415">        String url = UriComponentsBuilder.fromHttpUrl(&quot;https://sonarcloud.io/api/projects/search&quot;)</span>
+<span class="fc" id="L416">                .queryParam(&quot;organization&quot;, SONAR_ORG)</span>
+<span class="fc" id="L417">                .queryParam(&quot;projects&quot;, projectKey)</span>
+<span class="fc" id="L418">                .toUriString();</span>
+
+<span class="fc" id="L420">        HttpEntity&lt;Void&gt; request = new HttpEntity&lt;&gt;(buildSonarHeaders());</span>
+
+        try {
+<span class="fc" id="L423">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);</span>
+<span class="pc bpc" id="L424" title="2 of 4 branches missed.">            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {</span>
+<span class="nc" id="L425">                return false;</span>
+            }
+
+<span class="fc" id="L428">            List&lt;Map&lt;String, Object&gt;&gt; components = (List&lt;Map&lt;String, Object&gt;&gt;) response.getBody().get(&quot;components&quot;);</span>
+<span class="fc bfc" id="L429" title="All 2 branches covered.">            if (components == null) {</span>
+<span class="fc" id="L430">                return false;</span>
+            }
+
+<span class="fc" id="L433">            return components.stream().anyMatch(c -&gt; projectKey.equals(c.get(&quot;key&quot;)));</span>
+<span class="fc" id="L434">        } catch (HttpClientErrorException e) {</span>
+<span class="fc" id="L435">            log.warn(&quot;Failed checking SonarCloud project {}: status={}, body={}&quot;,</span>
+<span class="fc" id="L436">                    projectKey, e.getStatusCode(), e.getResponseBodyAsString());</span>
+<span class="fc" id="L437">            return false;</span>
+        }
+    }
+
+    private HttpHeaders buildSonarHeaders() {
+<span class="fc" id="L442">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L443">        headers.setBasicAuth(sonarToken, &quot;&quot;);</span>
+<span class="fc" id="L444">        headers.set(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="fc" id="L445">        return headers;</span>
+    }
+
+    private String toSonarProjectKey(String repoName) {
+<span class="fc" id="L449">        return ORG_OWNER + &quot;_&quot; + repoName;</span>
+    }
+
+    private void addRepoSecret(String repoName, String secretName, String secretValue) {
+<span class="nc" id="L453">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L454">        headers.set(&quot;Authorization&quot;, &quot;Bearer &quot; + githubToken);</span>
+<span class="nc" id="L455">        headers.set(&quot;Accept&quot;, &quot;application/vnd.github+json&quot;);</span>
+<span class="nc" id="L456">        headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="nc" id="L458">        String keyUrl = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/actions/secrets/public-key&quot;;</span>
+<span class="nc" id="L459">        HttpEntity&lt;Void&gt; keyRequest = new HttpEntity&lt;&gt;(headers);</span>
+<span class="nc" id="L460">        ResponseEntity&lt;Map&gt; keyResponse = restTemplate.exchange(keyUrl, HttpMethod.GET, keyRequest, Map.class);</span>
+
+<span class="nc bnc" id="L462" title="All 4 branches missed.">        if (!keyResponse.getStatusCode().is2xxSuccessful() || keyResponse.getBody() == null) {</span>
+<span class="nc" id="L463">            throw new RuntimeException(&quot;Failed to get repo public key for: &quot; + repoName);</span>
+        }
+
+<span class="nc" id="L466">        String publicKeyBase64 = (String) keyResponse.getBody().get(&quot;key&quot;);</span>
+<span class="nc" id="L467">        String keyId = (String) keyResponse.getBody().get(&quot;key_id&quot;);</span>
+
+<span class="nc" id="L469">        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64);</span>
+<span class="nc" id="L470">        byte[] messageBytes = secretValue.getBytes(StandardCharsets.UTF_8);</span>
+<span class="nc" id="L471">        byte[] cipherText = new byte[SEAL_BYTES + messageBytes.length];</span>
+
+<span class="nc" id="L473">        SodiumJava sodium = new SodiumJava();</span>
+<span class="nc" id="L474">        int result = sodium.crypto_box_seal(cipherText, messageBytes, messageBytes.length, publicKeyBytes);</span>
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        if (result != 0) {</span>
+<span class="nc" id="L476">            throw new RuntimeException(&quot;Failed to encrypt secret value&quot;);</span>
+        }
+
+<span class="nc" id="L479">        String encryptedValue = Base64.getEncoder().encodeToString(cipherText);</span>
+
+<span class="nc" id="L481">        String secretUrl = &quot;https://api.github.com/repos/&quot; + ORG_OWNER + &quot;/&quot; + repoName + &quot;/actions/secrets/&quot; + secretName;</span>
+<span class="nc" id="L482">        Map&lt;String, String&gt; body = Map.of(</span>
+                &quot;encrypted_value&quot;, encryptedValue,
+                &quot;key_id&quot;, keyId
+        );
+<span class="nc" id="L486">        HttpEntity&lt;Map&lt;String, String&gt;&gt; secretRequest = new HttpEntity&lt;&gt;(body, headers);</span>
+<span class="nc" id="L487">        ResponseEntity&lt;Void&gt; response = restTemplate.exchange(secretUrl, HttpMethod.PUT, secretRequest, Void.class);</span>
+
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        if (response.getStatusCode().is2xxSuccessful()) {</span>
+<span class="nc" id="L490">            log.info(&quot;Secret {} added to repo {}&quot;, secretName, repoName);</span>
+        } else {
+<span class="nc" id="L492">            throw new RuntimeException(&quot;Failed to add secret to repo: &quot; + response.getStatusCode());</span>
+        }
+<span class="nc" id="L494">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

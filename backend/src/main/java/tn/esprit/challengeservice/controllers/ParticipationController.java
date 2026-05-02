@@ -10,6 +10,7 @@ import tn.esprit.challengeservice.services.GitHubService;
 import tn.esprit.challengeservice.services.iparticipationService;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -142,10 +143,15 @@ public class ParticipationController {
     public Map<String, Object> getSonarResultsStatus(@PathVariable String participationId) {
         var resultOpt = participationService.getSonarResultsIfPresent(participationId);
         return resultOpt
-                .map(result -> Map.<String, Object>of(
-                        "status", "completed",
-                        "result", result))
-                .orElse(Map.of("status", "pending", "result", (Object) null));
+            .map(result -> Map.<String, Object>of(
+                "status", "completed",
+                "result", result))
+            .orElseGet(() -> {
+                Map<String, Object> pending = new LinkedHashMap<>();
+                pending.put("status", "pending");
+                pending.put("result", null);
+                return pending;
+            });
     }
 
     @PostMapping("/{participationId}/sonar-results/refresh")

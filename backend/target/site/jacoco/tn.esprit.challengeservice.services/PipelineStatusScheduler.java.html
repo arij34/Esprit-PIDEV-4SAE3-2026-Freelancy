@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PipelineStatusScheduler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">challenge-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.challengeservice.services</a> &gt; <span class="el_source">PipelineStatusScheduler.java</span></div><h1>PipelineStatusScheduler.java</h1><pre class="source lang-java linenums">package tn.esprit.challengeservice.services;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import tn.esprit.challengeservice.entities.ChallengeParticipation;
+import tn.esprit.challengeservice.entities.ParticipationStatus;
+import tn.esprit.challengeservice.entities.SonarCloudResult;
+import tn.esprit.challengeservice.repositories.participationRepository;
+import tn.esprit.challengeservice.repositories.SonarCloudResultRepository;
+
+import java.util.List;
+
+/**
+ * Scheduler that checks the SonarCloud pipeline status every 10 seconds.
+ * For participations with status SUBMITTED that don't have SonarCloud results yet,
+ * it attempts to fetch metrics from SonarCloud. When the analysis is ready, it saves
+ * the results and logs that the pipeline has finished.
+ */
+<span class="fc" id="L21">@Slf4j</span>
+@Component
+@RequiredArgsConstructor
+public class PipelineStatusScheduler {
+
+    private final participationRepository participationRepository;
+    private final SonarCloudResultRepository sonarCloudResultRepository;
+    private final GitHubService gitHubService;
+
+    @Scheduled(fixedRate = 10_000) // every 10 seconds
+    public void checkSonarCloudPipelineStatus() {
+<span class="fc" id="L32">        List&lt;ChallengeParticipation&gt; submitted = participationRepository.findByStatus(ParticipationStatus.SUBMITTED);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (submitted.isEmpty()) {</span>
+<span class="fc" id="L34">            return;</span>
+        }
+
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (ChallengeParticipation participation : submitted) {</span>
+            // Skip if we already have SonarCloud results for this participation
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            if (sonarCloudResultRepository.findByParticipationId(participation.getId()).isPresent()) {</span>
+<span class="fc" id="L40">                continue;</span>
+            }
+
+            try {
+<span class="fc" id="L44">                String prKey = gitHubService.getLatestPullRequestNumber(participation.getRepoName());</span>
+<span class="fc" id="L45">                var metrics = gitHubService.fetchSonarCloudMetrics(participation.getRepoName(), prKey);</span>
+
+<span class="fc" id="L47">                SonarCloudResult result = sonarCloudResultRepository.findByParticipationId(participation.getId())</span>
+<span class="fc" id="L48">                        .orElse(new SonarCloudResult());</span>
+
+<span class="fc" id="L50">                result.setQualityGateStatus(getStringMetric(metrics, &quot;alert_status&quot;));</span>
+<span class="fc" id="L51">                result.setBugs(getIntMetric(metrics, &quot;bugs&quot;));</span>
+<span class="fc" id="L52">                result.setCodeSmells(getIntMetric(metrics, &quot;code_smells&quot;));</span>
+<span class="fc" id="L53">                result.setVulnerabilities(getIntMetric(metrics, &quot;vulnerabilities&quot;));</span>
+<span class="fc" id="L54">                result.setSecurityHotspots(getIntMetric(metrics, &quot;security_hotspots&quot;));</span>
+<span class="fc" id="L55">                result.setCoverage(getDoubleMetric(metrics, &quot;coverage&quot;));</span>
+<span class="fc" id="L56">                result.setDuplication(getDoubleMetric(metrics, &quot;duplicated_lines_density&quot;));</span>
+<span class="fc" id="L57">                result.setLinesOfCode(getIntMetric(metrics, &quot;ncloc&quot;));</span>
+<span class="fc" id="L58">                result.setPullRequestKey(prKey);</span>
+<span class="fc" id="L59">                result.setAnalyzedAt(new java.util.Date());</span>
+<span class="fc" id="L60">                result.setParticipation(participation);</span>
+
+<span class="fc" id="L62">                sonarCloudResultRepository.save(result);</span>
+<span class="fc" id="L63">                log.info(&quot;SonarCloud pipeline finished for participation {} (repo: {}, PR: {})&quot;,</span>
+<span class="fc" id="L64">                        participation.getId(), participation.getRepoName(), prKey);</span>
+<span class="fc" id="L65">            } catch (Exception e) {</span>
+                // Analysis not ready yet or other transient error - will retry next run
+<span class="fc" id="L67">                log.debug(&quot;SonarCloud analysis not ready for participation {} (repo: {}): {}&quot;,</span>
+<span class="fc" id="L68">                        participation.getId(), participation.getRepoName(), e.getMessage());</span>
+<span class="fc" id="L69">            }</span>
+<span class="fc" id="L70">        }</span>
+<span class="fc" id="L71">    }</span>
+
+    private String getStringMetric(java.util.Map&lt;String, Object&gt; metrics, String key) {
+<span class="fc" id="L74">        Object value = metrics.get(key);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        return value != null ? value.toString() : null;</span>
+    }
+
+    private int getIntMetric(java.util.Map&lt;String, Object&gt; metrics, String key) {
+<span class="fc" id="L79">        Object value = metrics.get(key);</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        return value != null ? Integer.parseInt(value.toString()) : 0;</span>
+    }
+
+    private double getDoubleMetric(java.util.Map&lt;String, Object&gt; metrics, String key) {
+<span class="fc" id="L84">        Object value = metrics.get(key);</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        return value != null ? Double.parseDouble(value.toString()) : 0.0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
