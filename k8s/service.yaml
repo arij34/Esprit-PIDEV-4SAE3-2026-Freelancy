@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: matching-service
-  namespace: devops
+  namespace: matching
 spec:
   selector:
     app: matching-module
