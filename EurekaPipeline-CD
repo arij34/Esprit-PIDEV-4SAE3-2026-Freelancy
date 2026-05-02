@@ -1,15 +1,42 @@
-stage('Deploy to Kubernetes') {
-    steps {
-        sh '''
-            kubectl apply -f k8s/eureka-deployment.yaml -n devops
-        '''
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "ameni221/eureka-service:latest"
+        NAMESPACE    = "devopspidev"
     }
-}
-post {
-    success {
-        echo 'Pipeline completed successfully! Eureka service is deployed.'
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                git branch: 'eureka-server',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+            }
+        }
+
+        stage('Pull Latest Image') {
+            steps {
+                sh "docker pull ${DOCKER_IMAGE}"
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh "kubectl apply -f k8s/eureka-deployment.yaml -n ${NAMESPACE}"
+            }
+        }
     }
-    failure {
-        echo 'Pipeline failed!'
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully! Eureka service is deployed.'
+        }
+        failure {
+            echo '❌ Pipeline failed! Check the logs above.'
+        }
+        always {
+            echo '🔄 CD Pipeline finished.'
+        }
     }
 }
