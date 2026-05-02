@@ -16,7 +16,6 @@ import java.util.Map;
 @RequestMapping("/api/user-service")
 public class UserClientTestController {
 
-
     @Autowired
     private UserServiceClient userServiceClient;
 
@@ -25,10 +24,8 @@ public class UserClientTestController {
     }
 
     /**
-     * Simple endpoint to test communication with the user microservice via Eureka + Feign.
-     *
-     * In Swagger, call this endpoint with an Authorization header (e.g. "Bearer ...")
-     * and it will internally call the remote /api/public/ping on smart-freelance-backend.
+     * Test de communication avec le user microservice via Eureka + Feign.
+     * Appelle /api/public/ping sur smart-freelance-backend.
      */
     @GetMapping("/ping")
     public ResponseEntity<Map<String, String>> pingUserService(
@@ -38,20 +35,59 @@ public class UserClientTestController {
         return ResponseEntity.ok(response);
     }
 
-
-
+    /**
+     * Retourne la liste des freelancers.
+     *
+     * Le backend ne fournit pas d'endpoint /api/users/freelancers,
+     * donc on appelle /api/admin/users et on filtre par rôle FREELANCER.
+     *
+     * ⚠️ IMPORTANT : ce endpoint nécessite un token avec le rôle ADMIN,
+     * car /api/admin/users est protégé côté backend.
+     * Utilise un token d'un compte ADMIN pour appeler cet endpoint.
+     */
     @GetMapping("/freelancers")
-    public List<UserDto> getFreelancers(@RequestHeader("Authorization") String token) {
-        List<Map<String, Object>> users = userServiceClient.getFreelancers(token);
-        return users.stream().map(u -> new UserDto(
-                Long.valueOf(u.get("id").toString()),
-                (String) u.get("firstName"),
-                (String) u.get("lastName"),
-                (String) u.get("email"),
-                (String) u.get("role"),
-                (Boolean) u.get("enabled")
-        )).toList();
+    public ResponseEntity<?> getFreelancers(
+            @RequestHeader("Authorization") String token) {
+
+        try {
+            // Récupérer tous les users depuis /api/admin/users
+            List<Map<String, Object>> allUsers = userServiceClient.getAllUsers(token);
+
+            // Filtrer uniquement les FREELANCER
+            List<UserDto> freelancers = allUsers.stream()
+                    .filter(u -> {
+                        // Vérifier dans keycloakRoles (source principale)
+                        Object kcRoles = u.get("keycloakRoles");
+                        if (kcRoles instanceof List<?> roleList) {
+                            if (roleList.contains("FREELANCER")) return true;
+                        }
+                        // Fallback : vérifier dbRole
+                        return "FREELANCER".equals(u.get("dbRole"));
+                    })
+                    .map(u -> {
+                        // id peut être null si l'user n'existe pas encore en DB locale
+                        Long id = null;
+                        if (u.get("dbId") != null) {
+                            id = Long.valueOf(u.get("dbId").toString());
+                        }
+                        String firstName = u.get("firstName") != null ? u.get("firstName").toString() : "";
+                        String lastName  = u.get("lastName")  != null ? u.get("lastName").toString()  : "";
+                        String email     = u.get("email")     != null ? u.get("email").toString()     : "";
+                        String role      = u.get("dbRole")    != null ? u.get("dbRole").toString()    : "FREELANCER";
+                        boolean enabled  = u.get("enabled") instanceof Boolean b ? b : true;
+
+                        return new UserDto(id, firstName, lastName, email, role, enabled);
+                    })
+                    .toList();
+
+            return ResponseEntity.ok(freelancers);
+
+        } catch (feign.FeignException.Forbidden | feign.FeignException.Unauthorized e) {
+            return ResponseEntity.status(403).body(
+                    Map.of("error", "Token insuffisant : le rôle ADMIN est requis pour accéder à la liste des users.")
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
-
 }
-
