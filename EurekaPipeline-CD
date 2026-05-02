@@ -1,0 +1,15 @@
+stage('Deploy to Kubernetes') {
+    steps {
+        sh '''
+            kubectl apply -f k8s/eureka-deployment.yaml -n devops
+        '''
+    }
+}
+post {
+    success {
+        echo 'Pipeline completed successfully! Eureka service is deployed.'
+    }
+    failure {
+        echo 'Pipeline failed!'
+    }
+}

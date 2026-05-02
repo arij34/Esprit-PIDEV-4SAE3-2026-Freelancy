@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "Maven3"
+    }
+
+    environment {
+        DOCKER_IMAGE  = "ameni221/eureka-service:latest"
+        SONAR_ORG     = "freelancy-organization"
+        SONAR_PROJECT = "freelancy-organization_eureka"
+        SERVICE_DIR   = "backend"
+    }
+
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
+        stage('Git Checkout') {
+            steps {
+                git branch: 'eureka-module',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('SonarCloud Analysis') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.organization=${SONAR_ORG} \
+                            -Dsonar.projectKey=${SONAR_PROJECT}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ CI Pipeline completed! Triggering CD pipeline...'
+            build job: 'EurekaPipeline-CD', wait: false
+        }
+        failure {
+            echo '❌ CI Pipeline failed! Check the logs above.'
+        }
+        always {
+            echo '🔄 CI Pipeline finished.'
+        }
+    }
+}
