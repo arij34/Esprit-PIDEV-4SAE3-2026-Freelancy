@@ -1,0 +1,120 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "Maven3"
+    }
+
+    environment {
+        MS_NAME      = "challenge-service2"
+        IMAGE_NAME   = "ameni221/challenge-service"
+        IMAGE_TAG    = "latest"
+        SONAR_ORG    = "freelancy-organization"
+        SONAR_PROJECT = "freelancy-organization_challenge-service"
+        DOCKER_CREDS = credentials('docker-hub-credentials')
+    }
+
+    stages {
+
+        // ─────────────────────────────────────────────
+        // STAGE 1 — Checkout
+        // ─────────────────────────────────────────────
+        stage('1 — Checkout') {
+            steps {
+                git branch: 'Challenge-Module',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+                echo "Code retrieved from GitHub — branch Challenge-Module"
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 2 — Build Maven
+        // ─────────────────────────────────────────────
+        stage('2 — Build Maven') {
+            steps {
+                dir("${MS_NAME}") {
+                    sh 'mvn clean package -DskipTests'
+                    echo "Maven build completed: ${MS_NAME}"
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 3 — Tests
+        // ─────────────────────────────────────────────
+        stage('3 — Tests') {
+            steps {
+                dir("${MS_NAME}") {
+                    sh 'mvn test'
+                }
+            }
+            post {
+                always {
+                    junit "${MS_NAME}/target/surefire-reports/*.xml"
+                }
+                failure {
+                    error 'Tests failed — stopping pipeline'
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 4 — SonarCloud Analysis
+        // ─────────────────────────────────────────────
+        stage('4 — SonarCloud Analysis') {
+            steps {
+                dir("${MS_NAME}") {
+                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.organization=${SONAR_ORG} \
+                            -Dsonar.projectKey=${SONAR_PROJECT} \
+                            -Dsonar.projectName=challenge-service \
+                            -Dsonar.java.source=17
+                        """
+                    }
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 5 — Docker Build
+        // ─────────────────────────────────────────────
+        stage('5 — Docker Build') {
+            steps {
+                dir("${MS_NAME}") {
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                    echo "Docker image built: ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 6 — Docker Push
+        // ─────────────────────────────────────────────
+        stage('6 — Docker Push') {
+            steps {
+                sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                echo "Image published on Docker Hub: ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ CI Pipeline completed — image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
+            build job: 'ChallengePipeline-CD', wait: false
+        }
+        failure {
+            echo "❌ CI Pipeline failed — check logs above"
+        }
+        always {
+            sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
+            echo '🔄 CI Pipeline finished.'
+        }
+    }
+}

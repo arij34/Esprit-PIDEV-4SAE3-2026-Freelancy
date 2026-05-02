@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql-deployment
-  namespace: devops
+  name: mysql-challenge
+  namespace: freelancy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      app: mysql-challenge
   template:
     metadata:
       labels:
-        app: mysql
+        app: mysql-challenge
     spec:
       containers:
         - name: mysql
@@ -25,16 +25,16 @@ spec:
                   name: mysql-secret
                   key: mysql-root-password
             - name: MYSQL_DATABASE
-              value: testdb
+              value: challenge_db
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: mysql-service
-  namespace: devops
+  namespace: freelancy
 spec:
   selector:
-    app: mysql
+    app: mysql-challenge
   ports:
     - protocol: TCP
       port: 3306

@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "ameni221/challenge-service"
+        IMAGE_TAG  = "latest"
+        NAMESPACE  = "freelancy"
+    }
+
+    stages {
+
+        // ─────────────────────────────────────────────
+        // STAGE 1 — Checkout K8s Manifests
+        // ─────────────────────────────────────────────
+        stage('1 — Checkout Manifests') {
+            steps {
+                git branch: 'Challenge-Module',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+                echo 'Kubernetes manifests retrieved'
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 2 — Verify Image on Docker Hub
+        // ─────────────────────────────────────────────
+        stage('2 — Verify Image Docker Hub') {
+            steps {
+                sh "docker pull ${IMAGE_NAME}:${IMAGE_TAG}"
+                echo "Image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 3 — Create Namespace
+        // ─────────────────────────────────────────────
+        stage('3 — Create Namespace') {
+            steps {
+                sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
+                echo "Namespace ${NAMESPACE} ready"
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 4 — Deploy to Kubernetes
+        // ─────────────────────────────────────────────
+        stage('4 — Deploy to Kubernetes') {
+            steps {
+                sh "kubectl apply -f k8s/challenge-deployment.yaml -n ${NAMESPACE}"
+                echo "Manifests applied on K8s cluster"
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 5 — Verify Deployment
+        // ─────────────────────────────────────────────
+        stage('5 — Verify Deployment') {
+            steps {
+                sh "kubectl rollout status deployment/challenge-deployment -n ${NAMESPACE} --timeout=120s"
+                echo "Deployment is operational"
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // STAGE 6 — Smoke Test
+        // ─────────────────────────────────────────────
+        stage('6 — Smoke Test') {
+            steps {
+                sh "kubectl get pods -n ${NAMESPACE} -o wide"
+                sh "kubectl get services -n ${NAMESPACE}"
+                echo "Verify manually: http://[MINIKUBE_IP]:30077/student/actuator/health"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ CD Pipeline completed! Challenge service is deployed.'
+        }
+        failure {
+            echo '❌ CD Pipeline failed!'
+            sh "kubectl get events -n ${NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
+        }
+        always {
+            echo '🔄 CD Pipeline finished.'
+        }
+    }
+}
