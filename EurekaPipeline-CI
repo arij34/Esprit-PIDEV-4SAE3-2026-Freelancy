@@ -22,7 +22,7 @@ pipeline {
 
         stage('Git Checkout') {
             steps {
-                git branch: 'eureka-module',
+                git branch: 'eureka-server',
                     credentialsId: 'github-credentials',
                     url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
             }
