@@ -18,7 +18,7 @@ pipeline {
 
         stage('1 — Checkout') {
             steps {
-                git branch: 'Challenge-Module',
+                git branch: 'Challenge-Service',
                     credentialsId: 'github-credentials',
                     url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
                 echo "Code retrieved from GitHub — branch Challenge-Module"
