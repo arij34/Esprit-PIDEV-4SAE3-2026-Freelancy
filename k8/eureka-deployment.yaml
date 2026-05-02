@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eureka-deployment
-  namespace: devopspidev
+  namespace: freelancy
 spec:
   replicas: 1
   selector:
@@ -23,7 +23,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: eureka-service
-  namespace: devopspidev
+  namespace: freelancy
 spec:
   selector:
     app: eureka

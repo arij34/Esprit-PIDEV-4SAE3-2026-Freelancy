@@ -23,7 +23,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh "kubectl apply -f k8s/eureka-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/eureka-deployment.yaml -n ${NAMESPACE}"
             }
         }
     }
