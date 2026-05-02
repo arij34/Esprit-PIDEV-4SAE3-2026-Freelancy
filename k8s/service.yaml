@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: skill-service
+  namespace: skill
+spec:
+  selector:
+    app: skill-management
+  ports:
+    - protocol: TCP
+      port: 8086
+      targetPort: 8086
+      nodePort: 30086
+  type: NodePort

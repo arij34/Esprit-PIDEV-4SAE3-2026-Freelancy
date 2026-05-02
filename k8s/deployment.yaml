@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skill-deployment
+  namespace: skill
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: skill-management
+  template:
+    metadata:
+      labels:
+        app: skill-management
+    spec:
+      containers:
+        - name: skill-management
+          image: arijachach/skill-management:latest
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: skill-config
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8086
+            initialDelaySeconds: 60
+            periodSeconds: 15
