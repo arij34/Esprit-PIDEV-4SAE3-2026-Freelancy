@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matching-deployment
+  namespace: devops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-module
+  template:
+    metadata:
+      labels:
+        app: matching-module
+    spec:
+      containers:
+        - name: matching-module
+          image: arijachach/matching-module:latest
+          ports:
+            - containerPort: 8087
+          envFrom:
+            - configMapRef:
+                name: matching-config
