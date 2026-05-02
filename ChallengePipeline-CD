@@ -9,21 +9,26 @@ pipeline {
 
     stages {
 
-        // ─────────────────────────────────────────────
-        // STAGE 1 — Checkout K8s Manifests
-        // ─────────────────────────────────────────────
         stage('1 — Checkout Manifests') {
             steps {
-                git branch: 'Challenge-Module',
-                    credentialsId: 'github-credentials',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/Challenge-Service']],
+                    extensions: [[
+                        $class: 'CloneOption',
+                        shallow: true,
+                        depth: 1,
+                        timeout: 30
+                    ]],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
                 echo 'Kubernetes manifests retrieved'
             }
         }
 
-        // ─────────────────────────────────────────────
-        // STAGE 2 — Verify Image on Docker Hub
-        // ─────────────────────────────────────────────
         stage('2 — Verify Image Docker Hub') {
             steps {
                 sh "docker pull ${IMAGE_NAME}:${IMAGE_TAG}"
@@ -31,9 +36,6 @@ pipeline {
             }
         }
 
-        // ─────────────────────────────────────────────
-        // STAGE 3 — Create Namespace
-        // ─────────────────────────────────────────────
         stage('3 — Create Namespace') {
             steps {
                 sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
@@ -41,9 +43,6 @@ pipeline {
             }
         }
 
-        // ─────────────────────────────────────────────
-        // STAGE 4 — Deploy to Kubernetes
-        // ─────────────────────────────────────────────
         stage('4 — Deploy to Kubernetes') {
             steps {
                 sh "kubectl apply -f k8s/challenge-deployment.yaml -n ${NAMESPACE}"
@@ -51,9 +50,6 @@ pipeline {
             }
         }
 
-        // ─────────────────────────────────────────────
-        // STAGE 5 — Verify Deployment
-        // ─────────────────────────────────────────────
         stage('5 — Verify Deployment') {
             steps {
                 sh "kubectl rollout status deployment/challenge-deployment -n ${NAMESPACE} --timeout=120s"
@@ -61,14 +57,11 @@ pipeline {
             }
         }
 
-        // ─────────────────────────────────────────────
-        // STAGE 6 — Smoke Test
-        // ─────────────────────────────────────────────
         stage('6 — Smoke Test') {
             steps {
                 sh "kubectl get pods -n ${NAMESPACE} -o wide"
                 sh "kubectl get services -n ${NAMESPACE}"
-                echo "Verify manually: http://[MINIKUBE_IP]:30077/student/actuator/health"
+                echo "Verify manually: http://192.168.49.2:30077/actuator/health"
             }
         }
     }
@@ -78,8 +71,10 @@ pipeline {
             echo '✅ CD Pipeline completed! Challenge service is deployed.'
         }
         failure {
+            script {
+                sh "kubectl get events -n ${env.NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
+            }
             echo '❌ CD Pipeline failed!'
-            sh "kubectl get events -n ${NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
         }
         always {
             echo '🔄 CD Pipeline finished.'
