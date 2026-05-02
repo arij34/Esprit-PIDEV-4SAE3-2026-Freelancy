@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "ameni221/eureka-service:latest"
-        NAMESPACE    = "devopspidev"
+        NAMESPACE    = "freelancy"
     }
 
     stages {
