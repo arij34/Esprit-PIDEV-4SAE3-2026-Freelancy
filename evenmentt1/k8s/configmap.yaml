@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: event-config
+  namespace: freelancy
+data:
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-event:3306/eventdb
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SERVER_PORT: "8084"
