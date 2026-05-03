@@ -128,6 +128,13 @@ class GitHubServiceTest {
         server.verify();
         }
 
+    @Test
+    void doesUserExist_whenUsernameInvalid_shouldReturnFalse() {
+        assertFalse(gitHubService.doesUserExist(""));
+        assertFalse(gitHubService.doesUserExist("bad user"));
+        assertFalse(gitHubService.doesUserExist("../admin"));
+    }
+
         @Test
         void isCollaboratorAccepted_shouldReturnTrueOnlyFor204() {
         server.expect(once(), requestTo("https://api.github.com/repos/challenge-org-Freelancy/repo-a/collaborators/alice"))
@@ -161,6 +168,12 @@ class GitHubServiceTest {
         assertThrows(RuntimeException.class, () -> gitHubService.getLatestPullRequestNumber("repo-b"));
         secondServer.verify();
         }
+
+    @Test
+    void getLatestPullRequestNumber_whenRepoNameInvalid_shouldThrow() {
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.getLatestPullRequestNumber("repo with spaces"));
+    }
 
         @Test
         void fetchSonarCloudMetrics_whenBadStatus_shouldThrow() {
@@ -234,6 +247,56 @@ class GitHubServiceTest {
         assertTrue(ex.getMessage().contains("already exists"));
         server.verify();
         }
+
+    @Test
+    void createPullRequest_whenInputsInvalid_shouldThrowEarly() {
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.createPullRequest("repo with spaces", "feature"));
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.createPullRequest("repo-a", "feature branch"));
+    }
+
+    @Test
+    void addCollaborator_whenInputsInvalid_shouldThrowEarly() {
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.addCollaborator("repo-a", "bad user"));
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.addCollaborator("repo with spaces", "alice"));
+    }
+
+    @Test
+    void hasRepoSecret_whenInputsInvalid_shouldThrowEarly() {
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.hasRepoSecret("repo-a", "SONAR TOKEN"));
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.hasRepoSecret("repo with spaces", "SONAR_TOKEN"));
+    }
+
+    @Test
+    void isCollaboratorAccepted_whenInputsInvalid_shouldThrowEarly() {
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.isCollaboratorAccepted("repo with spaces", "alice"));
+        assertThrows(IllegalArgumentException.class,
+            () -> gitHubService.isCollaboratorAccepted("repo-a", "bad user"));
+    }
+
+    @Test
+    void doesBranchExist_whenBranchHasUnsafeChars_shouldReturnFalse() {
+        assertFalse(gitHubService.doesBranchExist("https://github.com/owner/repo", "bad branch"));
+        assertFalse(gitHubService.doesBranchExist("https://github.com/owner/repo", "../main"));
+    }
+
+    @Test
+    void doesBranchExist_whenRepoUrlWithoutScheme_shouldStillWork() {
+        server.expect(once(), requestTo("https://api.github.com/repos/owner/repo/branches/main"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        boolean exists = gitHubService.doesBranchExist("github.com/owner/repo.git", "main");
+
+        assertTrue(exists);
+        server.verify();
+    }
 
         @Test
         void ensureSonarSetupOrThrow_whenTokenMissing_shouldThrow() {

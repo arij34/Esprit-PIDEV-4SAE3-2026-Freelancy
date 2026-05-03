@@ -116,10 +116,17 @@ public class GitHubService {
             return false;
         }
         String[] ownerRepoParts = ownerRepo.split("/");
-        if (ownerRepoParts.length != 2 || !SAFE_BRANCH_NAME.matcher(branchName.trim()).matches()) {
+        String safeBranchName;
+        try {
+            safeBranchName = requireSafeBranchName(branchName);
+        } catch (IllegalArgumentException ex) {
             return false;
         }
-        String url = buildGithubUrl("repos", ownerRepoParts[0], ownerRepoParts[1], "branches", branchName.trim());
+
+        if (ownerRepoParts.length != 2) {
+            return false;
+        }
+        String url = buildGithubUrl("repos", ownerRepoParts[0], ownerRepoParts[1], "branches", safeBranchName);
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
@@ -572,6 +579,9 @@ public class GitHubService {
         }
         String normalized = branchName.trim();
         if (!SAFE_BRANCH_NAME.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("Invalid branchName format");
+        }
+        if (normalized.contains("..") || normalized.contains("//") || normalized.startsWith("/") || normalized.endsWith("/")) {
             throw new IllegalArgumentException("Invalid branchName format");
         }
         return normalized;
