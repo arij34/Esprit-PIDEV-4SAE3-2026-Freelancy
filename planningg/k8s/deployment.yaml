@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planning-deployment
+  namespace: freelancy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: planning
+  template:
+    metadata:
+      labels:
+        app: planning
+    spec:
+      containers:
+      - name: planning
+        image: jaff2003/planning:latest
+        ports:
+        - containerPort: 8089
+        envFrom:
+        - configMapRef:
+            name: planning-config
+        env:
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: planning-secret
+              key: mysql-password

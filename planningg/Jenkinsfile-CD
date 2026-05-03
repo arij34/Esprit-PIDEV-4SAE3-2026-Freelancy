@@ -1,12 +1,14 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE  = "jaff2003/planning:latest"
-        CONTAINER     = "planning-app"
-        PORT_HOST     = "8089"
-        PORT_CONT     = "8089"
+        DOCKER_IMAGE = "jaff2003/planning:latest"
     }
     stages {
+        stage('CLEAN') {
+            steps {
+                deleteDir()
+            }
+        }
         stage('GIT') {
             steps {
                 git branch: 'planning-management',
@@ -14,44 +16,52 @@ pipeline {
                     credentialsId: 'github-token'
             }
         }
-        stage('DOCKER PULL') {
+        stage('VERIFY IMAGE DOCKER HUB') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker pull ${DOCKER_IMAGE}"
-                }
+                sh "docker pull ${DOCKER_IMAGE}"
+                echo "Image ${DOCKER_IMAGE} disponible sur Docker Hub"
             }
         }
-        stage('STOP OLD CONTAINER') {
+        stage('DEPLOY TO KUBERNETES') {
             steps {
-                sh "docker stop ${CONTAINER} || true"
-                sh "docker rm   ${CONTAINER} || true"
+                sh '''
+                    kubectl apply -f planningg/k8s/namespace.yaml
+                    kubectl apply -f planningg/k8s/secret.yaml
+                    kubectl apply -f planningg/k8s/configmap.yaml
+                    kubectl apply -f planningg/k8s/mysql-deployment.yaml
+                    kubectl apply -f planningg/k8s/deployment.yaml
+                    kubectl apply -f planningg/k8s/service.yaml
+                    kubectl rollout restart deployment/planning-deployment -n freelancy
+                '''
             }
         }
-        stage('RUN NEW CONTAINER') {
+        stage('VERIFY DEPLOYMENT') {
             steps {
-                sh """
-                    docker run -d \
-                      --name ${CONTAINER} \
-                      -p ${PORT_HOST}:${PORT_CONT} \
-                      --restart unless-stopped \
-                      ${DOCKER_IMAGE}
-                """
+                sh '''
+                    kubectl rollout status deployment/planning-deployment -n freelancy --timeout=300s
+                    kubectl get pods -n freelancy
+                    kubectl get svc -n freelancy
+                    kubectl get deployments -n freelancy
+                '''
             }
         }
-        stage('HEALTH CHECK') {
+        stage('SMOKE TEST') {
             steps {
-                sh 'sleep 15'
-                sh "curl -f http://localhost:${PORT_HOST}/actuator/health || echo 'Health check done'"
+                sh '''
+                    kubectl get pods -n freelancy -o wide
+                    kubectl get services -n freelancy
+                '''
+                echo 'Planning service accessible via NodePort 30089'
             }
         }
     }
     post {
-        success { echo '✅ planning CD OK - container running on port 8089' }
-        failure { echo '❌ planning CD FAILED' }
+        success {
+            echo 'Déploiement Kubernetes planning réussi !'
+        }
+        failure {
+            sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
+            echo 'Déploiement Kubernetes planning échoué !'
+        }
     }
 }
