@@ -323,6 +323,33 @@ class ParticipationServiceImplTest {
         assertTrue(ex.getMessage().contains("Submission blocked"));
     }
 
+        @Test
+        void submitChallenge_whenParticipationMissing_shouldThrow() {
+                when(participationRepository.findById("missing-id")).thenReturn(Optional.empty());
+
+                assertThrows(RuntimeException.class,
+                                () -> participationService.submitChallenge("missing-id", "feature"));
+        }
+
+        @Test
+        void joinChallenge_whenSonarSetupStepsFail_shouldStillSaveParticipation() {
+                when(userServiceClient.getCurrentUser("Bearer token")).thenReturn(currentUser);
+                when(challengeRepository.findById("ch-001")).thenReturn(Optional.of(challenge));
+                when(participationRepository.existsByChallengeIdChallengeAndUserId("ch-001", 42L))
+                                .thenReturn(false);
+                when(gitHubService.createRepository(any())).thenReturn("https://github.com/org/repo");
+                doNothing().when(gitHubService).addCollaborator(any(), any());
+                doThrow(new RuntimeException("secret failed")).when(gitHubService).addSonarTokenSecret(any());
+                doThrow(new RuntimeException("project failed")).when(gitHubService).createSonarCloudProject(any());
+                when(participationRepository.save(any())).thenReturn(participation);
+
+                ChallengeParticipation result = participationService.joinChallenge(
+                                "ch-001", "ameni-dev", "Bearer token");
+
+                assertNotNull(result);
+                verify(participationRepository).save(any());
+        }
+
     @Test
     void fetchSonarResults_whenExistingResult_shouldUpdateAndSave() {
         SonarCloudResult existing = new SonarCloudResult();
@@ -351,6 +378,31 @@ class ParticipationServiceImplTest {
         assertEquals("12", result.getPullRequestKey());
         verify(sonarCloudResultRepository).save(existing);
     }
+
+        @Test
+        void fetchSonarResults_whenMetricsMissing_shouldApplyDefaultValues() {
+                SonarCloudResult existing = new SonarCloudResult();
+
+                when(participationRepository.findById("p-001")).thenReturn(Optional.of(participation));
+                when(gitHubService.getLatestPullRequestNumber("Docker-Challenge-ameni-dev")).thenReturn("13");
+                when(gitHubService.fetchSonarCloudMetrics("Docker-Challenge-ameni-dev", "13"))
+                                .thenReturn(Map.of());
+                when(sonarCloudResultRepository.findByParticipationId("p-001"))
+                                .thenReturn(Optional.of(existing));
+                when(sonarCloudResultRepository.save(existing)).thenReturn(existing);
+
+                SonarCloudResult result = participationService.fetchSonarResults("p-001");
+
+                assertNull(result.getQualityGateStatus());
+                assertEquals(0, result.getBugs());
+                assertEquals(0, result.getCodeSmells());
+                assertEquals(0, result.getVulnerabilities());
+                assertEquals(0, result.getSecurityHotspots());
+                assertEquals(0.0, result.getCoverage());
+                assertEquals(0.0, result.getDuplication());
+                assertEquals(0, result.getLinesOfCode());
+                verify(sonarCloudResultRepository).save(existing);
+        }
 
     @Test
     void fetchSonarResults_whenNotFound_shouldThrow() {
