@@ -45,35 +45,58 @@ pipeline {
                 echo "Image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
             }
         }
-        stage('3 — Create Namespace') {
+        stage('3 — Prepare Namespace & Secret') {
             steps {
                 sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
-                echo "Namespace ${NAMESPACE} ready"
+                sh """
+                    kubectl create secret generic mysql-secret \
+                      --from-literal=mysql-root-password=root \
+                      -n ${NAMESPACE} \
+                      --dry-run=client -o yaml | kubectl apply -f -
+                """
+                echo "Namespace and secrets ready"
             }
         }
-        stage('4 — Deploy to Kubernetes') {
+        stage('4 — Deploy MySQL') {
+            steps {
+                sh "kubectl apply -f k8s/mysql-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl rollout status deployment/mysql -n ${NAMESPACE} --timeout=120s"
+                echo "MySQL ready"
+            }
+        }
+        stage('5 — Deploy Prometheus') {
+            steps {
+                sh "kubectl apply -f k8s/prometheus-config.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8s/prometheus-deployment.yaml -n ${NAMESPACE}"
+                echo "Prometheus deployed"
+            }
+        }
+        stage('6 — Deploy Grafana') {
+            steps {
+                sh "kubectl apply -f k8s/grafana-deployment.yaml -n ${NAMESPACE}"
+                echo "Grafana deployed"
+            }
+        }
+        stage('7 — Deploy Challenge Service') {
             steps {
                 sh "kubectl apply -f k8s/challenge-deployment.yaml -n ${NAMESPACE}"
-                echo "Manifests applied on K8s cluster"
-            }
-        }
-        stage('5 — Verify Deployment') {
-            steps {
                 sh "kubectl rollout status deployment/challenge-deployment -n ${NAMESPACE} --timeout=120s"
-                echo "Deployment is operational"
+                echo "Challenge service deployed"
             }
         }
-        stage('6 — Smoke Test') {
+        stage('8 — Smoke Test') {
             steps {
                 sh "kubectl get pods -n ${NAMESPACE} -o wide"
                 sh "kubectl get services -n ${NAMESPACE}"
-                echo "Verify manually: http://192.168.49.2:30077/actuator/health"
+                echo "Challenge API: http://192.168.49.2:30077/actuator/health"
+                echo "Prometheus:    http://localhost:30090"
+                echo "Grafana:       http://localhost:30030 (admin/admin123)"
             }
         }
     }
     post {
         success {
-            echo '✅ CD Pipeline completed! Challenge service is deployed.'
+            echo '✅ CD Pipeline completed! All services deployed.'
         }
         failure {
             script {
