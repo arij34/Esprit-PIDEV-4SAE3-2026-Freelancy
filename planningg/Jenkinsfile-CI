@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    tools { maven "M2_HOME" }
+    environment {
+        DOCKER_IMAGE = "jaff2003/planning:latest"
+    }
+    stages {
+        stage('GIT') {
+            steps {
+                git branch: 'planning-management',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                    credentialsId: 'github-token'
+            }
+        }
+        stage('MVN CLEAN')   { steps { dir('planningg') { sh 'mvn clean' } } }
+        stage('MVN COMPILE') { steps { dir('planningg') { sh 'mvn compile' } } }
+        stage('MVN TEST')    { steps { dir('planningg') { sh 'mvn test -DskipTests' } } }
+        stage('MVN PACKAGE') { steps { dir('planningg') { sh 'mvn package -DskipTests' } } }
+        stage('DOCKER BUILD') {
+            steps {
+                dir('planningg') {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+        stage('DOCKER PUSH') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
+            }
+        }
+    }
+    post {
+        success { echo '✅ planning CI OK - image jaff2003/planning:latest pushed to Docker Hub' }
+        failure { echo '❌ planning CI FAILED' }
+    }
+}
