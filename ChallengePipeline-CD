@@ -60,7 +60,7 @@ pipeline {
         stage('4 — Deploy MySQL') {
             steps {
                 sh "kubectl apply -f k8s/mysql-deployment.yaml -n ${NAMESPACE}"
-                sh "kubectl rollout status deployment/mysql -n ${NAMESPACE} --timeout=120s"
+                sh "kubectl rollout status deployment/mysql-challenge -n ${NAMESPACE} --timeout=120s"
                 echo "MySQL ready"
             }
         }
