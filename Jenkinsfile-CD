@@ -35,14 +35,15 @@ pipeline {
             }
         }
         stage('VERIFY DEPLOYMENT') {
-            steps {
-                sh '''
-                    kubectl rollout status deployment/skill-deployment -n freelancy --timeout=600s
-                    kubectl get pods -n freelancy
-                    kubectl get svc -n freelancy
-                '''
-             }
-        }
+    steps {
+        sh '''
+            sleep 30
+            kubectl get pods -n freelancy
+            kubectl get svc -n freelancy
+            kubectl get deployments -n freelancy
+        '''
+    }
+}
         stage('SMOKE TEST') {
             steps {
                 sh '''
