@@ -3,6 +3,7 @@
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.challengeservice.dtos.TaskDTO;
 import tn.esprit.challengeservice.entities.Task;
 import tn.esprit.challengeservice.entities.TaskStatus;
 import tn.esprit.challengeservice.services.itaskService;
@@ -12,44 +13,55 @@ import java.util.List;
 @RestController
 @RequestMapping(&quot;/tasks&quot;)
 @RequiredArgsConstructor
-@CrossOrigin(&quot;*&quot;)
+@CrossOrigin(origins = &quot;${app.cors.allowed-origins:http://localhost:4200}&quot;)
 public class TaskController {
 
     private final itaskService taskService;
 
     @PostMapping(&quot;/{challengeId}&quot;)
     @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
-    public Task addTask(@PathVariable String challengeId, @RequestBody Task task) {
-<span class="fc" id="L23">        return taskService.addTask(challengeId, task);</span>
+    public Task addTask(@PathVariable String challengeId, @RequestBody TaskDTO taskDto) {
+<span class="fc" id="L24">        return taskService.addTask(challengeId, toTaskEntity(taskDto));</span>
     }
 
     @GetMapping(&quot;/challenge/{challengeId}&quot;)
     @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
     public List&lt;Task&gt; getTasksByChallenge(@PathVariable String challengeId) {
-<span class="fc" id="L29">        return taskService.getTasksByChallenge(challengeId);</span>
+<span class="fc" id="L30">        return taskService.getTasksByChallenge(challengeId);</span>
     }
 
     @PutMapping(&quot;/{id}&quot;)
     @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
-    public Task updateTask(@PathVariable String id, @RequestBody Task task) {
-<span class="fc" id="L35">        return taskService.updateTask(id, task);</span>
+    public Task updateTask(@PathVariable String id, @RequestBody TaskDTO taskDto) {
+<span class="fc" id="L36">        return taskService.updateTask(id, toTaskEntity(taskDto));</span>
     }
 
     @PatchMapping(&quot;/{id}/status&quot;)
     @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('FREELANCER')&quot;)
     public Task updateTaskStatus(@PathVariable String id, @RequestParam String status) {
         try {
-<span class="fc" id="L42">            TaskStatus taskStatus = TaskStatus.valueOf(status.toUpperCase().trim());</span>
-<span class="fc" id="L43">            return taskService.updateTaskStatus(id, taskStatus);</span>
-<span class="fc" id="L44">        } catch (IllegalArgumentException e) {</span>
-<span class="fc" id="L45">            throw new RuntimeException(&quot;Invalid status. Valid values: COMPLETE, COMPLETED, INPROGRESS, INCOMPLETE, CLOSED, ACTIVE&quot;);</span>
+<span class="fc" id="L43">            TaskStatus taskStatus = TaskStatus.valueOf(status.toUpperCase().trim());</span>
+<span class="fc" id="L44">            return taskService.updateTaskStatus(id, taskStatus);</span>
+<span class="fc" id="L45">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L46">            throw new RuntimeException(&quot;Invalid status. Valid values: COMPLETE, COMPLETED, INPROGRESS, INCOMPLETE, CLOSED, ACTIVE&quot;);</span>
         }
     }
 
     @DeleteMapping(&quot;/{id}&quot;)
     @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
     public void deleteTask(@PathVariable String id) {
-<span class="fc" id="L52">        taskService.deleteTask(id);</span>
-<span class="fc" id="L53">    }</span>
+<span class="fc" id="L53">        taskService.deleteTask(id);</span>
+<span class="fc" id="L54">    }</span>
+
+    private Task toTaskEntity(TaskDTO dto) {
+<span class="fc" id="L57">        Task task = new Task();</span>
+<span class="fc" id="L58">        task.setTitle(dto.getTitle());</span>
+<span class="fc" id="L59">        task.setDescription(dto.getDescription());</span>
+<span class="fc" id="L60">        task.setStatus(dto.getStatus());</span>
+<span class="fc" id="L61">        task.setSubmittedAt(dto.getSubmittedAt());</span>
+<span class="fc" id="L62">        task.setDeadline(dto.getDeadline());</span>
+<span class="fc" id="L63">        task.setProgress(dto.getProgress());</span>
+<span class="fc" id="L64">        return task;</span>
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

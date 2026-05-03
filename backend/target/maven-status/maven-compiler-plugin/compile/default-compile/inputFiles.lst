@@ -8,7 +8,10 @@ D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challe
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\controllers\ParticipationController.java
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\controllers\TaskController.java
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\controllers\UserTestController.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\dtos\ChallengeDTO.java
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\dtos\SaveSonarPointsRequest.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\dtos\SonarCloudResultDTO.java
+D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\dtos\TaskDTO.java
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\entities\Challenge.java
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\entities\ChallengeDifficulty.java
 D:\Vagrant\ubunto\pidev\challenge-service\backend\src\main\java\tn\esprit\challengeservice\entities\ChallengeParticipation.java

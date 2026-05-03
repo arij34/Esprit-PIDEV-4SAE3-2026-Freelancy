@@ -9,18 +9,23 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 public class GitHubService {
 
+    private static final String GITHUB_API_BASE = "https://api.github.com";
     private static final String TEMPLATE_URL =
             "https://api.github.com/repos/challenge-org-Freelancy/challenge-Test/generate";
     private static final String ORG_OWNER = "challenge-org-Freelancy";
     private static final String SONAR_ORG = "challenge-org-freelancy";
     private static final int SEAL_BYTES = 48;
+    private static final Pattern SAFE_PATH_SEGMENT = Pattern.compile("^[A-Za-z0-9._-]+$");
+    private static final Pattern SAFE_BRANCH_NAME = Pattern.compile("^[A-Za-z0-9._/-]+$");
 
     @Value("${github.token}")
     private String githubToken;
@@ -61,7 +66,9 @@ public class GitHubService {
     }
 
     public void addCollaborator(String repoName, String usernameGithub) {
-        String url = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/collaborators/" + usernameGithub;
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String safeUsername = requireSafePathSegment(usernameGithub, "usernameGithub");
+        String url = buildGithubUrl("repos", ORG_OWNER, safeRepoName, "collaborators", safeUsername);
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
@@ -108,7 +115,11 @@ public class GitHubService {
         if (ownerRepo == null) {
             return false;
         }
-        String url = "https://api.github.com/repos/" + ownerRepo + "/branches/" + branchName;
+        String[] ownerRepoParts = ownerRepo.split("/");
+        if (ownerRepoParts.length != 2 || !SAFE_BRANCH_NAME.matcher(branchName.trim()).matches()) {
+            return false;
+        }
+        String url = buildGithubUrl("repos", ownerRepoParts[0], ownerRepoParts[1], "branches", branchName.trim());
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
@@ -126,13 +137,33 @@ public class GitHubService {
 
     private String extractOwnerRepoFromUrl(String repoUrl) {
         try {
-            String normalized = repoUrl.trim().replace(".git", "");
-            if (normalized.contains("github.com/")) {
-                String path = normalized.substring(normalized.indexOf("github.com/") + 11);
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-                return path;
+            String normalized = repoUrl.trim();
+            if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+                normalized = "https://" + normalized;
+            }
+
+            URI uri = URI.create(normalized);
+            if (uri.getHost() == null || !uri.getHost().toLowerCase(Locale.ROOT).contains("github.com")) {
+                return null;
+            }
+
+            String path = uri.getPath();
+            if (path == null || path.isBlank()) {
+                return null;
+            }
+
+            String[] parts = Arrays.stream(path.split("/"))
+                    .filter(s -> !s.isBlank())
+                    .toArray(String[]::new);
+
+            if (parts.length < 2) {
+                return null;
+            }
+
+            String owner = parts[0];
+            String repo = parts[1].replaceAll("\\.git$", "");
+            if (SAFE_PATH_SEGMENT.matcher(owner).matches() && SAFE_PATH_SEGMENT.matcher(repo).matches()) {
+                return owner + "/" + repo;
             }
             return null;
         } catch (Exception e) {
@@ -142,7 +173,16 @@ public class GitHubService {
     }
 
     public boolean doesUserExist(String usernameGithub) {
-        String url = "https://api.github.com/users/" + usernameGithub;
+        if (usernameGithub == null || usernameGithub.isBlank()) {
+            return false;
+        }
+
+        String safeUsername = usernameGithub.trim();
+        if (!SAFE_PATH_SEGMENT.matcher(safeUsername).matches()) {
+            return false;
+        }
+
+        String url = buildGithubUrl("users", safeUsername);
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/vnd.github+json");
@@ -158,7 +198,9 @@ public class GitHubService {
     }
 
     public boolean isCollaboratorAccepted(String repoName, String usernameGithub) {
-        String url = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/collaborators/" + usernameGithub;
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String safeUsername = requireSafePathSegment(usernameGithub, "usernameGithub");
+        String url = buildGithubUrl("repos", ORG_OWNER, safeRepoName, "collaborators", safeUsername);
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
@@ -230,7 +272,9 @@ public class GitHubService {
     }
 
     public String createPullRequest(String repoName, String branchName) {
-        String url = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/pulls";
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String safeBranchName = requireSafeBranchName(branchName);
+        String url = buildGithubUrl("repos", ORG_OWNER, safeRepoName, "pulls");
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
@@ -241,9 +285,9 @@ public class GitHubService {
 
         Map<String, Object> body = Map.of(
                 "title", "Challenge Submission",
-                "head", branchName,
+            "head", safeBranchName,
                 "base", baseBranch,
-                "body", "Automated challenge submission from branch " + branchName
+            "body", "Automated challenge submission from branch " + safeBranchName
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
@@ -267,15 +311,15 @@ public class GitHubService {
                 throw new RuntimeException("Invalid or missing GitHub token. Check GITHUB_TOKEN is set correctly.");
             }
             if (status == 404) {
-                throw new RuntimeException("Repository or branch not found. Ensure the branch '" + branchName + "' exists and is pushed.");
+                throw new RuntimeException("Repository or branch not found. Ensure the branch '" + safeBranchName + "' exists and is pushed.");
             }
             if (status == 422) {
-                log.warn("GitHub 422 creating PR for repo {} branch {}: {}", repoName, branchName, errorBody);
+                log.warn("GitHub 422 creating PR for repo {} branch {}: {}", safeRepoName, safeBranchName, errorBody);
                 if (errorBody != null && errorBody.contains("A pull request already exists")) {
-                    throw new RuntimeException("A pull request already exists for branch '" + branchName + "'. Check GitHub.");
+                    throw new RuntimeException("A pull request already exists for branch '" + safeBranchName + "'. Check GitHub.");
                 }
                 if (errorBody != null && errorBody.contains("Reference does not exist")) {
-                    throw new RuntimeException("Branch '" + branchName + "' not found. Ensure it exists and is pushed to the remote.");
+                    throw new RuntimeException("Branch '" + safeBranchName + "' not found. Ensure it exists and is pushed to the remote.");
                 }
                 throw new RuntimeException("Cannot create pull request: " + (errorBody != null && errorBody.length() < 200 ? errorBody : "Validation failed. Check branch name and that it is pushed."));
             }
@@ -284,7 +328,8 @@ public class GitHubService {
     }
 
     private String getDefaultBranch(String repoName) {
-        String url = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName;
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String url = buildGithubUrl("repos", ORG_OWNER, safeRepoName);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
         headers.set("Accept", "application/vnd.github+json");
@@ -367,7 +412,13 @@ public class GitHubService {
     }
 
     public String getLatestPullRequestNumber(String repoName) {
-        String url = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/pulls?state=all&sort=created&direction=desc&per_page=1";
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String url = UriComponentsBuilder.fromHttpUrl(buildGithubUrl("repos", ORG_OWNER, safeRepoName, "pulls"))
+            .queryParam("state", "all")
+            .queryParam("sort", "created")
+            .queryParam("direction", "desc")
+            .queryParam("per_page", 1)
+            .toUriString();
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + githubToken);
@@ -398,7 +449,9 @@ public class GitHubService {
         headers.set("Authorization", "Bearer " + githubToken);
         headers.set("Accept", "application/vnd.github+json");
 
-        String url = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/actions/secrets/" + secretName;
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String safeSecretName = requireSafePathSegment(secretName, "secretName");
+        String url = buildGithubUrl("repos", ORG_OWNER, safeRepoName, "actions", "secrets", safeSecretName);
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         try {
@@ -455,12 +508,15 @@ public class GitHubService {
         headers.set("Accept", "application/vnd.github+json");
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String keyUrl = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/actions/secrets/public-key";
+        String safeRepoName = requireSafePathSegment(repoName, "repoName");
+        String safeSecretName = requireSafePathSegment(secretName, "secretName");
+
+        String keyUrl = buildGithubUrl("repos", ORG_OWNER, safeRepoName, "actions", "secrets", "public-key");
         HttpEntity<Void> keyRequest = new HttpEntity<>(headers);
         ResponseEntity<Map> keyResponse = restTemplate.exchange(keyUrl, HttpMethod.GET, keyRequest, Map.class);
 
         if (!keyResponse.getStatusCode().is2xxSuccessful() || keyResponse.getBody() == null) {
-            throw new RuntimeException("Failed to get repo public key for: " + repoName);
+            throw new RuntimeException("Failed to get repo public key for: " + safeRepoName);
         }
 
         String publicKeyBase64 = (String) keyResponse.getBody().get("key");
@@ -478,7 +534,7 @@ public class GitHubService {
 
         String encryptedValue = Base64.getEncoder().encodeToString(cipherText);
 
-        String secretUrl = "https://api.github.com/repos/" + ORG_OWNER + "/" + repoName + "/actions/secrets/" + secretName;
+        String secretUrl = buildGithubUrl("repos", ORG_OWNER, safeRepoName, "actions", "secrets", safeSecretName);
         Map<String, String> body = Map.of(
                 "encrypted_value", encryptedValue,
                 "key_id", keyId
@@ -487,9 +543,37 @@ public class GitHubService {
         ResponseEntity<Void> response = restTemplate.exchange(secretUrl, HttpMethod.PUT, secretRequest, Void.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
-            log.info("Secret {} added to repo {}", secretName, repoName);
+            log.info("Secret {} added to repo {}", safeSecretName, safeRepoName);
         } else {
             throw new RuntimeException("Failed to add secret to repo: " + response.getStatusCode());
         }
+    }
+
+    private String buildGithubUrl(String... pathSegments) {
+        return UriComponentsBuilder.fromHttpUrl(GITHUB_API_BASE)
+                .pathSegment(pathSegments)
+                .toUriString();
+    }
+
+    private String requireSafePathSegment(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be blank");
+        }
+        String normalized = value.trim();
+        if (!SAFE_PATH_SEGMENT.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("Invalid " + fieldName + " format");
+        }
+        return normalized;
+    }
+
+    private String requireSafeBranchName(String branchName) {
+        if (branchName == null || branchName.isBlank()) {
+            throw new IllegalArgumentException("branchName cannot be blank");
+        }
+        String normalized = branchName.trim();
+        if (!SAFE_BRANCH_NAME.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("Invalid branchName format");
+        }
+        return normalized;
     }
 }

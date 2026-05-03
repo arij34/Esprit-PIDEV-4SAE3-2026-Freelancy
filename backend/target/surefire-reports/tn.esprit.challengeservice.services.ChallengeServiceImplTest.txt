@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: tn.esprit.challengeservice.services.ChallengeServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.548 s -- in tn.esprit.challengeservice.services.ChallengeServiceImplTest
+Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.345 s -- in tn.esprit.challengeservice.services.ChallengeServiceImplTest

@@ -3,6 +3,7 @@ package tn.esprit.challengeservice.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.challengeservice.dtos.SonarCloudResultDTO;
 import tn.esprit.challengeservice.entities.ChallengeParticipation;
 import tn.esprit.challengeservice.entities.SonarCloudResult;
 import tn.esprit.challengeservice.exceptions.SonarResultsNotFoundException;
@@ -162,8 +163,8 @@ public class ParticipationController {
     @PutMapping("/{participationId}/sonar-results")
     public SonarCloudResult updateSonarResults(
             @PathVariable String participationId,
-            @RequestBody SonarCloudResult updatedResult) {
-        return participationService.updateSonarResults(participationId, updatedResult);
+            @RequestBody SonarCloudResultDTO updatedResultDto) {
+        return participationService.updateSonarResults(participationId, toSonarCloudResultEntity(updatedResultDto));
     }
 
     @PatchMapping("/{participationId}/sonar-results/{sonarResultId}/points")
@@ -213,5 +214,18 @@ public class ParticipationController {
     private static double parseDouble(Map<String, Object> m, String key) {
         Object v = m.get(key);
         return v != null ? Double.parseDouble(v.toString()) : 0.0;
+    }
+
+    private SonarCloudResult toSonarCloudResultEntity(SonarCloudResultDTO dto) {
+        SonarCloudResult result = new SonarCloudResult();
+        result.setQualityGateStatus(dto.getQualityGateStatus());
+        result.setBugs(dto.getBugs());
+        result.setCodeSmells(dto.getCodeSmells());
+        result.setVulnerabilities(dto.getVulnerabilities());
+        result.setSecurityHotspots(dto.getSecurityHotspots());
+        result.setCoverage(dto.getCoverage());
+        result.setDuplication(dto.getDuplication());
+        result.setLinesOfCode(dto.getLinesOfCode());
+        return result;
     }
 }
