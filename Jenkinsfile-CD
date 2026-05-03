@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = "arijachach/skill-management:latest"
+    }
+    stages {
+        stage('CLEAN') {
+            steps {
+                deleteDir()
+            }
+        }
+        stage('GIT') {
+            steps {
+                git branch: 'skill_management',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+            }
+        }
+        stage('VERIFY IMAGE DOCKER HUB') {
+            steps {
+                sh "docker pull ${DOCKER_IMAGE}"
+                echo "Image ${DOCKER_IMAGE} disponible sur Docker Hub"
+            }
+        }
+        stage('DEPLOY TO KUBERNETES') {
+            steps {
+                sh '''
+                    kubectl apply -f k8s/namespace.yaml
+                    kubectl apply -f k8s/mysql-deployment.yaml
+                    kubectl apply -f k8s/configmap.yaml
+                    kubectl apply -f k8s/secret.yaml
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
+                    kubectl rollout restart deployment/skill-deployment -n freelancy
+                '''
+            }
+        }
+        stage('VERIFY DEPLOYMENT') {
+            steps {
+                sh '''
+                    kubectl rollout status deployment/skill-deployment -n freelancy --timeout=300s
+                    kubectl get pods -n freelancy
+                    kubectl get svc -n freelancy
+                    kubectl get deployments -n freelancy
+                '''
+            }
+        }
+        stage('SMOKE TEST') {
+            steps {
+                sh '''
+                    kubectl get pods -n freelancy -o wide
+                    kubectl get services -n freelancy
+                '''
+                echo 'Service accessible via NodePort 30086'
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Déploiement Kubernetes réussi !'
+        }
+        failure {
+            sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
+            echo 'Déploiement Kubernetes échoué !'
+        }
+    }
+}
