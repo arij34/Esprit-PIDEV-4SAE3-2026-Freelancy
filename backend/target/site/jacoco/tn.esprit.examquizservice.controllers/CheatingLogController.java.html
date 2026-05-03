@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheatingLogController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.controllers</a> &gt; <span class="el_source">CheatingLogController.java</span></div><h1>CheatingLogController.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.controllers;
+
+import tn.esprit.examquizservice.entities.CheatingLog;
+import tn.esprit.examquizservice.services.CheatingLogService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/cheating-logs&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+@RequiredArgsConstructor
+public class CheatingLogController {
+    private final CheatingLogService service;
+<span class="nc" id="L16">    @PostMapping public CheatingLog create(@RequestBody CheatingLog value) { return service.create(value); }</span>
+<span class="nc" id="L17">    @GetMapping public List&lt;CheatingLog&gt; getAll() { return service.findAll(); }</span>
+<span class="nc" id="L18">    @GetMapping(&quot;/{id}&quot;) public CheatingLog getById(@PathVariable Long id) { return service.findById(id); }</span>
+<span class="nc" id="L19">    @PutMapping(&quot;/{id}&quot;) public CheatingLog update(@PathVariable Long id, @RequestBody CheatingLog value) { return service.update(id, value); }</span>
+<span class="nc" id="L20">    @DeleteMapping(&quot;/{id}&quot;) public void delete(@PathVariable Long id) { service.delete(id); }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

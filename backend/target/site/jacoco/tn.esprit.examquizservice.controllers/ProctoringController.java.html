@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProctoringController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.controllers</a> &gt; <span class="el_source">ProctoringController.java</span></div><h1>ProctoringController.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.controllers;
+
+import tn.esprit.examquizservice.dtos.RecordViolationRequest;
+import tn.esprit.examquizservice.dtos.RecordViolationResponse;
+import tn.esprit.examquizservice.dtos.ViolationDTO;
+import tn.esprit.examquizservice.services.ProctoringService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * REST Controller for exam proctoring and violation management.
+ * 
+ * Endpoints:
+ * - POST /api/proctoring/violations - Record a new violation
+ * - GET /api/proctoring/violations - Get violations for exam and user
+ */
+@RestController
+@RequestMapping(&quot;/api/proctoring&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+@RequiredArgsConstructor
+<span class="nc" id="L29">@Slf4j</span>
+public class ProctoringController {
+
+    private final ProctoringService proctoringService;
+
+    @PostMapping(&quot;/violations&quot;)
+    public ResponseEntity&lt;?&gt; recordViolation(
+            @Valid @RequestBody RecordViolationRequest request,
+            BindingResult bindingResult) {
+
+<span class="nc" id="L39">        log.info(&quot;Recording violation - examId: {}, userId: {}, type: {}&quot;,</span>
+<span class="nc" id="L40">                request.getExamId(), request.getUserId(), request.getType());</span>
+
+        // Validate request body
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (bindingResult.hasErrors()) {</span>
+<span class="nc" id="L44">            String errors = bindingResult.getAllErrors().stream()</span>
+<span class="nc" id="L45">                    .map(error -&gt; error.getDefaultMessage())</span>
+<span class="nc" id="L46">                    .collect(Collectors.joining(&quot;, &quot;));</span>
+
+<span class="nc" id="L48">            log.warn(&quot;Validation error in violation request: {}&quot;, errors);</span>
+<span class="nc" id="L49">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L50">                    .body(RecordViolationResponse.builder()</span>
+<span class="nc" id="L51">                            .message(&quot;Validation error: &quot; + errors)</span>
+<span class="nc" id="L52">                            .build());</span>
+        }
+
+        try {
+<span class="nc" id="L56">            RecordViolationResponse response = proctoringService.recordViolation(</span>
+<span class="nc" id="L57">                    request.getExamId(),</span>
+<span class="nc" id="L58">                    request.getUserId(),</span>
+<span class="nc" id="L59">                    request.getAttemptId(),</span>
+<span class="nc" id="L60">                    request.getType(),</span>
+<span class="nc" id="L61">                    request.getSeverity(),</span>
+<span class="nc" id="L62">                    request.getDetails()</span>
+            );
+
+<span class="nc" id="L65">            log.info(&quot;Violation recorded successfully - status: {}, count: {}&quot;,</span>
+<span class="nc" id="L66">                    response.getStatus(), response.getViolationCount());</span>
+
+<span class="nc" id="L68">            return ResponseEntity.ok(response);</span>
+
+<span class="nc" id="L70">        } catch (Exception e) {</span>
+<span class="nc" id="L71">            log.error(&quot;Error recording violation&quot;, e);</span>
+<span class="nc" id="L72">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L73">                    .body(RecordViolationResponse.builder()</span>
+<span class="nc" id="L74">                            .message(&quot;Error recording violation: &quot; + e.getMessage())</span>
+<span class="nc" id="L75">                            .build());</span>
+        }
+    }
+
+    /**
+     * Retrieves violations for a specific exam and user.
+     * &lt;p&gt;
+     * Query Parameters:
+     * - examId (required): The exam ID
+     * - userId (required): The user ID
+     * &lt;p&gt;
+     * Response: Array of ViolationDTO
+     */
+    @GetMapping(&quot;/violations&quot;)
+    public ResponseEntity&lt;?&gt; getViolations(
+            @RequestParam(required = true) Long examId,
+            @RequestParam(required = true) Long userId) {
+
+<span class="nc" id="L93">        log.debug(&quot;Fetching violations - examId: {}, userId: {}&quot;, examId, userId);</span>
+
+        try {
+<span class="nc" id="L96">            List&lt;ViolationDTO&gt; violations = proctoringService.getViolationsByExamAndUser(examId, userId);</span>
+
+<span class="nc" id="L98">            log.info(&quot;Violations fetched successfully - count: {}&quot;, violations.size());</span>
+<span class="nc" id="L99">            return ResponseEntity.ok(violations);</span>
+
+<span class="nc" id="L101">        } catch (Exception e) {</span>
+<span class="nc" id="L102">            log.error(&quot;Error fetching violations&quot;, e);</span>
+<span class="nc" id="L103">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L104">                    .body(&quot;Error fetching violations: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Retrieves violation count for a specific exam and user.
+     * &lt;p&gt;
+     * Query Parameters:
+     * - examId (required): The exam ID
+     * - userId (required): The user ID
+     * &lt;p&gt;
+     * Response: { &quot;violationCount&quot;: number }
+     */
+    @GetMapping(&quot;/violations/count&quot;)
+    public ResponseEntity&lt;?&gt; getViolationCount(
+            @RequestParam(required = true) Long examId,
+            @RequestParam(required = true) Long userId) {
+
+<span class="nc" id="L122">        log.debug(&quot;Fetching violation count - examId: {}, userId: {}&quot;, examId, userId);</span>
+
+        try {
+<span class="nc" id="L125">            Long count = proctoringService.getViolationCount(examId, userId);</span>
+
+<span class="nc" id="L127">            return ResponseEntity.ok()</span>
+<span class="nc" id="L128">                    .body(java.util.Map.of(&quot;violationCount&quot;, count));</span>
+
+<span class="nc" id="L130">        } catch (Exception e) {</span>
+<span class="nc" id="L131">            log.error(&quot;Error fetching violation count&quot;, e);</span>
+<span class="nc" id="L132">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L133">                    .body(&quot;Error fetching violation count: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Retrieves all violations for a specific exam.
+     * &lt;p&gt;
+     * Query Parameters:
+     * - examId (required): The exam ID
+     * &lt;p&gt;
+     * Response: Array of ViolationDTO
+     */
+    @GetMapping(&quot;/violations/exam&quot;)
+    public ResponseEntity&lt;?&gt; getExamViolations(
+            @RequestParam(required = true) Long examId) {
+
+<span class="nc" id="L149">        log.debug(&quot;Fetching violations for exam - examId: {}&quot;, examId);</span>
+
+        try {
+<span class="nc" id="L152">            List&lt;ViolationDTO&gt; violations = proctoringService.getViolationsByExam(examId);</span>
+
+<span class="nc" id="L154">            log.info(&quot;Exam violations fetched successfully - count: {}&quot;, violations.size());</span>
+<span class="nc" id="L155">            return ResponseEntity.ok(violations);</span>
+
+<span class="nc" id="L157">        } catch (Exception e) {</span>
+<span class="nc" id="L158">            log.error(&quot;Error fetching exam violations&quot;, e);</span>
+<span class="nc" id="L159">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L160">                    .body(&quot;Error fetching exam violations: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * GET /api/proctoring/violations/by-attempt/{attemptId}
+     * Returns all violations tied to a specific attempt.
+     */
+    @GetMapping(&quot;/violations/by-attempt/{attemptId}&quot;)
+    public ResponseEntity&lt;?&gt; getByAttempt(@PathVariable Long attemptId) {
+        try {
+<span class="nc" id="L171">            return ResponseEntity.ok(proctoringService.getViolationsByAttempt(attemptId));</span>
+<span class="nc" id="L172">        } catch (Exception e) {</span>
+<span class="nc" id="L173">            log.error(&quot;Error fetching violations by attempt&quot;, e);</span>
+<span class="nc" id="L174">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L175">                    .body(&quot;Error fetching violations: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * GET /api/proctoring/violations/summary?examId=&amp;userId=
+     * Returns aggregated violation summary for a user on an exam.
+     */
+    @GetMapping(&quot;/violations/summary&quot;)
+    public ResponseEntity&lt;?&gt; getViolationSummary(
+            @RequestParam Long examId,
+            @RequestParam Long userId) {
+        try {
+<span class="nc" id="L188">            return ResponseEntity.ok(proctoringService.getViolationSummary(examId, userId));</span>
+<span class="nc" id="L189">        } catch (Exception e) {</span>
+<span class="nc" id="L190">            log.error(&quot;Error fetching violation summary&quot;, e);</span>
+<span class="nc" id="L191">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L192">                    .body(&quot;Error fetching summary: &quot; + e.getMessage());</span>
+
+        }
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

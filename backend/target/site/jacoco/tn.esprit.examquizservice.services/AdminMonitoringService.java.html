@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminMonitoringService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.services</a> &gt; <span class="el_source">AdminMonitoringService.java</span></div><h1>AdminMonitoringService.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.services;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import tn.esprit.examquizservice.dtos.AdminLiveCandidateDTO;
+import tn.esprit.examquizservice.dtos.AdminLiveEventDTO;
+import tn.esprit.examquizservice.dtos.AdminLiveExamSnapshotDTO;
+import tn.esprit.examquizservice.entities.Attempt;
+import tn.esprit.examquizservice.entities.AttemptStatus;
+import tn.esprit.examquizservice.entities.CheatingLog;
+import tn.esprit.examquizservice.entities.ExamParticipation;
+import tn.esprit.examquizservice.entities.ExamViolation;
+import tn.esprit.examquizservice.repositories.AttemptRepository;
+import tn.esprit.examquizservice.repositories.CheatingLogRepository;
+import tn.esprit.examquizservice.repositories.ExamParticipationRepository;
+import tn.esprit.examquizservice.repositories.ExamRepository;
+import tn.esprit.examquizservice.repositories.ExamViolationRepository;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+<span class="nc" id="L35">@Slf4j</span>
+public class AdminMonitoringService {
+
+    private static final int DEFAULT_RECENT_EVENTS_LIMIT = 25;
+    private static final int STREAM_INTERVAL_MS = 3000;
+
+    /** Statuses included in the live monitoring view */
+<span class="nc" id="L42">    private static final List&lt;AttemptStatus&gt; MONITORED_STATUSES =</span>
+<span class="nc" id="L43">            List.of(AttemptStatus.IN_PROGRESS, AttemptStatus.AUTO_SUBMITTED, AttemptStatus.SUBMITTED);</span>
+
+    private final AttemptRepository attemptRepository;
+    private final ExamViolationRepository examViolationRepository;
+    private final CheatingLogRepository cheatingLogRepository;
+    private final ExamRepository examRepository;
+    private final ExamParticipationRepository participationRepository;
+
+    @Transactional(readOnly = true)
+    public AdminLiveExamSnapshotDTO getLiveSnapshot(Long examId) {
+        // Fetch exam title directly so it works even when no candidates are active
+<span class="nc" id="L54">        String examTitle = examRepository.findById(examId)</span>
+<span class="nc" id="L55">                .map(e -&gt; e.getTitle())</span>
+<span class="nc" id="L56">                .orElse(null);</span>
+
+        // Include IN_PROGRESS, AUTO_SUBMITTED and SUBMITTED so admins see every
+        // candidate who participated in the current session, not only the ones
+        // still clicking (especially important because phone-detection threshold=1
+        // immediately flips status to AUTO_SUBMITTED)
+<span class="nc" id="L62">        List&lt;Attempt&gt; allAttempts = attemptRepository.findByExamIdAndStatusIn(examId, MONITORED_STATUSES);</span>
+
+<span class="nc" id="L64">        List&lt;Long&gt; attemptIds = allAttempts.stream().map(Attempt::getId).toList();</span>
+
+        // Build userId→participation map so we can display real names in the admin UI
+<span class="nc" id="L67">        List&lt;Long&gt; userIds = allAttempts.stream().map(Attempt::getUserId).distinct().toList();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        Map&lt;Long, ExamParticipation&gt; participationByUserId = userIds.isEmpty()</span>
+<span class="nc" id="L69">                ? Map.of()</span>
+<span class="nc" id="L70">                : participationRepository.findByExam_Id(examId).stream()</span>
+<span class="nc" id="L71">                        .collect(Collectors.toMap(ExamParticipation::getUserId, p -&gt; p, (a, b) -&gt; a));</span>
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        List&lt;ExamViolation&gt; violations = attemptIds.isEmpty()</span>
+<span class="nc" id="L74">                ? List.of()</span>
+<span class="nc" id="L75">                : examViolationRepository.findByExamIdAndAttemptIdIn(examId, attemptIds);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        List&lt;CheatingLog&gt; cheatingLogs = attemptIds.isEmpty()</span>
+<span class="nc" id="L77">                ? List.of()</span>
+<span class="nc" id="L78">                : cheatingLogRepository.findByAttemptIdIn(attemptIds);</span>
+
+<span class="nc" id="L80">        Map&lt;Long, List&lt;ExamViolation&gt;&gt; violationsByAttempt = violations.stream()</span>
+<span class="nc" id="L81">                .collect(Collectors.groupingBy(ExamViolation::getAttemptId));</span>
+<span class="nc" id="L82">        Map&lt;Long, List&lt;CheatingLog&gt;&gt; logsByAttempt = cheatingLogs.stream()</span>
+<span class="nc" id="L83">                .collect(Collectors.groupingBy(log -&gt; log.getAttempt().getId()));</span>
+
+<span class="nc" id="L85">        List&lt;AdminLiveCandidateDTO&gt; candidates = allAttempts.stream()</span>
+<span class="nc" id="L86">                .map(attempt -&gt; mapCandidate(attempt,</span>
+<span class="nc" id="L87">                        violationsByAttempt.getOrDefault(attempt.getId(), List.of()),</span>
+<span class="nc" id="L88">                        logsByAttempt.getOrDefault(attempt.getId(), List.of()),</span>
+<span class="nc" id="L89">                        participationByUserId.get(attempt.getUserId())))</span>
+<span class="nc" id="L90">                .sorted(Comparator.comparing(AdminLiveCandidateDTO::getStartedAt, Comparator.nullsLast(Comparator.reverseOrder())))</span>
+<span class="nc" id="L91">                .toList();</span>
+
+<span class="nc" id="L93">        long activeCandidates = allAttempts.stream()</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                .filter(a -&gt; AttemptStatus.IN_PROGRESS == a.getStatus()).count();</span>
+
+<span class="nc" id="L96">        return AdminLiveExamSnapshotDTO.builder()</span>
+<span class="nc" id="L97">                .examId(examId)</span>
+<span class="nc" id="L98">                .examTitle(examTitle)</span>
+<span class="nc" id="L99">                .activeCandidates((int) activeCandidates)</span>
+<span class="nc" id="L100">                .totalParticipants(candidates.size())</span>
+<span class="nc" id="L101">                .generatedAt(LocalDateTime.now())</span>
+<span class="nc" id="L102">                .candidates(candidates)</span>
+<span class="nc" id="L103">                .recentEvents(getRecentEvents(examId, 30, DEFAULT_RECENT_EVENTS_LIMIT))</span>
+<span class="nc" id="L104">                .build();</span>
+    }
+
+    @Transactional(readOnly = true)
+    public List&lt;AdminLiveEventDTO&gt; getRecentEvents(Long examId, int sinceMinutes, int limit) {
+<span class="nc" id="L109">        LocalDateTime since = LocalDateTime.now().minusMinutes(Math.max(1, sinceMinutes));</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        int safeLimit = limit &lt;= 0 ? DEFAULT_RECENT_EVENTS_LIMIT : limit;</span>
+
+<span class="nc" id="L112">        List&lt;AdminLiveEventDTO&gt; events = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L114">        examViolationRepository.findByExamIdAndTimestampAfterOrderByTimestampDesc(examId, since)</span>
+<span class="nc" id="L115">                .stream()</span>
+<span class="nc" id="L116">                .map(this::mapViolationEvent)</span>
+<span class="nc" id="L117">                .forEach(events::add);</span>
+
+<span class="nc" id="L119">        cheatingLogRepository.findRecentByExamId(examId, since)</span>
+<span class="nc" id="L120">                .stream()</span>
+<span class="nc" id="L121">                .map(this::mapCheatingEvent)</span>
+<span class="nc" id="L122">                .forEach(events::add);</span>
+
+<span class="nc" id="L124">        return events.stream()</span>
+<span class="nc" id="L125">                .sorted(Comparator.comparing(AdminLiveEventDTO::getTimestamp, Comparator.nullsLast(Comparator.reverseOrder())))</span>
+<span class="nc" id="L126">                .limit(safeLimit)</span>
+<span class="nc" id="L127">                .toList();</span>
+    }
+
+    /**
+     * Returns live activity for one candidate in one exam.
+     * active=true only when latest attempt status is IN_PROGRESS.
+     */
+    @Transactional(readOnly = true)
+    public Map&lt;String, Object&gt; getCandidateActivity(Long examId, Long userId) {
+<span class="nc" id="L136">        String examTitle = examRepository.findById(examId)</span>
+<span class="nc" id="L137">                .map(e -&gt; e.getTitle())</span>
+<span class="nc" id="L138">                .orElse(null);</span>
+
+<span class="nc" id="L140">        ExamParticipation participation = participationRepository</span>
+<span class="nc" id="L141">                .findByExam_IdAndUserId(examId, userId)</span>
+<span class="nc" id="L142">                .orElse(null);</span>
+
+<span class="nc" id="L144">        Attempt latestAttempt = attemptRepository.findByExamIdAndStatusIn(examId, MONITORED_STATUSES).stream()</span>
+<span class="nc" id="L145">                .filter(a -&gt; userId.equals(a.getUserId()))</span>
+<span class="nc" id="L146">                .max(Comparator.comparing(Attempt::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())))</span>
+<span class="nc" id="L147">                .orElse(null);</span>
+
+<span class="nc bnc" id="L149" title="All 4 branches missed.">        boolean active = latestAttempt != null &amp;&amp; latestAttempt.getStatus() == AttemptStatus.IN_PROGRESS;</span>
+
+<span class="nc" id="L151">        Map&lt;String, Object&gt; payload = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L152">        payload.put(&quot;examId&quot;, examId);</span>
+<span class="nc" id="L153">        payload.put(&quot;examTitle&quot;, examTitle);</span>
+<span class="nc" id="L154">        payload.put(&quot;userId&quot;, userId);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        payload.put(&quot;userFirstName&quot;, participation != null ? participation.getUserFirstName() : null);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        payload.put(&quot;userLastName&quot;, participation != null ? participation.getUserLastName() : null);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        payload.put(&quot;userEmail&quot;, participation != null ? participation.getUserEmail() : null);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        payload.put(&quot;attemptId&quot;, latestAttempt != null ? latestAttempt.getId() : null);</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        payload.put(&quot;attemptStatus&quot;, latestAttempt != null &amp;&amp; latestAttempt.getStatus() != null</span>
+<span class="nc" id="L160">                ? latestAttempt.getStatus().name()</span>
+<span class="nc" id="L161">                : &quot;NOT_STARTED&quot;);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        payload.put(&quot;startedAt&quot;, latestAttempt != null ? latestAttempt.getStartTime() : null);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        payload.put(&quot;submittedAt&quot;, latestAttempt != null ? latestAttempt.getSubmittedAt() : null);</span>
+<span class="nc" id="L164">        payload.put(&quot;active&quot;, active);</span>
+<span class="nc" id="L165">        payload.put(&quot;generatedAt&quot;, LocalDateTime.now());</span>
+
+<span class="nc" id="L167">        return payload;</span>
+    }
+
+    public SseEmitter streamExamMonitoring(Long examId) {
+        // Long.MAX_VALUE = no timeout; 0L is ambiguous across servlet containers
+<span class="nc" id="L172">        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);</span>
+<span class="nc" id="L173">        AtomicBoolean active = new AtomicBoolean(true);</span>
+
+<span class="nc" id="L175">        emitter.onCompletion(() -&gt; active.set(false));</span>
+<span class="nc" id="L176">        emitter.onTimeout(() -&gt; {</span>
+<span class="nc" id="L177">            active.set(false);</span>
+<span class="nc" id="L178">            emitter.complete();</span>
+<span class="nc" id="L179">        });</span>
+<span class="nc" id="L180">        emitter.onError(error -&gt; active.set(false));</span>
+
+<span class="nc" id="L182">        CompletableFuture.runAsync(() -&gt; {</span>
+            try {
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                while (active.get()) {</span>
+<span class="nc" id="L185">                    emitter.send(SseEmitter.event()</span>
+<span class="nc" id="L186">                            .name(&quot;snapshot&quot;)</span>
+<span class="nc" id="L187">                            .data(getLiveSnapshot(examId)));</span>
+<span class="nc" id="L188">                    Thread.sleep(STREAM_INTERVAL_MS);</span>
+                }
+<span class="nc" id="L190">            } catch (IOException e) {</span>
+<span class="nc" id="L191">                log.debug(&quot;Admin monitoring stream closed for exam {}&quot;, examId);</span>
+<span class="nc" id="L192">                emitter.complete();</span>
+<span class="nc" id="L193">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L194">                Thread.currentThread().interrupt();</span>
+<span class="nc" id="L195">                emitter.complete();</span>
+<span class="nc" id="L196">            } catch (Exception e) {</span>
+<span class="nc" id="L197">                log.error(&quot;Admin monitoring stream failed for exam {}&quot;, examId, e);</span>
+<span class="nc" id="L198">                emitter.completeWithError(e);</span>
+            }
+<span class="nc" id="L200">        });</span>
+
+<span class="nc" id="L202">        return emitter;</span>
+    }
+
+    private AdminLiveCandidateDTO mapCandidate(Attempt attempt, List&lt;ExamViolation&gt; violations, List&lt;CheatingLog&gt; logs,
+                                               ExamParticipation participation) {
+<span class="nc" id="L207">                int answeredQuestions = attemptRepository.countAnsweredQuestions(attempt.getId());</span>
+<span class="nc" id="L208">        ExamViolation lastViolation = violations.stream()</span>
+<span class="nc" id="L209">                .max(Comparator.comparing(ExamViolation::getTimestamp, Comparator.nullsLast(Comparator.naturalOrder())))</span>
+<span class="nc" id="L210">                .orElse(null);</span>
+<span class="nc" id="L211">        LocalDateTime lastLogTime = logs.stream()</span>
+<span class="nc" id="L212">                .map(CheatingLog::getEventTime)</span>
+<span class="nc" id="L213">                .filter(java.util.Objects::nonNull)</span>
+<span class="nc" id="L214">                .max(LocalDateTime::compareTo)</span>
+<span class="nc" id="L215">                .orElse(null);</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        LocalDateTime lastViolationTime = lastViolation != null ? lastViolation.getTimestamp() : null;</span>
+<span class="nc" id="L217">        LocalDateTime lastActivityTime = StreamMax.max(lastLogTime, lastViolationTime, attempt.getSubmittedAt(), attempt.getStartTime());</span>
+
+<span class="nc" id="L219">        return AdminLiveCandidateDTO.builder()</span>
+<span class="nc" id="L220">                .attemptId(attempt.getId())</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                .examId(attempt.getExam() != null ? attempt.getExam().getId() : null)</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                .examTitle(attempt.getExam() != null ? attempt.getExam().getTitle() : null)</span>
+<span class="nc" id="L223">                .userId(attempt.getUserId())</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                .userFirstName(participation != null ? participation.getUserFirstName() : null)</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                .userLastName(participation != null ? participation.getUserLastName() : null)</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                .userEmail(participation != null ? participation.getUserEmail() : null)</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                .attemptStatus(attempt.getStatus() != null ? attempt.getStatus().name() : null)</span>
+<span class="nc" id="L228">                .startedAt(attempt.getStartTime())</span>
+<span class="nc" id="L229">                .expectedEndTime(attempt.getExpectedEndTime())</span>
+<span class="nc" id="L230">                .suspiciousScore(attempt.getSuspiciousScore())</span>
+<span class="nc" id="L231">                .answeredQuestions(answeredQuestions)</span>
+<span class="nc" id="L232">                .cheatingEventsCount(logs.size())</span>
+<span class="nc" id="L233">                .violationCount(violations.size())</span>
+<span class="nc bnc" id="L234" title="All 4 branches missed.">                .lastWarningType(lastViolation != null &amp;&amp; lastViolation.getType() != null ? lastViolation.getType().name() : null)</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                .lastWarningAction(lastViolation != null ? lastViolation.getActionTaken() : null)</span>
+<span class="nc" id="L236">                .lastWarningTime(lastViolationTime)</span>
+<span class="nc" id="L237">                .lastActivityTime(lastActivityTime)</span>
+<span class="nc" id="L238">                .autoSubmitted(Boolean.TRUE.equals(attempt.getAutoSubmitted()))</span>
+<span class="nc" id="L239">                .riskLevel(computeRiskLevel(attempt.getSuspiciousScore(), violations.size()))</span>
+<span class="nc" id="L240">                .build();</span>
+    }
+
+    private AdminLiveEventDTO mapViolationEvent(ExamViolation violation) {
+<span class="nc" id="L244">        return AdminLiveEventDTO.builder()</span>
+<span class="nc" id="L245">                .source(&quot;VIOLATION&quot;)</span>
+<span class="nc" id="L246">                .examId(violation.getExamId())</span>
+<span class="nc" id="L247">                .attemptId(violation.getAttemptId())</span>
+<span class="nc" id="L248">                .userId(violation.getUserId())</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                .type(violation.getType() != null ? violation.getType().name() : null)</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                .severity(violation.getSeverity() != null ? violation.getSeverity().name() : null)</span>
+<span class="nc" id="L251">                .action(violation.getActionTaken())</span>
+<span class="nc" id="L252">                .details(violation.getDetails())</span>
+<span class="nc" id="L253">                .timestamp(violation.getTimestamp())</span>
+<span class="nc" id="L254">                .build();</span>
+    }
+
+    private AdminLiveEventDTO mapCheatingEvent(CheatingLog cheatingLog) {
+<span class="nc" id="L258">        Attempt attempt = cheatingLog.getAttempt();</span>
+<span class="nc" id="L259">        return AdminLiveEventDTO.builder()</span>
+<span class="nc" id="L260">                .source(&quot;CHEATING_LOG&quot;)</span>
+<span class="nc bnc" id="L261" title="All 4 branches missed.">                .examId(attempt != null &amp;&amp; attempt.getExam() != null ? attempt.getExam().getId() : null)</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                .attemptId(attempt != null ? attempt.getId() : null)</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                .userId(attempt != null ? attempt.getUserId() : null)</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                .type(cheatingLog.getEventType() != null ? cheatingLog.getEventType().name() : null)</span>
+<span class="nc" id="L265">                .severity(null)</span>
+<span class="nc" id="L266">                .action(null)</span>
+<span class="nc" id="L267">                .details(cheatingLog.getDetails())</span>
+<span class="nc" id="L268">                .timestamp(cheatingLog.getEventTime())</span>
+<span class="nc" id="L269">                .build();</span>
+    }
+
+    private String computeRiskLevel(Double suspiciousScore, int violationCount) {
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        double score = suspiciousScore != null ? suspiciousScore : 0.0;</span>
+<span class="nc bnc" id="L274" title="All 4 branches missed.">        if (score &gt;= 5.0 || violationCount &gt;= 3) return &quot;HIGH&quot;;</span>
+<span class="nc bnc" id="L275" title="All 4 branches missed.">        if (score &gt;= 2.0 || violationCount &gt;= 1) return &quot;MEDIUM&quot;;</span>
+<span class="nc" id="L276">        return &quot;LOW&quot;;</span>
+    }
+
+    private static final class StreamMax {
+        private static LocalDateTime max(LocalDateTime... values) {
+<span class="nc" id="L281">            return java.util.Arrays.stream(values)</span>
+<span class="nc" id="L282">                    .filter(java.util.Objects::nonNull)</span>
+<span class="nc" id="L283">                    .max(LocalDateTime::compareTo)</span>
+<span class="nc" id="L284">                    .orElse(null);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

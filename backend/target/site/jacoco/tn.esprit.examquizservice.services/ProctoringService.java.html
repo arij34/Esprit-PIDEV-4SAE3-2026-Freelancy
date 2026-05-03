@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProctoringService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.services</a> &gt; <span class="el_source">ProctoringService.java</span></div><h1>ProctoringService.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.services;
+
+import tn.esprit.examquizservice.config.ProctoringConfig;
+import tn.esprit.examquizservice.dtos.RecordViolationResponse;
+import tn.esprit.examquizservice.dtos.ViolationDTO;
+import tn.esprit.examquizservice.dtos.ViolationStatus;
+import tn.esprit.examquizservice.entities.*;
+import tn.esprit.examquizservice.repositories.ExamViolationRepository;
+
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Service for handling exam proctoring and violation tracking.
+ * - Implements violation recording with business rules
+ * - Manages automatic exam termination and submission
+ * - Tracks violation history for reporting
+ */
+@Service
+@RequiredArgsConstructor
+<span class="nc" id="L29">@Slf4j</span>
+public class ProctoringService {
+    
+    private final ExamViolationRepository violationRepository;
+    private final ExamSessionService examSessionService;
+    private final AttemptService attemptService;
+
+    @Value(&quot;${exam.proctoring.threshold.default:3}&quot;)
+    private int defaultThreshold;
+
+    @Value(&quot;${exam.proctoring.threshold.phone-detected:3}&quot;)
+    private int phoneDetectedThreshold;
+
+    @Value(&quot;${exam.proctoring.threshold.tab-switch:3}&quot;)
+    private int tabSwitchThreshold;
+
+    @Value(&quot;${exam.proctoring.threshold.looking-away:3}&quot;)
+    private int lookingAwayThreshold;
+    
+    /**
+     * Records a violation for an exam and applies business rules.
+     *
+     * Business Rules:
+     * - Any violation type reaches threshold (default 3) -&gt; auto-submit exam
+     * - Otherwise -&gt; issue warning
+     */
+    @Transactional
+    public RecordViolationResponse recordViolation(Long examId, Long userId, Long attemptId,
+                                                    ExamViolationType type, String severity, String details) {
+<span class="nc" id="L58">        log.info(&quot;Recording violation - examId: {}, userId: {}, type: {}&quot;, examId, userId, type);</span>
+
+        // Parse severity, default LOW
+<span class="nc" id="L61">        ViolationSeverity sev = ViolationSeverity.LOW;</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (severity != null) {</span>
+<span class="nc" id="L63">            try { sev = ViolationSeverity.valueOf(severity.toUpperCase()); }</span>
+<span class="nc" id="L64">            catch (IllegalArgumentException ignored) {}</span>
+        }
+        
+        try {
+            // Count existing violations to derive snapshot (new one not yet saved)
+<span class="nc" id="L69">            int currentViolationCount = violationRepository.countByUserIdAndExamId(userId, examId).intValue() + 1;</span>
+
+<span class="nc" id="L71">            Long currentTypeCount = violationRepository.countByExamIdAndUserIdAndType(examId, userId, type);</span>
+<span class="nc" id="L72">            int thresholdForType = getThresholdForType(type);</span>
+            // +1 because the new violation hasn't been persisted yet at this point
+<span class="nc" id="L74">            long newTypeCount = currentTypeCount + 1;</span>
+
+            // Determine the action taken
+            String actionTaken;
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (newTypeCount &gt;= thresholdForType) {</span>
+<span class="nc" id="L79">                actionTaken = &quot;AUTO_SUBMIT&quot;;</span>
+<span class="nc" id="L80">            } else {</span>
+<span class="nc" id="L81">                actionTaken = &quot;WARNING&quot;;</span>
+            }
+
+            // Create violation record
+<span class="nc" id="L85">            ExamViolation violation = ExamViolation.builder()</span>
+<span class="nc" id="L86">                    .examId(examId)</span>
+<span class="nc" id="L87">                    .userId(userId)</span>
+<span class="nc" id="L88">                    .attemptId(attemptId)</span>
+<span class="nc" id="L89">                    .type(type)</span>
+<span class="nc" id="L90">                    .severity(sev)</span>
+<span class="nc" id="L91">                    .timestamp(LocalDateTime.now())</span>
+<span class="nc" id="L92">                    .details(details)</span>
+<span class="nc" id="L93">                    .actionTaken(actionTaken)</span>
+<span class="nc" id="L94">                    .countSnapshot(currentViolationCount)</span>
+<span class="nc" id="L95">                    .build();</span>
+
+<span class="nc" id="L97">            ExamViolation savedViolation = violationRepository.save(violation);</span>
+<span class="nc" id="L98">            log.debug(&quot;Violation saved successfully - violationId: {}&quot;, savedViolation.getId());</span>
+
+            // Apply business rules
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (newTypeCount &gt;= thresholdForType) {</span>
+<span class="nc" id="L102">                log.warn(&quot;Violation type threshold reached ({}) for {} - auto-submitting exam. ExamId: {}, UserId: {}&quot;,</span>
+<span class="nc" id="L103">                        thresholdForType, type, examId, userId);</span>
+<span class="nc" id="L104">                examSessionService.autoSubmitExam(attemptId);</span>
+<span class="nc" id="L105">                return RecordViolationResponse.builder()</span>
+<span class="nc" id="L106">                        .status(ViolationStatus.AUTO_SUBMITTED)</span>
+<span class="nc" id="L107">                        .violationCount(currentViolationCount)</span>
+<span class="nc" id="L108">                        .message(&quot;Exam auto-submitted: &quot; + type + &quot; reached &quot;</span>
+<span class="nc" id="L109">                                + thresholdForType + &quot; violations&quot;)</span>
+<span class="nc" id="L110">                        .action(&quot;AUTO_SUBMIT&quot;)</span>
+<span class="nc" id="L111">                        .build();</span>
+            }
+
+            // Issue warning
+<span class="nc" id="L115">            log.info(&quot;Violation recorded as warning. Current count: {}. {} count is {}/{}&quot;,</span>
+<span class="nc" id="L116">                    currentViolationCount, type, newTypeCount, thresholdForType);</span>
+<span class="nc" id="L117">            return RecordViolationResponse.builder()</span>
+<span class="nc" id="L118">                    .status(ViolationStatus.WARNING)</span>
+<span class="nc" id="L119">                    .violationCount(currentViolationCount)</span>
+<span class="nc" id="L120">                    .message(&quot;Violation recorded. You have &quot; + Math.max(0, thresholdForType - newTypeCount)</span>
+<span class="nc" id="L121">                            + &quot; remaining &quot; + type + &quot; warnings before auto-submission&quot;)</span>
+<span class="nc" id="L122">                    .action(&quot;CONTINUE&quot;)</span>
+<span class="nc" id="L123">                    .build();</span>
+
+<span class="nc" id="L125">        } catch (Exception e) {</span>
+<span class="nc" id="L126">            log.error(&quot;Error recording violation&quot;, e);</span>
+<span class="nc" id="L127">            throw new RuntimeException(&quot;Failed to record violation: &quot; + e.getMessage());</span>
+        }
+    }
+    
+    /**
+     * Retrieves all violations for a specific exam and user.
+     */
+    @Transactional(readOnly = true)
+    public List&lt;ViolationDTO&gt; getViolationsByExamAndUser(Long examId, Long userId) {
+<span class="nc" id="L136">        log.debug(&quot;Fetching violations - examId: {}, userId: {}&quot;, examId, userId);</span>
+        
+<span class="nc" id="L138">        List&lt;ExamViolation&gt; violations = violationRepository.findByExamIdAndUserId(examId, userId);</span>
+        
+<span class="nc" id="L140">        return violations.stream()</span>
+<span class="nc" id="L141">                .map(this::mapToViolationDTO)</span>
+<span class="nc" id="L142">                .collect(Collectors.toList());</span>
+    }
+    
+    /**
+     * Retrieves violation count for exam and user.
+     */
+    @Transactional(readOnly = true)
+    public Long getViolationCount(Long examId, Long userId) {
+<span class="nc" id="L150">        log.debug(&quot;Fetching violation count - examId: {}, userId: {}&quot;, examId, userId);</span>
+<span class="nc" id="L151">        return violationRepository.countByUserIdAndExamId(userId, examId);</span>
+    }
+    
+    /**
+     * Retrieves all violations for a specific exam.
+     */
+    @Transactional(readOnly = true)
+    public List&lt;ViolationDTO&gt; getViolationsByExam(Long examId) {
+<span class="nc" id="L159">        log.debug(&quot;Fetching violations for exam - examId: {}&quot;, examId);</span>
+        
+<span class="nc" id="L161">        List&lt;ExamViolation&gt; violations = violationRepository.findByExamId(examId);</span>
+        
+<span class="nc" id="L163">        return violations.stream()</span>
+<span class="nc" id="L164">                .map(this::mapToViolationDTO)</span>
+<span class="nc" id="L165">                .collect(Collectors.toList());</span>
+    }
+    
+    /**
+     * Retrieves all violations for a specific attempt.
+     */
+    @Transactional(readOnly = true)
+    public List&lt;ViolationDTO&gt; getViolationsByAttempt(Long attemptId) {
+<span class="nc" id="L173">        return violationRepository.findByAttemptId(attemptId).stream()</span>
+<span class="nc" id="L174">                .map(this::mapToViolationDTO)</span>
+<span class="nc" id="L175">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Returns a summary (count + last action) for a given exam+user combination.
+     */
+    @Transactional(readOnly = true)
+    public Map&lt;String, Object&gt; getViolationSummary(Long examId, Long userId) {
+<span class="nc" id="L183">        List&lt;ExamViolation&gt; list = violationRepository.findByExamIdAndUserId(examId, userId);</span>
+<span class="nc" id="L184">        long total = list.size();</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        String lastAction = list.isEmpty() ? null : list.get(list.size() - 1).getActionTaken();</span>
+<span class="nc" id="L186">        Map&lt;String, Object&gt; summary = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L187">        summary.put(&quot;examId&quot;, examId);</span>
+<span class="nc" id="L188">        summary.put(&quot;userId&quot;, userId);</span>
+<span class="nc" id="L189">        summary.put(&quot;totalViolations&quot;, total);</span>
+<span class="nc" id="L190">        summary.put(&quot;lastAction&quot;, lastAction);</span>
+<span class="nc" id="L191">        return summary;</span>
+    }
+
+    /**
+     * Maps ExamViolation entity to ViolationDTO.
+     */
+    private ViolationDTO mapToViolationDTO(ExamViolation violation) {
+<span class="nc" id="L198">        return ViolationDTO.builder()</span>
+<span class="nc" id="L199">                .id(violation.getId())</span>
+<span class="nc" id="L200">                .examId(violation.getExamId())</span>
+<span class="nc" id="L201">                .userId(violation.getUserId())</span>
+<span class="nc" id="L202">                .attemptId(violation.getAttemptId())</span>
+<span class="nc" id="L203">                .type(violation.getType())</span>
+<span class="nc" id="L204">                .severity(violation.getSeverity())</span>
+<span class="nc" id="L205">                .timestamp(violation.getTimestamp())</span>
+<span class="nc" id="L206">                .details(violation.getDetails())</span>
+<span class="nc" id="L207">                .actionTaken(violation.getActionTaken())</span>
+<span class="nc" id="L208">                .countSnapshot(violation.getCountSnapshot())</span>
+<span class="nc" id="L209">                .build();</span>
+    }
+    
+    private int getThresholdForType(ExamViolationType type) {
+<span class="nc bnc" id="L213" title="All 4 branches missed.">        return switch (type) {</span>
+<span class="nc" id="L214">            case PHONE_DETECTED -&gt; phoneDetectedThreshold;</span>
+<span class="nc" id="L215">            case TAB_SWITCH -&gt; tabSwitchThreshold;</span>
+<span class="nc" id="L216">            case LOOKING_AWAY -&gt; lookingAwayThreshold;</span>
+<span class="nc" id="L217">            default -&gt; defaultThreshold;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

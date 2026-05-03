@@ -1,0 +1,111 @@
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = "ameni221/examquiz-service"   // ← change to teammate's Docker Hub image
+        IMAGE_TAG  = "latest"
+        NAMESPACE  = "freelancy"
+    }
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('1 — Checkout Manifests') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/ExamQuiz-Service']],   // ← change to actual branch name
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 1,
+                            timeout: 30,
+                            noTags: true
+                        ],
+                        [
+                            $class: 'SparseCheckoutPaths',
+                            sparseCheckoutPaths: [
+                                [path: 'k8s/']
+                            ]
+                        ]
+                    ],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
+                echo 'Kubernetes manifests retrieved'
+            }
+        }
+        stage('2 — Verify Image Docker Hub') {
+            steps {
+                sh "docker pull ${IMAGE_NAME}:${IMAGE_TAG}"
+                echo "Image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
+            }
+        }
+        stage('3 — Prepare Namespace & Secret') {
+            steps {
+                sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
+                sh """
+                    kubectl create secret generic mysql-examquiz-secret \
+                      --from-literal=mysql-root-password=root \
+                      -n ${NAMESPACE} \
+                      --dry-run=client -o yaml | kubectl apply -f -
+                """
+                echo "Namespace and secrets ready"
+            }
+        }
+        stage('4 — Deploy MySQL') {
+            steps {
+                sh "kubectl apply -f k8s/mysql-examquiz-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl rollout status deployment/mysql-examquiz -n ${NAMESPACE} --timeout=120s"
+                echo "MySQL ExamQuiz ready"
+            }
+        }
+        stage('5 — Deploy Prometheus') {
+            steps {
+                sh "kubectl apply -f k8s/prometheus-config.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8s/prometheus-deployment.yaml -n ${NAMESPACE}"
+                echo "Prometheus deployed"
+            }
+        }
+        stage('6 — Deploy Grafana') {
+            steps {
+                sh "kubectl apply -f k8s/grafana-deployment.yaml -n ${NAMESPACE}"
+                echo "Grafana deployed"
+            }
+        }
+        stage('7 — Deploy ExamQuiz Service') {
+            steps {
+                sh "kubectl apply -f k8s/examquiz-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl rollout status deployment/examquiz-deployment -n ${NAMESPACE} --timeout=120s"
+                echo "ExamQuiz service deployed"
+            }
+        }
+        stage('8 — Smoke Test') {
+            steps {
+                sh "kubectl get pods -n ${NAMESPACE} -o wide"
+                sh "kubectl get services -n ${NAMESPACE}"
+                echo "ExamQuiz API: http://192.168.49.2:30150/actuator/health"
+                echo "Prometheus:   http://localhost:30090"
+                echo "Grafana:      http://localhost:30030 (admin/admin123)"
+            }
+        }
+    }
+    post {
+        success {
+            echo '✅ CD Pipeline completed! ExamQuiz service deployed.'
+        }
+        failure {
+            script {
+                sh "kubectl get events -n ${env.NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
+            }
+            echo '❌ CD Pipeline failed!'
+        }
+        always {
+            echo '🔄 CD Pipeline finished.'
+        }
+    }
+}

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResultService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.services</a> &gt; <span class="el_source">ResultService.java</span></div><h1>ResultService.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.services;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import tn.esprit.examquizservice.clients.UserServiceClient;
+import tn.esprit.examquizservice.dtos.ResultResponse;
+import tn.esprit.examquizservice.dtos.SubmitResultRequest;
+import tn.esprit.examquizservice.entities.Exam;
+import tn.esprit.examquizservice.entities.ExamResult;
+import tn.esprit.examquizservice.entities.ResultStatus;
+import tn.esprit.examquizservice.exceptions.DuplicateResultException;
+import tn.esprit.examquizservice.exceptions.ResourceNotFoundException;
+import tn.esprit.examquizservice.repositories.ExamRepository;
+import tn.esprit.examquizservice.repositories.ExamResultRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L24">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class ResultService {
+
+    private final ExamResultRepository resultRepository;
+    private final ExamRepository examRepository;
+    private final ObjectMapper objectMapper;
+    private final UserServiceClient userServiceClient;
+
+    /** POST /api/results/submit */
+    public ResultResponse submit(SubmitResultRequest request) {
+        // Reject duplicate: same attempt already has a result
+<span class="fc" id="L37">        resultRepository.findByAttemptId(request.getAttemptId()).ifPresent(existing -&gt; {</span>
+<span class="fc" id="L38">            throw new DuplicateResultException(</span>
+<span class="fc" id="L39">                    &quot;Result already submitted for attemptId=&quot; + request.getAttemptId());</span>
+        });
+
+        // Reject duplicate: same (examId, userId) — enforces one-attempt-per-user at API level
+<span class="fc" id="L43">        resultRepository.findByUserIdAndExamId(request.getUserId(), request.getExamId())</span>
+<span class="fc" id="L44">                .ifPresent(existing -&gt; {</span>
+<span class="nc" id="L45">                    throw new DuplicateResultException(</span>
+<span class="nc" id="L46">                            &quot;Exam already completed by userId=&quot; + request.getUserId()</span>
+<span class="nc" id="L47">                                    + &quot; for examId=&quot; + request.getExamId());</span>
+                });
+
+<span class="fc" id="L50">        Exam exam = examRepository.findById(request.getExamId())</span>
+<span class="pc" id="L51">                .orElseThrow(() -&gt; new RuntimeException(&quot;Exam not found: &quot; + request.getExamId()));</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        double total   = request.getTotalPoints() != null ? request.getTotalPoints()</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">                       : (exam.getPoints() != null ? exam.getPoints() : 0);</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        double earned  = request.getEarnedPoints() != null ? request.getEarnedPoints() : 0;</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        double percent = total &gt; 0 ? (earned / total) * 100.0 : 0.0;</span>
+
+        ResultStatus status;
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (Boolean.TRUE.equals(request.getAutoSubmitted())) {</span>
+<span class="fc" id="L60">            status = ResultStatus.AUTO_SUBMITTED;</span>
+<span class="fc" id="L61">        } else {</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">            double passing = exam.getPassingScore() != null ? exam.getPassingScore() : 50.0;</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            status = percent &gt;= passing ? ResultStatus.PASSED : ResultStatus.FAILED;</span>
+        }
+
+<span class="fc" id="L66">        String answersJson = null;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (request.getAnswers() != null) {</span>
+            try {
+<span class="nc" id="L69">                answersJson = objectMapper.writeValueAsString(request.getAnswers());</span>
+<span class="pc" id="L70">            } catch (JsonProcessingException e) {</span>
+<span class="fc" id="L71">                answersJson = request.getAnswers().toString();</span>
+            }
+        }
+
+<span class="fc" id="L75">        ExamResult result = ExamResult.builder()</span>
+<span class="fc" id="L76">                .examId(request.getExamId())</span>
+<span class="fc" id="L77">                .userId(request.getUserId())</span>
+<span class="fc" id="L78">                .attemptId(request.getAttemptId())</span>
+<span class="fc" id="L79">                .scorePercent(percent)</span>
+<span class="fc" id="L80">                .earnedPoints(earned)</span>
+<span class="fc" id="L81">                .totalPoints(total)</span>
+<span class="fc" id="L82">                .status(status)</span>
+<span class="fc" id="L83">                .submittedAt(LocalDateTime.now())</span>
+<span class="fc" id="L84">                .timeTakenSeconds(request.getTimeTakenSeconds())</span>
+<span class="fc" id="L85">                .answersJson(answersJson)</span>
+<span class="fc" id="L86">                .build();</span>
+
+<span class="fc" id="L88">        ExamResult saved = resultRepository.save(result);</span>
+<span class="fc" id="L89">        awardExperiencePoints(saved.getUserId(), saved.getEarnedPoints());</span>
+<span class="fc" id="L90">        return toResponse(saved);</span>
+    }
+
+    /**
+     * Internal use: auto-save result directly from ExamSessionService after submitExam.
+     * Does NOT throw on duplicate — idempotent (returns existing if already saved).
+     */
+    public ResultResponse saveOrGet(Long examId, Long userId, Long attemptId, Double earned,
+                                    Double total, Boolean autoSubmitted, Integer timeTakenSeconds,
+                                    Double passingScore) {
+<span class="fc" id="L100">        return resultRepository.findByAttemptId(attemptId)</span>
+<span class="fc" id="L101">                .map(this::toResponse)</span>
+<span class="fc" id="L102">                .orElseGet(() -&gt; {</span>
+<span class="nc bnc" id="L103" title="All 4 branches missed.">                    double percent = total != null &amp;&amp; total &gt; 0 ? (earned / total) * 100.0 : 0.0;</span>
+                    ResultStatus status;
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                    if (Boolean.TRUE.equals(autoSubmitted)) {</span>
+<span class="nc" id="L106">                        status = ResultStatus.AUTO_SUBMITTED;</span>
+<span class="nc" id="L107">                    } else {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                        double passing = passingScore != null ? passingScore : 50.0;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                        status = percent &gt;= passing ? ResultStatus.PASSED : ResultStatus.FAILED;</span>
+                    }
+<span class="nc" id="L111">                    ExamResult result = ExamResult.builder()</span>
+<span class="nc" id="L112">                            .examId(examId).userId(userId).attemptId(attemptId)</span>
+<span class="nc" id="L113">                            .scorePercent(percent).earnedPoints(earned).totalPoints(total)</span>
+<span class="nc" id="L114">                            .status(status).submittedAt(LocalDateTime.now())</span>
+<span class="nc" id="L115">                            .timeTakenSeconds(timeTakenSeconds)</span>
+<span class="nc" id="L116">                            .build();</span>
+<span class="nc" id="L117">                    ExamResult saved = resultRepository.save(result);</span>
+<span class="nc" id="L118">                    awardExperiencePoints(saved.getUserId(), saved.getEarnedPoints());</span>
+<span class="nc" id="L119">                    return toResponse(saved);</span>
+                });
+    }
+
+    /** GET /api/results/me?examId=... */
+    public ResultResponse getMyResult(Long userId, Long examId) {
+<span class="pc" id="L125">        ExamResult result = resultRepository.findByUserIdAndExamId(userId, examId)</span>
+<span class="pc" id="L126">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+<span class="fc" id="L127">                        &quot;No result found for userId=&quot; + userId + &quot; examId=&quot; + examId));</span>
+<span class="nc" id="L128">        return toResponse(result);</span>
+    }
+
+    /** GET /api/results/by-attempt/{attemptId} */
+    public ResultResponse getByAttempt(Long attemptId) {
+<span class="nc" id="L133">        ExamResult result = resultRepository.findByAttemptId(attemptId)</span>
+<span class="nc" id="L134">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+<span class="nc" id="L135">                        &quot;No result found for attemptId=&quot; + attemptId));</span>
+<span class="nc" id="L136">        return toResponse(result);</span>
+    }
+
+    /** GET /api/results/history/me */
+    public List&lt;ResultResponse&gt; getHistory(Long userId) {
+<span class="fc" id="L141">        return resultRepository.findByUserId(userId).stream()</span>
+<span class="fc" id="L142">                .map(this::toResponse)</span>
+<span class="fc" id="L143">                .collect(Collectors.toList());</span>
+    }
+
+    /** GET /api/results?examId=&amp;userId= (admin) */
+    public List&lt;ResultResponse&gt; getByExamAndUser(Long examId, Long userId) {
+<span class="fc" id="L148">        return resultRepository.findAllByUserIdAndExamId(userId, examId).stream()</span>
+<span class="fc" id="L149">                .map(this::toResponse)</span>
+<span class="fc" id="L150">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Increases earned points for a user's result.
+     * - If examId is provided: updates that exam result for the user.
+     * - If examId is null: updates the latest result for that user.
+     */
+    @Transactional
+    public ResultResponse increaseScoreByUserId(Long userId, Double deltaPoints, Long examId) {
+<span class="pc bpc" id="L160" title="1 of 4 branches missed.">        if (deltaPoints == null || deltaPoints &lt;= 0) {</span>
+<span class="fc" id="L161">            throw new IllegalArgumentException(&quot;deltaPoints must be &gt; 0&quot;);</span>
+        }
+
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        ExamResult result = (examId != null)</span>
+<span class="fc" id="L165">                ? resultRepository.findByUserIdAndExamId(userId, examId)</span>
+<span class="pc" id="L166">                    .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+<span class="pc" id="L167">                            &quot;No result found for userId=&quot; + userId + &quot; examId=&quot; + examId))</span>
+<span class="fc" id="L168">                : resultRepository.findTopByUserIdOrderBySubmittedAtDescIdDesc(userId)</span>
+<span class="pc" id="L169">                    .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
+<span class="nc" id="L170">                            &quot;No result found for userId=&quot; + userId));</span>
+
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        double currentEarned = result.getEarnedPoints() != null ? result.getEarnedPoints() : 0.0;</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        double total = result.getTotalPoints() != null ? result.getTotalPoints() : 0.0;</span>
+<span class="fc" id="L174">        double updatedEarned = currentEarned + deltaPoints;</span>
+
+        // Keep earned points in a valid range.
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (total &gt; 0) {</span>
+<span class="fc" id="L178">            updatedEarned = Math.min(updatedEarned, total);</span>
+        }
+
+<span class="fc" id="L181">        result.setEarnedPoints(updatedEarned);</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">        result.setScorePercent(total &gt; 0 ? (updatedEarned / total) * 100.0 : updatedEarned);</span>
+
+        // Preserve AUTO_SUBMITTED semantics; otherwise recompute pass/fail.
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (result.getStatus() != ResultStatus.AUTO_SUBMITTED) {</span>
+<span class="fc" id="L186">            double passingScore = examRepository.findById(result.getExamId())</span>
+<span class="fc" id="L187">                    .map(Exam::getPassingScore)</span>
+<span class="fc" id="L188">                    .orElse(50.0);</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">            result.setStatus(result.getScorePercent() &gt;= passingScore ? ResultStatus.PASSED : ResultStatus.FAILED);</span>
+        }
+
+<span class="fc" id="L192">        return toResponse(resultRepository.save(result));</span>
+    }
+
+    /**
+     * Calls the user service to add {@code earnedPoints} to the user's experiencePoints.
+     * Failures are logged but never propagate — exam submission must succeed regardless.
+     */
+    private void awardExperiencePoints(Long userId, Double earnedPoints) {
+<span class="pc bpc" id="L200" title="3 of 6 branches missed.">        if (userId == null || earnedPoints == null || earnedPoints &lt;= 0) return;</span>
+        try {
+<span class="fc" id="L202">            userServiceClient.addExperiencePoints(userId, earnedPoints);</span>
+<span class="fc" id="L203">            log.info(&quot;Awarded {} XP to userId={}&quot;, earnedPoints, userId);</span>
+<span class="pc" id="L204">        } catch (Exception e) {</span>
+<span class="nc" id="L205">            log.warn(&quot;Failed to award XP to userId={}: {}&quot;, userId, e.getMessage());</span>
+        }
+<span class="fc" id="L207">    }</span>
+
+    public ResultResponse toResponse(ExamResult r) {
+<span class="fc" id="L210">        return ResultResponse.builder()</span>
+<span class="fc" id="L211">                .id(r.getId())</span>
+<span class="fc" id="L212">                .examId(r.getExamId())</span>
+<span class="fc" id="L213">                .userId(r.getUserId())</span>
+<span class="fc" id="L214">                .attemptId(r.getAttemptId())</span>
+<span class="fc" id="L215">                .scorePercent(r.getScorePercent())</span>
+<span class="fc" id="L216">                .earnedPoints(r.getEarnedPoints())</span>
+<span class="fc" id="L217">                .totalPoints(r.getTotalPoints())</span>
+<span class="fc" id="L218">                .status(r.getStatus())</span>
+<span class="fc" id="L219">                .submittedAt(r.getSubmittedAt())</span>
+<span class="fc" id="L220">                .timeTakenSeconds(r.getTimeTakenSeconds())</span>
+<span class="fc" id="L221">                .answersJson(r.getAnswersJson())</span>
+<span class="fc" id="L222">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

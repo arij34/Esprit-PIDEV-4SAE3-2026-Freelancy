@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AntiCheatingService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.services</a> &gt; <span class="el_source">AntiCheatingService.java</span></div><h1>AntiCheatingService.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.services;
+
+import tn.esprit.examquizservice.entities.*;
+import tn.esprit.examquizservice.repositories.AttemptRepository;
+import tn.esprit.examquizservice.repositories.CheatingLogRepository;
+import tn.esprit.examquizservice.dtos.CheatingEventDTO;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L18">@Slf4j</span>
+public class AntiCheatingService {
+    
+    private final AttemptRepository attemptRepository;
+    private final CheatingLogRepository cheatingLogRepository;
+    
+    @Value(&quot;${exam.cheating.threshold:5.0}&quot;)
+    private Double suspiciousScoreThreshold;
+    
+    @Value(&quot;${exam.cheating.tab-switch-weight:1.0}&quot;)
+    private Double tabSwitchWeight;
+    
+    @Value(&quot;${exam.cheating.fullscreen-exit-weight:2.0}&quot;)
+    private Double fullscreenExitWeight;
+    
+    @Value(&quot;${exam.cheating.copy-paste-weight:3.0}&quot;)
+    private Double copyPasteWeight;
+    
+    @Value(&quot;${exam.cheating.ip-change-weight:3.0}&quot;)
+    private Double ipChangeWeight;
+    
+    @Value(&quot;${exam.cheating.device-change-weight:3.0}&quot;)
+    private Double deviceChangeWeight;
+    
+    @Value(&quot;${exam.cheating.fast-answer-weight:0.5}&quot;)
+    private Double fastAnswerWeight;
+    
+    /**
+     * Validate exam session token and IP/Device
+     */
+    public boolean validateSessionToken(String sessionToken, String ipAddress, String deviceFingerprint) {
+<span class="fc" id="L49">        Optional&lt;Attempt&gt; attempt = attemptRepository.findBySessionToken(sessionToken);</span>
+        
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (attempt.isEmpty()) {</span>
+<span class="fc" id="L52">            log.warn(&quot;Invalid session token: {}&quot;, sessionToken);</span>
+<span class="fc" id="L53">            return false;</span>
+        }
+        
+<span class="fc" id="L56">        Attempt attData = attempt.get();</span>
+        
+        // Check if session is expired
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">        if (attData.getExpectedEndTime() != null &amp;&amp; attData.getExpectedEndTime() &lt; System.currentTimeMillis()) {</span>
+<span class="fc" id="L60">            log.warn(&quot;Session token expired for attempt: {}&quot;, attData.getId());</span>
+<span class="fc" id="L61">            return false;</span>
+        }
+        
+<span class="fc" id="L64">        return true;</span>
+    }
+    
+    /**
+     * Record a cheating event and update suspicious score
+     */
+    public void recordCheatingEvent(Long attemptId, CheatingEventDTO eventDTO) {
+<span class="fc" id="L71">        Optional&lt;Attempt&gt; attempt = attemptRepository.findById(attemptId);</span>
+        
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (attempt.isEmpty()) {</span>
+<span class="fc" id="L74">            log.error(&quot;Attempt not found: {}&quot;, attemptId);</span>
+<span class="fc" id="L75">            return;</span>
+        }
+        
+<span class="fc" id="L78">        Attempt att = attempt.get();</span>
+        
+        // Create and save cheating log
+<span class="fc" id="L81">        CheatingLog log = CheatingLog.builder()</span>
+<span class="fc" id="L82">            .attempt(att)</span>
+<span class="fc" id="L83">            .eventType(eventDTO.getEventType())</span>
+<span class="fc" id="L84">            .eventTime(LocalDateTime.now())</span>
+<span class="fc" id="L85">            .details(eventDTO.getDetails())</span>
+<span class="fc" id="L86">            .build();</span>
+        
+<span class="fc" id="L88">        cheatingLogRepository.save(log);</span>
+        
+        // Update suspicious score based on event type
+<span class="fc" id="L91">        updateSuspiciousScore(att, eventDTO.getEventType());</span>
+        
+        // Log suspicious activity
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (att.getSuspiciousActivities() == null) {</span>
+<span class="fc" id="L95">            att.setSuspiciousActivities(&quot;&quot;);</span>
+        }
+<span class="fc" id="L97">        att.setSuspiciousActivities(</span>
+<span class="fc" id="L98">            att.getSuspiciousActivities() + </span>
+<span class="fc" id="L99">            eventDTO.getEventType() + &quot; at &quot; + LocalDateTime.now() + &quot;; &quot;</span>
+        );
+        
+<span class="fc" id="L102">        attemptRepository.save(att);</span>
+<span class="fc" id="L103">    }</span>
+    
+    /**
+     * Update suspicious score based on event type
+     */
+    private void updateSuspiciousScore(Attempt attempt, CheatingEventType eventType) {
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        Double currentScore = attempt.getSuspiciousScore() != null ? attempt.getSuspiciousScore() : 0.0;</span>
+<span class="fc" id="L110">        Double newScore = currentScore;</span>
+        
+<span class="pc bpc" id="L112" title="8 of 9 branches missed.">        switch (eventType) {</span>
+            case TAB_SWITCH:
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                attempt.setTabSwitchCount((attempt.getTabSwitchCount() != null ? attempt.getTabSwitchCount() : 0) + 1);</span>
+<span class="fc" id="L115">                newScore += tabSwitchWeight;</span>
+<span class="fc" id="L116">                break;</span>
+            case FULLSCREEN_EXIT:
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                attempt.setFullscreenExitCount((attempt.getFullscreenExitCount() != null ? attempt.getFullscreenExitCount() : 0) + 1);</span>
+<span class="nc" id="L119">                newScore += fullscreenExitWeight;</span>
+<span class="nc" id="L120">                break;</span>
+            case COPY_PASTE:
+<span class="nc" id="L122">                attempt.setCopyPasteDetected(true);</span>
+<span class="nc" id="L123">                newScore += copyPasteWeight;</span>
+<span class="nc" id="L124">                break;</span>
+            case IP_CHANGED:
+<span class="nc" id="L126">                newScore += ipChangeWeight;</span>
+<span class="nc" id="L127">                break;</span>
+            case DEVICE_CHANGED:
+<span class="nc" id="L129">                newScore += deviceChangeWeight;</span>
+<span class="nc" id="L130">                break;</span>
+            case PAGE_REFRESH:
+<span class="nc" id="L132">                newScore += 1.5;</span>
+<span class="nc" id="L133">                break;</span>
+            case KEYBOARD_SHORTCUT:
+<span class="nc" id="L135">                newScore += 1.0;</span>
+<span class="nc" id="L136">                break;</span>
+            case RIGHT_CLICK:
+<span class="nc" id="L138">                newScore += 0.5;</span>
+<span class="nc" id="L139">                break;</span>
+            default:
+<span class="nc" id="L141">                newScore += 1.0;</span>
+        }
+        
+<span class="fc" id="L144">        attempt.setSuspiciousScore(newScore);</span>
+<span class="fc" id="L145">    }</span>
+    
+    /**
+     * Check if IP address changed from start of exam
+     */
+    public boolean checkIpAddressChange(Attempt attempt, String currentIpAddress) {
+<span class="pc bpc" id="L151" title="2 of 4 branches missed.">        if (attempt.getIpAddress() == null || !attempt.getIpAddress().equals(currentIpAddress)) {</span>
+<span class="pc bpc" id="L152" title="1 of 4 branches missed.">            if (attempt.getLastIpAddress() != null &amp;&amp; !attempt.getLastIpAddress().equals(currentIpAddress)) {</span>
+<span class="fc" id="L153">                logIPChange(attempt, currentIpAddress);</span>
+<span class="fc" id="L154">                return true;</span>
+            }
+<span class="fc" id="L156">            attempt.setLastIpAddress(currentIpAddress);</span>
+<span class="fc" id="L157">            return false;</span>
+        }
+<span class="nc" id="L159">        return false;</span>
+    }
+    
+    /**
+     * Check if device fingerprint changed from start of exam
+     */
+    public boolean checkDeviceFingerprint(Attempt attempt, String currentFingerprint) {
+<span class="pc bpc" id="L166" title="2 of 4 branches missed.">        if (attempt.getDeviceFingerprint() == null || !attempt.getDeviceFingerprint().equals(currentFingerprint)) {</span>
+<span class="pc bpc" id="L167" title="1 of 4 branches missed.">            if (attempt.getLastDeviceFingerprint() != null &amp;&amp; !attempt.getLastDeviceFingerprint().equals(currentFingerprint)) {</span>
+<span class="fc" id="L168">                logDeviceChange(attempt, currentFingerprint);</span>
+<span class="fc" id="L169">                return true;</span>
+            }
+<span class="fc" id="L171">            attempt.setLastDeviceFingerprint(currentFingerprint);</span>
+<span class="fc" id="L172">            return false;</span>
+        }
+<span class="nc" id="L174">        return false;</span>
+    }
+    
+    /**
+     * Check if answer was answered too quickly (potential bot/copy)
+     */
+    public boolean checkTooFastAnswer(Integer timeTakenSeconds) {
+        // Consider anything under 3 seconds as suspiciously fast
+<span class="fc bfc" id="L182" title="All 4 branches covered.">        return timeTakenSeconds != null &amp;&amp; timeTakenSeconds &lt; 3;</span>
+    }
+    
+    /**
+     * Calculate final suspicious score and determine if attempt should be flagged
+     */
+    public void calculateFinalSuspiciousScore(Attempt attempt) {
+<span class="fc" id="L189">        List&lt;CheatingLog&gt; logs = cheatingLogRepository.findByAttemptId(attempt.getId());</span>
+<span class="fc" id="L190">        Double score = 0.0;</span>
+        
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        for (CheatingLog log : logs) {</span>
+<span class="pc bpc" id="L193" title="3 of 6 branches missed.">            switch (log.getEventType()) {</span>
+                case TAB_SWITCH:
+<span class="fc" id="L195">                    score += tabSwitchWeight;</span>
+<span class="fc" id="L196">                    break;</span>
+                case FULLSCREEN_EXIT:
+<span class="fc" id="L198">                    score += fullscreenExitWeight;</span>
+<span class="fc" id="L199">                    break;</span>
+                case COPY_PASTE:
+<span class="fc" id="L201">                    score += copyPasteWeight;</span>
+<span class="fc" id="L202">                    break;</span>
+                case IP_CHANGED:
+<span class="nc" id="L204">                    score += ipChangeWeight;</span>
+<span class="nc" id="L205">                    break;</span>
+                case DEVICE_CHANGED:
+<span class="nc" id="L207">                    score += deviceChangeWeight;</span>
+<span class="nc" id="L208">                    break;</span>
+                default:
+<span class="nc" id="L210">                    score += 1.0;</span>
+            }
+        }
+        
+<span class="fc" id="L214">        attempt.setSuspiciousScore(score);</span>
+        
+        // Flag attempt if score exceeds threshold
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">        if (score &gt; suspiciousScoreThreshold) {</span>
+<span class="fc" id="L218">            attempt.setStatus(AttemptStatus.AUTO_SUBMITTED);</span>
+        }
+        
+<span class="fc" id="L221">        attemptRepository.save(attempt);</span>
+<span class="fc" id="L222">    }</span>
+    
+    /**
+     * Check if user already has an active exam session (prevent multiple sessions)
+     */
+    public boolean hasActiveExamSession(Long userId) {
+<span class="fc" id="L228">        return attemptRepository.hasActiveExam(userId);</span>
+    }
+    
+    /**
+     * Get suspicious attempts for admin review
+     */
+    public List&lt;Attempt&gt; getSuspiciousAttempts() {
+<span class="fc" id="L235">        return attemptRepository.findSuspiciousAttempts(suspiciousScoreThreshold);</span>
+    }
+    
+    private void logIPChange(Attempt attempt, String newIpAddress) {
+<span class="fc" id="L239">        CheatingLog log = CheatingLog.builder()</span>
+<span class="fc" id="L240">            .attempt(attempt)</span>
+<span class="fc" id="L241">            .eventType(CheatingEventType.IP_CHANGED)</span>
+<span class="fc" id="L242">            .eventTime(LocalDateTime.now())</span>
+<span class="fc" id="L243">            .details(&quot;IP changed from &quot; + attempt.getIpAddress() + &quot; to &quot; + newIpAddress)</span>
+<span class="fc" id="L244">            .build();</span>
+<span class="fc" id="L245">        cheatingLogRepository.save(log);</span>
+<span class="fc" id="L246">    }</span>
+    
+    private void logDeviceChange(Attempt attempt, String newFingerprint) {
+<span class="fc" id="L249">        CheatingLog log = CheatingLog.builder()</span>
+<span class="fc" id="L250">            .attempt(attempt)</span>
+<span class="fc" id="L251">            .eventType(CheatingEventType.DEVICE_CHANGED)</span>
+<span class="fc" id="L252">            .eventTime(LocalDateTime.now())</span>
+<span class="fc" id="L253">            .details(&quot;Device fingerprint changed from &quot; + attempt.getDeviceFingerprint() + &quot; to &quot; + newFingerprint)</span>
+<span class="fc" id="L254">            .build();</span>
+<span class="fc" id="L255">        cheatingLogRepository.save(log);</span>
+<span class="fc" id="L256">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataSeeder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.config</a> &gt; <span class="el_source">DataSeeder.java</span></div><h1>DataSeeder.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.config;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.examquizservice.entities.*;
+import tn.esprit.examquizservice.repositories.ExamRepository;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Seeds 10 production-ready exams (20 MCQ questions × 5 pts = 100 pts each).
+ * Only runs when the exams table is empty — fully idempotent.
+ */
+<span class="nc" id="L20">@Slf4j</span>
+@Component
+@RequiredArgsConstructor
+public class DataSeeder implements ApplicationRunner {
+
+    private final ExamRepository examRepository;
+
+    @Override
+    @Transactional
+    public void run(ApplicationArguments args) {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (examRepository.count() &gt; 0) {</span>
+<span class="nc" id="L31">            log.info(&quot;DataSeeder: exams table already populated, skipping seed.&quot;);</span>
+<span class="nc" id="L32">            return;</span>
+        }
+<span class="nc" id="L34">        log.info(&quot;DataSeeder: seeding 10 exams...&quot;);</span>
+<span class="nc" id="L35">        buildExams().forEach(examRepository::save);</span>
+<span class="nc" id="L36">        log.info(&quot;DataSeeder: done.&quot;);</span>
+<span class="nc" id="L37">    }</span>
+
+    // -------------------------------------------------------------------------
+    // Exam builders
+    // -------------------------------------------------------------------------
+
+    private List&lt;Exam&gt; buildExams() {
+<span class="nc" id="L44">        return List.of(</span>
+<span class="nc" id="L45">            buildExam(&quot;Java Fundamentals&quot;,</span>
+<span class="nc" id="L46">                &quot;Core Java concepts: OOP, collections, exceptions, generics, and more.&quot;,</span>
+<span class="nc" id="L47">                javaQuestions()),</span>
+<span class="nc" id="L48">            buildExam(&quot;Spring Boot Essentials&quot;,</span>
+<span class="nc" id="L49">                &quot;Spring Boot auto-configuration, REST controllers, JPA, and security basics.&quot;,</span>
+<span class="nc" id="L50">                springQuestions()),</span>
+<span class="nc" id="L51">            buildExam(&quot;JavaScript Essentials&quot;,</span>
+<span class="nc" id="L52">                &quot;ES6+ features, async/await, DOM manipulation, and module system.&quot;,</span>
+<span class="nc" id="L53">                jsQuestions()),</span>
+<span class="nc" id="L54">            buildExam(&quot;SQL &amp; Relational Databases&quot;,</span>
+<span class="nc" id="L55">                &quot;DDL, DML, joins, indexes, transactions, and normalization.&quot;,</span>
+<span class="nc" id="L56">                sqlQuestions()),</span>
+<span class="nc" id="L57">            buildExam(&quot;REST API Design&quot;,</span>
+<span class="nc" id="L58">                &quot;HTTP verbs, status codes, versioning, authentication, and best practices.&quot;,</span>
+<span class="nc" id="L59">                restQuestions()),</span>
+<span class="nc" id="L60">            buildExam(&quot;Python Basics&quot;,</span>
+<span class="nc" id="L61">                &quot;Python syntax, data types, comprehensions, decorators, and file I/O.&quot;,</span>
+<span class="nc" id="L62">                pythonQuestions()),</span>
+<span class="nc" id="L63">            buildExam(&quot;Git &amp; Version Control&quot;,</span>
+<span class="nc" id="L64">                &quot;Branching, merging, rebasing, tagging, and collaborative workflows.&quot;,</span>
+<span class="nc" id="L65">                gitQuestions()),</span>
+<span class="nc" id="L66">            buildExam(&quot;HTML &amp; CSS Fundamentals&quot;,</span>
+<span class="nc" id="L67">                &quot;Semantic HTML5, CSS box model, flexbox, grid, and responsive design.&quot;,</span>
+<span class="nc" id="L68">                htmlCssQuestions()),</span>
+<span class="nc" id="L69">            buildExam(&quot;Agile &amp; Scrum&quot;,</span>
+<span class="nc" id="L70">                &quot;Scrum roles, ceremonies, artifacts, sprint planning, and Kanban basics.&quot;,</span>
+<span class="nc" id="L71">                agileQuestions()),</span>
+<span class="nc" id="L72">            buildExam(&quot;Cybersecurity Basics&quot;,</span>
+<span class="nc" id="L73">                &quot;OWASP Top 10, encryption, authentication, XSS, SQL injection, and secure coding.&quot;,</span>
+<span class="nc" id="L74">                cyberQuestions())</span>
+        );
+    }
+
+    private Exam buildExam(String title, String description, List&lt;Question&gt; questions) {
+<span class="nc" id="L79">        Exam exam = Exam.builder()</span>
+<span class="nc" id="L80">                .title(title)</span>
+<span class="nc" id="L81">                .description(description)</span>
+<span class="nc" id="L82">                .duration(45)</span>
+<span class="nc" id="L83">                .points(100.0)</span>
+<span class="nc" id="L84">                .passingScore(50.0)</span>
+<span class="nc" id="L85">                .startDate(LocalDateTime.now())</span>
+<span class="nc" id="L86">                .endDate(LocalDateTime.now().plusYears(1))</span>
+<span class="nc" id="L87">                .maxAttempts(3)</span>
+<span class="nc" id="L88">                .createdBy(&quot;admin&quot;)</span>
+<span class="nc" id="L89">                .createdAt(LocalDateTime.now())</span>
+<span class="nc" id="L90">                .status(ExamStatus.PUBLISHED)</span>
+<span class="nc" id="L91">                .examType(ExamType.EXAM)</span>
+<span class="nc" id="L92">                .build();</span>
+
+<span class="nc" id="L94">        questions.forEach(q -&gt; q.setExam(exam));</span>
+<span class="nc" id="L95">        exam.setQuestions(questions);</span>
+<span class="nc" id="L96">        return exam;</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper: build one MCQ question with 4 choices, one correct
+    // -------------------------------------------------------------------------
+
+    private Question q(int order, String text, String a, String b, String c, String d, int correctIndex) {
+<span class="nc" id="L104">        List&lt;Answer&gt; answers = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L105">        String[] opts = {a, b, c, d};</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        for (int i = 0; i &lt; 4; i++) {</span>
+<span class="nc" id="L107">            Answer ans = Answer.builder()</span>
+<span class="nc" id="L108">                    .answerText(opts[i])</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    .isCorrect(i == correctIndex)</span>
+<span class="nc" id="L110">                    .orderIndex(i + 1)</span>
+<span class="nc" id="L111">                    .build();</span>
+<span class="nc" id="L112">            answers.add(ans);</span>
+        }
+<span class="nc" id="L114">        Question question = Question.builder()</span>
+<span class="nc" id="L115">                .questionText(text)</span>
+<span class="nc" id="L116">                .questionType(&quot;MCQ&quot;)</span>
+<span class="nc" id="L117">                .points(5.0)</span>
+<span class="nc" id="L118">                .difficultyLevel(&quot;MEDIUM&quot;)</span>
+<span class="nc" id="L119">                .orderIndex(order)</span>
+<span class="nc" id="L120">                .answers(answers)</span>
+<span class="nc" id="L121">                .build();</span>
+<span class="nc" id="L122">        answers.forEach(ans -&gt; ans.setQuestion(question));</span>
+<span class="nc" id="L123">        return question;</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // 1 · Java Fundamentals (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; javaQuestions() {
+<span class="nc" id="L131">        return List.of(</span>
+<span class="nc" id="L132">            q(1,  &quot;Which keyword is used to prevent a class from being subclassed?&quot;,</span>
+<span class="nc" id="L133">                &quot;static&quot;, &quot;final&quot;, &quot;abstract&quot;, &quot;sealed&quot;, 1),</span>
+<span class="nc" id="L134">            q(2,  &quot;What is the default value of a boolean field in a Java class?&quot;,</span>
+<span class="nc" id="L135">                &quot;true&quot;, &quot;null&quot;, &quot;false&quot;, &quot;0&quot;, 2),</span>
+<span class="nc" id="L136">            q(3,  &quot;Which collection guarantees insertion-order and allows duplicates?&quot;,</span>
+<span class="nc" id="L137">                &quot;HashSet&quot;, &quot;TreeSet&quot;, &quot;ArrayList&quot;, &quot;LinkedHashSet&quot;, 2),</span>
+<span class="nc" id="L138">            q(4,  &quot;What does the 'volatile' keyword guarantee?&quot;,</span>
+<span class="nc" id="L139">                &quot;Atomicity of compound operations&quot;, &quot;Visibility of writes across threads&quot;,</span>
+<span class="nc" id="L140">                &quot;Prevention of deadlocks&quot;, &quot;Mutual exclusion&quot;, 1),</span>
+<span class="nc" id="L141">            q(5,  &quot;Which interface must a lambda implement to be used as a Runnable?&quot;,</span>
+<span class="nc" id="L142">                &quot;Callable&quot;, &quot;Runnable&quot;, &quot;Supplier&quot;, &quot;Function&quot;, 1),</span>
+<span class="nc" id="L143">            q(6,  &quot;What is the time complexity of HashMap.get() on average?&quot;,</span>
+<span class="nc" id="L144">                &quot;O(n)&quot;, &quot;O(log n)&quot;, &quot;O(1)&quot;, &quot;O(n log n)&quot;, 2),</span>
+<span class="nc" id="L145">            q(7,  &quot;Which exception is thrown when you access an array index out of range?&quot;,</span>
+<span class="nc" id="L146">                &quot;NullPointerException&quot;, &quot;IndexOutOfBoundsException&quot;,</span>
+<span class="nc" id="L147">                &quot;ArrayIndexOutOfBoundsException&quot;, &quot;IllegalArgumentException&quot;, 2),</span>
+<span class="nc" id="L148">            q(8,  &quot;What does 'static' mean on a nested class?&quot;,</span>
+<span class="nc" id="L149">                &quot;It can only access static outer members&quot;, &quot;It cannot be instantiated&quot;,</span>
+<span class="nc" id="L150">                &quot;It inherits the outer class&quot;, &quot;It is thread-safe&quot;, 0),</span>
+<span class="nc" id="L151">            q(9,  &quot;Which method is called by the JVM to start a thread?&quot;,</span>
+<span class="nc" id="L152">                &quot;start()&quot;, &quot;run()&quot;, &quot;execute()&quot;, &quot;init()&quot;, 0),</span>
+<span class="nc" id="L153">            q(10, &quot;What is the result of 5 &gt;&gt; 1 in Java?&quot;,</span>
+<span class="nc" id="L154">                &quot;10&quot;, &quot;2&quot;, &quot;3&quot;, &quot;1&quot;, 1),</span>
+<span class="nc" id="L155">            q(11, &quot;Which Java version introduced records?&quot;,</span>
+<span class="nc" id="L156">                &quot;Java 11&quot;, &quot;Java 14 (preview)&quot;, &quot;Java 16 (stable)&quot;, &quot;Java 17&quot;, 2),</span>
+<span class="nc" id="L157">            q(12, &quot;What is autoboxing?&quot;,</span>
+<span class="nc" id="L158">                &quot;Converting an array to a list&quot;, &quot;Automatic conversion between primitives and wrappers&quot;,</span>
+<span class="nc" id="L159">                &quot;Casting a subtype to supertype&quot;, &quot;Wrapping exceptions automatically&quot;, 1),</span>
+<span class="nc" id="L160">            q(13, &quot;Which annotation marks a method that overrides a superclass method?&quot;,</span>
+<span class="nc" id="L161">                &quot;@Override&quot;, &quot;@Inherited&quot;, &quot;@SuppressWarnings&quot;, &quot;@Deprecated&quot;, 0),</span>
+<span class="nc" id="L162">            q(14, &quot;What is the purpose of the 'transient' keyword?&quot;,</span>
+<span class="nc" id="L163">                &quot;Marks a field as thread-local&quot;, &quot;Skips a field during serialization&quot;,</span>
+<span class="nc" id="L164">                &quot;Makes a field immutable&quot;, &quot;Declares a temporary variable&quot;, 1),</span>
+<span class="nc" id="L165">            q(15, &quot;Which interface is implemented by all Java exceptions?&quot;,</span>
+<span class="nc" id="L166">                &quot;Serializable&quot;, &quot;Cloneable&quot;, &quot;Throwable&quot;, &quot;Error&quot;, 0),</span>
+<span class="nc" id="L167">            q(16, &quot;What does Optional.orElseGet() accept?&quot;,</span>
+<span class="nc" id="L168">                &quot;A default value&quot;, &quot;A Supplier&quot;, &quot;A Function&quot;, &quot;A Predicate&quot;, 1),</span>
+<span class="nc" id="L169">            q(17, &quot;Which Java stream operation is a terminal operation?&quot;,</span>
+<span class="nc" id="L170">                &quot;filter()&quot;, &quot;map()&quot;, &quot;collect()&quot;, &quot;sorted()&quot;, 2),</span>
+<span class="nc" id="L171">            q(18, &quot;What is method hiding in Java?&quot;,</span>
+<span class="nc" id="L172">                &quot;Overriding a static method&quot;, &quot;Using private methods in subclasses&quot;,</span>
+<span class="nc" id="L173">                &quot;Calling super methods&quot;, &quot;Hiding fields with the same name&quot;, 0),</span>
+<span class="nc" id="L174">            q(19, &quot;Which garbage collector is used by default in Java 11+?&quot;,</span>
+<span class="nc" id="L175">                &quot;Serial GC&quot;, &quot;Parallel GC&quot;, &quot;G1 GC&quot;, &quot;ZGC&quot;, 2),</span>
+<span class="nc" id="L176">            q(20, &quot;What is the scope of a variable declared inside a try-with-resources statement?&quot;,</span>
+<span class="nc" id="L177">                &quot;The entire method&quot;, &quot;Only the try block&quot;, &quot;The try and catch blocks&quot;, &quot;The entire class&quot;, 1)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 2 · Spring Boot Essentials (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; springQuestions() {
+<span class="nc" id="L186">        return List.of(</span>
+<span class="nc" id="L187">            q(1,  &quot;Which annotation enables auto-configuration in Spring Boot?&quot;,</span>
+<span class="nc" id="L188">                &quot;@EnableAutoConfiguration&quot;, &quot;@SpringBootApplication&quot;, &quot;@Configuration&quot;, &quot;@ComponentScan&quot;, 1),</span>
+<span class="nc" id="L189">            q(2,  &quot;What is the default embedded server in Spring Boot?&quot;,</span>
+<span class="nc" id="L190">                &quot;Jetty&quot;, &quot;Undertow&quot;, &quot;Tomcat&quot;, &quot;Netty&quot;, 2),</span>
+<span class="nc" id="L191">            q(3,  &quot;Which annotation maps HTTP GET requests to a method?&quot;,</span>
+<span class="nc" id="L192">                &quot;@PostMapping&quot;, &quot;@RequestMapping&quot;, &quot;@GetMapping&quot;, &quot;@PutMapping&quot;, 2),</span>
+<span class="nc" id="L193">            q(4,  &quot;What does @Transactional do by default on a RuntimeException?&quot;,</span>
+<span class="nc" id="L194">                &quot;Commits the transaction&quot;, &quot;Does nothing&quot;, &quot;Rolls back the transaction&quot;,</span>
+<span class="nc" id="L195">                &quot;Logs the exception&quot;, 2),</span>
+<span class="nc" id="L196">            q(5,  &quot;Which file configures Spring Boot properties?&quot;,</span>
+<span class="nc" id="L197">                &quot;beans.xml&quot;, &quot;application.properties&quot;, &quot;spring.xml&quot;, &quot;config.json&quot;, 1),</span>
+<span class="nc" id="L198">            q(6,  &quot;What annotation is used to inject a bean by type?&quot;,</span>
+<span class="nc" id="L199">                &quot;@Inject&quot;, &quot;@Resource&quot;, &quot;@Autowired&quot;, &quot;@Value&quot;, 2),</span>
+<span class="nc" id="L200">            q(7,  &quot;Which Spring Data method returns an Optional?&quot;,</span>
+<span class="nc" id="L201">                &quot;findAll()&quot;, &quot;getById()&quot;, &quot;findById()&quot;, &quot;listAll()&quot;, 2),</span>
+<span class="nc" id="L202">            q(8,  &quot;What HTTP status does @ResponseStatus(HttpStatus.CREATED) return?&quot;,</span>
+<span class="nc" id="L203">                &quot;200&quot;, &quot;201&quot;, &quot;204&quot;, &quot;202&quot;, 1),</span>
+<span class="nc" id="L204">            q(9,  &quot;What is the purpose of @PathVariable?&quot;,</span>
+<span class="nc" id="L205">                &quot;Maps a query parameter&quot;, &quot;Maps a request body field&quot;,</span>
+<span class="nc" id="L206">                &quot;Extracts a URI template variable&quot;, &quot;Binds a header value&quot;, 2),</span>
+<span class="nc" id="L207">            q(10, &quot;Which annotation declares a Spring bean explicitly in a config class?&quot;,</span>
+<span class="nc" id="L208">                &quot;@Service&quot;, &quot;@Bean&quot;, &quot;@Component&quot;, &quot;@Repository&quot;, 1),</span>
+<span class="nc" id="L209">            q(11, &quot;What does spring.jpa.hibernate.ddl-auto=update do?&quot;,</span>
+<span class="nc" id="L210">                &quot;Drops and recreates the schema&quot;, &quot;Only validates the schema&quot;,</span>
+<span class="nc" id="L211">                &quot;Updates the schema without dropping data&quot;, &quot;Has no effect&quot;, 2),</span>
+<span class="nc" id="L212">            q(12, &quot;Which scope instantiates a new bean for each HTTP request?&quot;,</span>
+<span class="nc" id="L213">                &quot;singleton&quot;, &quot;prototype&quot;, &quot;request&quot;, &quot;session&quot;, 2),</span>
+<span class="nc" id="L214">            q(13, &quot;What does @ControllerAdvice allow you to do?&quot;,</span>
+<span class="nc" id="L215">                &quot;Configure embedded server&quot;, &quot;Define global exception handlers&quot;,</span>
+<span class="nc" id="L216">                &quot;Enable caching&quot;, &quot;Map multiple controllers&quot;, 1),</span>
+<span class="nc" id="L217">            q(14, &quot;Which dependency adds Spring Security to a Boot project?&quot;,</span>
+<span class="nc" id="L218">                &quot;spring-boot-starter-web&quot;, &quot;spring-boot-starter-security&quot;,</span>
+<span class="nc" id="L219">                &quot;spring-security-core&quot;, &quot;spring-boot-security-auto&quot;, 1),</span>
+<span class="nc" id="L220">            q(15, &quot;What does @RequestBody do?&quot;,</span>
+<span class="nc" id="L221">                &quot;Sends a request&quot;, &quot;Deserializes the HTTP body into a Java object&quot;,</span>
+<span class="nc" id="L222">                &quot;Validates request params&quot;, &quot;Sets response headers&quot;, 1),</span>
+<span class="nc" id="L223">            q(16, &quot;Which annotation makes a class a JPA entity?&quot;,</span>
+<span class="nc" id="L224">                &quot;@Table&quot;, &quot;@Column&quot;, &quot;@Entity&quot;, &quot;@Repository&quot;, 2),</span>
+<span class="nc" id="L225">            q(17, &quot;What is the default Spring Boot banner output location?&quot;,</span>
+<span class="nc" id="L226">                &quot;System.err&quot;, &quot;A log file&quot;, &quot;System.out (console)&quot;,</span>
+<span class="nc" id="L227">                &quot;A banner.txt HTTP endpoint&quot;, 2),</span>
+<span class="nc" id="L228">            q(18, &quot;Which profile annotation activates a bean only in 'dev' profile?&quot;,</span>
+<span class="nc" id="L229">                &quot;@ActiveProfiles(\&quot;dev\&quot;)&quot;, &quot;@Profile(\&quot;dev\&quot;)&quot;, &quot;@ConditionalOnProfile(\&quot;dev\&quot;)&quot;,</span>
+<span class="nc" id="L230">                &quot;@EnableProfile(\&quot;dev\&quot;)&quot;, 1),</span>
+<span class="nc" id="L231">            q(19, &quot;What does @SpringBootTest do?&quot;,</span>
+<span class="nc" id="L232">                &quot;Runs unit tests only&quot;, &quot;Loads the full application context for integration tests&quot;,</span>
+<span class="nc" id="L233">                &quot;Mocks all beans&quot;, &quot;Skips dependency injection&quot;, 1),</span>
+<span class="nc" id="L234">            q(20, &quot;Which actuator endpoint exposes health information?&quot;,</span>
+<span class="nc" id="L235">                &quot;/actuator/info&quot;, &quot;/actuator/status&quot;, &quot;/actuator/health&quot;, &quot;/actuator/ping&quot;, 2)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 3 · JavaScript Essentials (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; jsQuestions() {
+<span class="nc" id="L244">        return List.of(</span>
+<span class="nc" id="L245">            q(1,  &quot;Which keyword declares a block-scoped variable in ES6?&quot;,</span>
+<span class="nc" id="L246">                &quot;var&quot;, &quot;let&quot;, &quot;function&quot;, &quot;type&quot;, 1),</span>
+<span class="nc" id="L247">            q(2,  &quot;What does the spread operator (...) do?&quot;,</span>
+<span class="nc" id="L248">                &quot;Declares a rest parameter&quot;, &quot;Expands an iterable into individual elements&quot;,</span>
+<span class="nc" id="L249">                &quot;Creates a deep copy&quot;, &quot;Merges two objects recursively&quot;, 1),</span>
+<span class="nc" id="L250">            q(3,  &quot;What does Promise.all() do?&quot;,</span>
+<span class="nc" id="L251">                &quot;Resolves as soon as one promise resolves&quot;,</span>
+<span class="nc" id="L252">                &quot;Resolves when all promises resolve&quot;,</span>
+<span class="nc" id="L253">                &quot;Ignores rejected promises&quot;,</span>
+<span class="nc" id="L254">                &quot;Runs promises sequentially&quot;, 1),</span>
+<span class="nc" id="L255">            q(4,  &quot;What is the output of typeof null?&quot;,</span>
+<span class="nc" id="L256">                &quot;\&quot;null\&quot;&quot;, &quot;\&quot;undefined\&quot;&quot;, &quot;\&quot;object\&quot;&quot;, &quot;\&quot;boolean\&quot;&quot;, 2),</span>
+<span class="nc" id="L257">            q(5,  &quot;Which array method returns a new transformed array?&quot;,</span>
+<span class="nc" id="L258">                &quot;forEach()&quot;, &quot;filter()&quot;, &quot;map()&quot;, &quot;reduce()&quot;, 2),</span>
+<span class="nc" id="L259">            q(6,  &quot;What is a closure in JavaScript?&quot;,</span>
+<span class="nc" id="L260">                &quot;A function with no return value&quot;,</span>
+<span class="nc" id="L261">                &quot;A function that retains access to its outer scope&quot;,</span>
+<span class="nc" id="L262">                &quot;An arrow function&quot;,</span>
+<span class="nc" id="L263">                &quot;A self-invoking function&quot;, 1),</span>
+<span class="nc" id="L264">            q(7,  &quot;What does async/await do?&quot;,</span>
+<span class="nc" id="L265">                &quot;Creates a new thread&quot;,</span>
+<span class="nc" id="L266">                &quot;Makes synchronous code run faster&quot;,</span>
+<span class="nc" id="L267">                &quot;Syntactic sugar over Promises&quot;,</span>
+<span class="nc" id="L268">                &quot;Blocks the event loop&quot;, 2),</span>
+<span class="nc" id="L269">            q(8,  &quot;Which method adds an element to the end of an array?&quot;,</span>
+<span class="nc" id="L270">                &quot;unshift()&quot;, &quot;push()&quot;, &quot;splice()&quot;, &quot;concat()&quot;, 1),</span>
+<span class="nc" id="L271">            q(9,  &quot;What is the difference between == and ===?&quot;,</span>
+<span class="nc" id="L272">                &quot;No difference&quot;,</span>
+<span class="nc" id="L273">                &quot;=== also checks type&quot;,</span>
+<span class="nc" id="L274">                &quot;== checks strict equality&quot;,</span>
+<span class="nc" id="L275">                &quot;=== converts types before comparing&quot;, 1),</span>
+<span class="nc" id="L276">            q(10, &quot;Which statement imports a default export?&quot;,</span>
+<span class="nc" id="L277">                &quot;import { foo } from './foo'&quot;, &quot;import foo from './foo'&quot;,</span>
+<span class="nc" id="L278">                &quot;require('./foo')&quot;, &quot;import * from './foo'&quot;, 1),</span>
+<span class="nc" id="L279">            q(11, &quot;What does JSON.parse() return?&quot;,</span>
+<span class="nc" id="L280">                &quot;A JSON string&quot;, &quot;A JavaScript object or primitive&quot;,</span>
+<span class="nc" id="L281">                &quot;A Map object&quot;, &quot;An array always&quot;, 1),</span>
+<span class="nc" id="L282">            q(12, &quot;Which event fires when the DOM is fully loaded?&quot;,</span>
+<span class="nc" id="L283">                &quot;load&quot;, &quot;DOMContentLoaded&quot;, &quot;ready&quot;, &quot;init&quot;, 1),</span>
+<span class="nc" id="L284">            q(13, &quot;What does the nullish coalescing operator (??) return?&quot;,</span>
+<span class="nc" id="L285">                &quot;Left side if truthy&quot;, &quot;Left side if not null/undefined&quot;,</span>
+<span class="nc" id="L286">                &quot;Right side always&quot;, &quot;Left side if false&quot;, 1),</span>
+<span class="nc" id="L287">            q(14, &quot;Which method converts a JavaScript object to a JSON string?&quot;,</span>
+<span class="nc" id="L288">                &quot;JSON.parse()&quot;, &quot;JSON.stringify()&quot;, &quot;Object.toString()&quot;, &quot;JSON.encode()&quot;, 1),</span>
+<span class="nc" id="L289">            q(15, &quot;What is hoisting?&quot;,</span>
+<span class="nc" id="L290">                &quot;Moving imports to the top of the file&quot;,</span>
+<span class="nc" id="L291">                &quot;The JS engine moving declarations to the top of their scope&quot;,</span>
+<span class="nc" id="L292">                &quot;Lazy evaluation of expressions&quot;,</span>
+<span class="nc" id="L293">                &quot;Prototype chain lookup&quot;, 1),</span>
+<span class="nc" id="L294">            q(16, &quot;Which built-in object stores key-value pairs of any type as keys?&quot;,</span>
+<span class="nc" id="L295">                &quot;Object&quot;, &quot;WeakMap&quot;, &quot;Map&quot;, &quot;Set&quot;, 2),</span>
+<span class="nc" id="L296">            q(17, &quot;What does Array.from() do?&quot;,</span>
+<span class="nc" id="L297">                &quot;Converts an array to a string&quot;,</span>
+<span class="nc" id="L298">                &quot;Creates a shallow copy from an array-like or iterable&quot;,</span>
+<span class="nc" id="L299">                &quot;Flattens nested arrays&quot;,</span>
+<span class="nc" id="L300">                &quot;Sorts an array&quot;, 1),</span>
+<span class="nc" id="L301">            q(18, &quot;What is the purpose of the 'use strict' directive?&quot;,</span>
+<span class="nc" id="L302">                &quot;Enables ES6 features&quot;,</span>
+<span class="nc" id="L303">                &quot;Enforces stricter parsing and error handling&quot;,</span>
+<span class="nc" id="L304">                &quot;Disables async functions&quot;,</span>
+<span class="nc" id="L305">                &quot;Activates tree shaking&quot;, 1),</span>
+<span class="nc" id="L306">            q(19, &quot;Which method removes the last element from an array?&quot;,</span>
+<span class="nc" id="L307">                &quot;shift()&quot;, &quot;pop()&quot;, &quot;splice(-1)&quot;, &quot;delete()&quot;, 1),</span>
+<span class="nc" id="L308">            q(20, &quot;What does the optional chaining operator (?.) do?&quot;,</span>
+<span class="nc" id="L309">                &quot;Throws if null&quot;, &quot;Returns undefined instead of throwing on null/undefined&quot;,</span>
+<span class="nc" id="L310">                &quot;Creates optional parameters&quot;, &quot;Short-circuits boolean expressions&quot;, 1)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 4 · SQL &amp; Relational Databases (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; sqlQuestions() {
+<span class="nc" id="L319">        return List.of(</span>
+<span class="nc" id="L320">            q(1,  &quot;Which SQL statement retrieves data from a table?&quot;,</span>
+<span class="nc" id="L321">                &quot;INSERT&quot;, &quot;UPDATE&quot;, &quot;SELECT&quot;, &quot;DELETE&quot;, 2),</span>
+<span class="nc" id="L322">            q(2,  &quot;What does a PRIMARY KEY constraint guarantee?&quot;,</span>
+<span class="nc" id="L323">                &quot;All values are positive&quot;, &quot;Values are unique and not null&quot;,</span>
+<span class="nc" id="L324">                &quot;Values reference another table&quot;, &quot;Values are indexed&quot;, 1),</span>
+<span class="nc" id="L325">            q(3,  &quot;Which JOIN returns all rows from both tables, with NULLs for missing matches?&quot;,</span>
+<span class="nc" id="L326">                &quot;INNER JOIN&quot;, &quot;LEFT JOIN&quot;, &quot;RIGHT JOIN&quot;, &quot;FULL OUTER JOIN&quot;, 3),</span>
+<span class="nc" id="L327">            q(4,  &quot;What does the GROUP BY clause do?&quot;,</span>
+<span class="nc" id="L328">                &quot;Sorts the result set&quot;, &quot;Filters grouped rows&quot;,</span>
+<span class="nc" id="L329">                &quot;Groups rows with the same value in specified columns&quot;,</span>
+<span class="nc" id="L330">                &quot;Joins two tables&quot;, 2),</span>
+<span class="nc" id="L331">            q(5,  &quot;Which clause filters grouped results?&quot;,</span>
+<span class="nc" id="L332">                &quot;WHERE&quot;, &quot;HAVING&quot;, &quot;ORDER BY&quot;, &quot;FILTER&quot;, 1),</span>
+<span class="nc" id="L333">            q(6,  &quot;What is a foreign key?&quot;,</span>
+<span class="nc" id="L334">                &quot;A unique identifier for a row&quot;,</span>
+<span class="nc" id="L335">                &quot;A column that references the primary key of another table&quot;,</span>
+<span class="nc" id="L336">                &quot;An auto-incremented column&quot;,</span>
+<span class="nc" id="L337">                &quot;An indexed column&quot;, 1),</span>
+<span class="nc" id="L338">            q(7,  &quot;Which normal form eliminates partial dependencies?&quot;,</span>
+<span class="nc" id="L339">                &quot;1NF&quot;, &quot;2NF&quot;, &quot;3NF&quot;, &quot;BCNF&quot;, 1),</span>
+<span class="nc" id="L340">            q(8,  &quot;What does ACID stand for?&quot;,</span>
+<span class="nc" id="L341">                &quot;Atomicity, Consistency, Integrity, Durability&quot;,</span>
+<span class="nc" id="L342">                &quot;Atomicity, Concurrency, Isolation, Durability&quot;,</span>
+<span class="nc" id="L343">                &quot;Atomicity, Consistency, Isolation, Durability&quot;,</span>
+<span class="nc" id="L344">                &quot;Availability, Consistency, Isolation, Durability&quot;, 2),</span>
+<span class="nc" id="L345">            q(9,  &quot;Which command permanently removes a table and its data?&quot;,</span>
+<span class="nc" id="L346">                &quot;DELETE&quot;, &quot;TRUNCATE&quot;, &quot;DROP&quot;, &quot;REMOVE&quot;, 2),</span>
+<span class="nc" id="L347">            q(10, &quot;What is an index used for?&quot;,</span>
+<span class="nc" id="L348">                &quot;Enforcing uniqueness only&quot;, &quot;Speeding up data retrieval&quot;,</span>
+<span class="nc" id="L349">                &quot;Creating relationships&quot;, &quot;Storing computed values&quot;, 1),</span>
+<span class="nc" id="L350">            q(11, &quot;Which SQL function counts non-null values in a column?&quot;,</span>
+<span class="nc" id="L351">                &quot;SUM()&quot;, &quot;AVG()&quot;, &quot;COUNT(column)&quot;, &quot;COUNT(*)&quot;, 2),</span>
+<span class="nc" id="L352">            q(12, &quot;What does DISTINCT do in a SELECT query?&quot;,</span>
+<span class="nc" id="L353">                &quot;Orders results&quot;, &quot;Removes duplicate rows from results&quot;,</span>
+<span class="nc" id="L354">                &quot;Filters by condition&quot;, &quot;Aggregates data&quot;, 1),</span>
+<span class="nc" id="L355">            q(13, &quot;What is a stored procedure?&quot;,</span>
+<span class="nc" id="L356">                &quot;A view that stores computations&quot;,</span>
+<span class="nc" id="L357">                &quot;A precompiled set of SQL statements stored in the database&quot;,</span>
+<span class="nc" id="L358">                &quot;A trigger that fires on INSERT&quot;,</span>
+<span class="nc" id="L359">                &quot;An index on a function&quot;, 1),</span>
+<span class="nc" id="L360">            q(14, &quot;Which isolation level prevents dirty reads?&quot;,</span>
+<span class="nc" id="L361">                &quot;READ UNCOMMITTED&quot;, &quot;READ COMMITTED&quot;,</span>
+<span class="nc" id="L362">                &quot;REPEATABLE READ&quot;, &quot;SERIALIZABLE&quot;, 1),</span>
+<span class="nc" id="L363">            q(15, &quot;What does the EXPLAIN keyword do?&quot;,</span>
+<span class="nc" id="L364">                &quot;Runs a query and explains the result&quot;,</span>
+<span class="nc" id="L365">                &quot;Shows the query execution plan&quot;,</span>
+<span class="nc" id="L366">                &quot;Validates SQL syntax&quot;,</span>
+<span class="nc" id="L367">                &quot;Displays table schema&quot;, 1),</span>
+<span class="nc" id="L368">            q(16, &quot;Which constraint ensures a column value is never NULL?&quot;,</span>
+<span class="nc" id="L369">                &quot;UNIQUE&quot;, &quot;CHECK&quot;, &quot;NOT NULL&quot;, &quot;DEFAULT&quot;, 2),</span>
+<span class="nc" id="L370">            q(17, &quot;What is a self-join?&quot;,</span>
+<span class="nc" id="L371">                &quot;Joining a table with a temporary table&quot;,</span>
+<span class="nc" id="L372">                &quot;Joining a table with itself&quot;,</span>
+<span class="nc" id="L373">                &quot;A join without a ON condition&quot;,</span>
+<span class="nc" id="L374">                &quot;A join on the same column&quot;, 1),</span>
+<span class="nc" id="L375">            q(18, &quot;Which keyword renames a column alias in a SELECT?&quot;,</span>
+<span class="nc" id="L376">                &quot;RENAME&quot;, &quot;AS&quot;, &quot;ALIAS&quot;, &quot;NAME&quot;, 1),</span>
+<span class="nc" id="L377">            q(19, &quot;What does ROLLBACK do?&quot;,</span>
+<span class="nc" id="L378">                &quot;Saves all changes permanently&quot;, &quot;Undoes all changes in the current transaction&quot;,</span>
+<span class="nc" id="L379">                &quot;Creates a savepoint&quot;, &quot;Drops the last inserted row&quot;, 1),</span>
+<span class="nc" id="L380">            q(20, &quot;What is the purpose of a composite key?&quot;,</span>
+<span class="nc" id="L381">                &quot;To speed up queries&quot;, &quot;A primary key made of two or more columns&quot;,</span>
+<span class="nc" id="L382">                &quot;A key that spans multiple tables&quot;, &quot;An auto-generated UUID key&quot;, 1)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 5 · REST API Design (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; restQuestions() {
+<span class="nc" id="L391">        return List.of(</span>
+<span class="nc" id="L392">            q(1,  &quot;Which HTTP method is idempotent and returns a resource?&quot;,</span>
+<span class="nc" id="L393">                &quot;POST&quot;, &quot;PUT&quot;, &quot;GET&quot;, &quot;PATCH&quot;, 2),</span>
+<span class="nc" id="L394">            q(2,  &quot;What HTTP status code means 'resource created'?&quot;,</span>
+<span class="nc" id="L395">                &quot;200&quot;, &quot;201&quot;, &quot;204&quot;, &quot;202&quot;, 1),</span>
+<span class="nc" id="L396">            q(3,  &quot;What does '404 Not Found' mean?&quot;,</span>
+<span class="nc" id="L397">                &quot;Server error&quot;, &quot;The requested resource does not exist&quot;,</span>
+<span class="nc" id="L398">                &quot;Unauthorized access&quot;, &quot;Request timeout&quot;, 1),</span>
+<span class="nc" id="L399">            q(4,  &quot;Which HTTP method is used for a full update of a resource?&quot;,</span>
+<span class="nc" id="L400">                &quot;POST&quot;, &quot;PATCH&quot;, &quot;GET&quot;, &quot;PUT&quot;, 3),</span>
+<span class="nc" id="L401">            q(5,  &quot;What is HATEOAS?&quot;,</span>
+<span class="nc" id="L402">                &quot;A caching strategy&quot;, &quot;An authentication protocol&quot;,</span>
+<span class="nc" id="L403">                &quot;Including navigational links in API responses&quot;,</span>
+<span class="nc" id="L404">                &quot;A compression algorithm&quot;, 2),</span>
+<span class="nc" id="L405">            q(6,  &quot;Which status code indicates a successful request with no body?&quot;,</span>
+<span class="nc" id="L406">                &quot;200&quot;, &quot;201&quot;, &quot;204&quot;, &quot;202&quot;, 2),</span>
+<span class="nc" id="L407">            q(7,  &quot;What does the 'Authorization' header typically carry?&quot;,</span>
+<span class="nc" id="L408">                &quot;The API version&quot;, &quot;A Bearer token or Basic credentials&quot;,</span>
+<span class="nc" id="L409">                &quot;The content type&quot;, &quot;The request origin&quot;, 1),</span>
+<span class="nc" id="L410">            q(8,  &quot;What is the purpose of API versioning?&quot;,</span>
+<span class="nc" id="L411">                &quot;Caching responses&quot;, &quot;Throttling clients&quot;,</span>
+<span class="nc" id="L412">                &quot;Avoiding breaking changes for existing clients&quot;,</span>
+<span class="nc" id="L413">                &quot;Compressing payloads&quot;, 2),</span>
+<span class="nc" id="L414">            q(9,  &quot;Which format is most commonly used for REST API responses?&quot;,</span>
+<span class="nc" id="L415">                &quot;XML&quot;, &quot;CSV&quot;, &quot;JSON&quot;, &quot;YAML&quot;, 2),</span>
+<span class="nc" id="L416">            q(10, &quot;What does 401 Unauthorized mean?&quot;,</span>
+<span class="nc" id="L417">                &quot;The user is authenticated but lacks permission&quot;,</span>
+<span class="nc" id="L418">                &quot;Authentication is required or has failed&quot;,</span>
+<span class="nc" id="L419">                &quot;The resource is permanently unavailable&quot;,</span>
+<span class="nc" id="L420">                &quot;The server is down&quot;, 1),</span>
+<span class="nc" id="L421">            q(11, &quot;What is the difference between 401 and 403?&quot;,</span>
+<span class="nc" id="L422">                &quot;No difference&quot;,</span>
+<span class="nc" id="L423">                &quot;401 = not authenticated, 403 = not authorized&quot;,</span>
+<span class="nc" id="L424">                &quot;401 = server error, 403 = client error&quot;,</span>
+<span class="nc" id="L425">                &quot;401 = timeout, 403 = not found&quot;, 1),</span>
+<span class="nc" id="L426">            q(12, &quot;What does a 429 status code indicate?&quot;,</span>
+<span class="nc" id="L427">                &quot;Server error&quot;, &quot;Too many requests (rate limiting)&quot;,</span>
+<span class="nc" id="L428">                &quot;Payload too large&quot;, &quot;Unsupported media type&quot;, 1),</span>
+<span class="nc" id="L429">            q(13, &quot;Which HTTP method should be used to partially update a resource?&quot;,</span>
+<span class="nc" id="L430">                &quot;PUT&quot;, &quot;POST&quot;, &quot;PATCH&quot;, &quot;DELETE&quot;, 2),</span>
+<span class="nc" id="L431">            q(14, &quot;What is idempotency?&quot;,</span>
+<span class="nc" id="L432">                &quot;Making multiple identical requests produces the same result as one&quot;,</span>
+<span class="nc" id="L433">                &quot;A request that never fails&quot;,</span>
+<span class="nc" id="L434">                &quot;A cached response&quot;,</span>
+<span class="nc" id="L435">                &quot;A stateless request&quot;, 0),</span>
+<span class="nc" id="L436">            q(15, &quot;What does CORS stand for?&quot;,</span>
+<span class="nc" id="L437">                &quot;Cross-Origin Resource Sharing&quot;, &quot;Cross-Origin Request Security&quot;,</span>
+<span class="nc" id="L438">                &quot;Client-Origin Response Specification&quot;, &quot;Content-Origin Request Scheme&quot;, 0),</span>
+<span class="nc" id="L439">            q(16, &quot;What is the purpose of an ETag header?&quot;,</span>
+<span class="nc" id="L440">                &quot;Specifies the encoding&quot;, &quot;Identifies a specific version of a resource for caching&quot;,</span>
+<span class="nc" id="L441">                &quot;Sets the content type&quot;, &quot;Authorizes the request&quot;, 1),</span>
+<span class="nc" id="L442">            q(17, &quot;Which constraint makes REST stateless?&quot;,</span>
+<span class="nc" id="L443">                &quot;Uniform interface&quot;, &quot;Stateless constraint — each request contains all info needed&quot;,</span>
+<span class="nc" id="L444">                &quot;Layered system&quot;, &quot;Code on demand&quot;, 1),</span>
+<span class="nc" id="L445">            q(18, &quot;What is the correct content-type for a JSON request body?&quot;,</span>
+<span class="nc" id="L446">                &quot;text/json&quot;, &quot;application/xml&quot;, &quot;application/json&quot;, &quot;text/plain&quot;, 2),</span>
+<span class="nc" id="L447">            q(19, &quot;Which HTTP method deletes a resource?&quot;,</span>
+<span class="nc" id="L448">                &quot;REMOVE&quot;, &quot;DELETE&quot;, &quot;PURGE&quot;, &quot;CLEAR&quot;, 1),</span>
+<span class="nc" id="L449">            q(20, &quot;What does a 500 Internal Server Error indicate?&quot;,</span>
+<span class="nc" id="L450">                &quot;The client sent an invalid request&quot;,</span>
+<span class="nc" id="L451">                &quot;The resource was not found&quot;,</span>
+<span class="nc" id="L452">                &quot;An unexpected condition on the server&quot;,</span>
+<span class="nc" id="L453">                &quot;Rate limit exceeded&quot;, 2)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 6 · Python Basics (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; pythonQuestions() {
+<span class="nc" id="L462">        return List.of(</span>
+<span class="nc" id="L463">            q(1,  &quot;Which keyword defines a function in Python?&quot;,</span>
+<span class="nc" id="L464">                &quot;function&quot;, &quot;fun&quot;, &quot;def&quot;, &quot;lambda&quot;, 2),</span>
+<span class="nc" id="L465">            q(2,  &quot;What data type is immutable and ordered in Python?&quot;,</span>
+<span class="nc" id="L466">                &quot;list&quot;, &quot;dict&quot;, &quot;tuple&quot;, &quot;set&quot;, 2),</span>
+<span class="nc" id="L467">            q(3,  &quot;What does len([1,2,3]) return?&quot;,</span>
+<span class="nc" id="L468">                &quot;2&quot;, &quot;3&quot;, &quot;4&quot;, &quot;1&quot;, 1),</span>
+<span class="nc" id="L469">            q(4,  &quot;Which method adds an element to the end of a list?&quot;,</span>
+<span class="nc" id="L470">                &quot;add()&quot;, &quot;insert()&quot;, &quot;append()&quot;, &quot;push()&quot;, 2),</span>
+<span class="nc" id="L471">            q(5,  &quot;What does *args allow in a function?&quot;,</span>
+<span class="nc" id="L472">                &quot;Keyword arguments&quot;, &quot;A variable number of positional arguments&quot;,</span>
+<span class="nc" id="L473">                &quot;Default arguments&quot;, &quot;Type-annotated arguments&quot;, 1),</span>
+<span class="nc" id="L474">            q(6,  &quot;What is a list comprehension?&quot;,</span>
+<span class="nc" id="L475">                &quot;A way to sort lists&quot;,</span>
+<span class="nc" id="L476">                &quot;A concise syntax to create lists from iterables&quot;,</span>
+<span class="nc" id="L477">                &quot;A built-in sorting algorithm&quot;,</span>
+<span class="nc" id="L478">                &quot;A method to filter duplicates&quot;, 1),</span>
+<span class="nc" id="L479">            q(7,  &quot;Which keyword is used for exception handling in Python?&quot;,</span>
+<span class="nc" id="L480">                &quot;catch&quot;, &quot;except&quot;, &quot;handle&quot;, &quot;rescue&quot;, 1),</span>
+<span class="nc" id="L481">            q(8,  &quot;What does the 'with' statement do?&quot;,</span>
+<span class="nc" id="L482">                &quot;Reimports a module&quot;, &quot;Creates a context manager ensuring resource cleanup&quot;,</span>
+<span class="nc" id="L483">                &quot;Starts a loop&quot;, &quot;Defines a nested function&quot;, 1),</span>
+<span class="nc" id="L484">            q(9,  &quot;What is the output of bool('') in Python?&quot;,</span>
+<span class="nc" id="L485">                &quot;True&quot;, &quot;False&quot;, &quot;None&quot;, &quot;Error&quot;, 1),</span>
+<span class="nc" id="L486">            q(10, &quot;Which built-in function returns the type of an object?&quot;,</span>
+<span class="nc" id="L487">                &quot;class()&quot;, &quot;typeof()&quot;, &quot;type()&quot;, &quot;isinstance()&quot;, 2),</span>
+<span class="nc" id="L488">            q(11, &quot;What does a decorator do in Python?&quot;,</span>
+<span class="nc" id="L489">                &quot;Compiles a function&quot;, &quot;Wraps a function to modify its behavior&quot;,</span>
+<span class="nc" id="L490">                &quot;Inherits from a base class&quot;, &quot;Creates a singleton&quot;, 1),</span>
+<span class="nc" id="L491">            q(12, &quot;What is the use of __init__ in a class?&quot;,</span>
+<span class="nc" id="L492">                &quot;Destroys the object&quot;, &quot;Imports the module&quot;,</span>
+<span class="nc" id="L493">                &quot;Initializes instance attributes&quot;, &quot;Defines class methods&quot;, 2),</span>
+<span class="nc" id="L494">            q(13, &quot;Which module is used for regular expressions in Python?&quot;,</span>
+<span class="nc" id="L495">                &quot;regex&quot;, &quot;re&quot;, &quot;match&quot;, &quot;string&quot;, 1),</span>
+<span class="nc" id="L496">            q(14, &quot;What does range(1, 5) produce?&quot;,</span>
+<span class="nc" id="L497">                &quot;1, 2, 3, 4, 5&quot;, &quot;1, 2, 3, 4&quot;, &quot;0, 1, 2, 3, 4&quot;, &quot;1, 2, 3, 4, 5, 6&quot;, 1),</span>
+<span class="nc" id="L498">            q(15, &quot;Which statement exits a loop prematurely?&quot;,</span>
+<span class="nc" id="L499">                &quot;exit&quot;, &quot;return&quot;, &quot;break&quot;, &quot;stop&quot;, 2),</span>
+<span class="nc" id="L500">            q(16, &quot;What is a generator in Python?&quot;,</span>
+<span class="nc" id="L501">                &quot;A function that returns a list&quot;,</span>
+<span class="nc" id="L502">                &quot;A function that yields values lazily using 'yield'&quot;,</span>
+<span class="nc" id="L503">                &quot;A class that inherits from Iterator&quot;,</span>
+<span class="nc" id="L504">                &quot;A built-in data type&quot;, 1),</span>
+<span class="nc" id="L505">            q(17, &quot;Which keyword checks membership in a collection?&quot;,</span>
+<span class="nc" id="L506">                &quot;has&quot;, &quot;contains&quot;, &quot;in&quot;, &quot;within&quot;, 2),</span>
+<span class="nc" id="L507">            q(18, &quot;What does dict.get(key, default) do?&quot;,</span>
+<span class="nc" id="L508">                &quot;Raises KeyError if key is missing&quot;,</span>
+<span class="nc" id="L509">                &quot;Returns default if key is not found&quot;,</span>
+<span class="nc" id="L510">                &quot;Inserts key with default value&quot;,</span>
+<span class="nc" id="L511">                &quot;Updates the key&quot;, 1),</span>
+<span class="nc" id="L512">            q(19, &quot;What is PEP 8?&quot;,</span>
+<span class="nc" id="L513">                &quot;Python's error handling specification&quot;,</span>
+<span class="nc" id="L514">                &quot;The Python style guide&quot;,</span>
+<span class="nc" id="L515">                &quot;The Python security standard&quot;,</span>
+<span class="nc" id="L516">                &quot;A packaging specification&quot;, 1),</span>
+<span class="nc" id="L517">            q(20, &quot;What does the zip() function do?&quot;,</span>
+<span class="nc" id="L518">                &quot;Compresses a file&quot;, &quot;Combines two iterables into pairs of tuples&quot;,</span>
+<span class="nc" id="L519">                &quot;Flattens a nested list&quot;, &quot;Sorts two lists together&quot;, 1)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 7 · Git &amp; Version Control (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; gitQuestions() {
+<span class="nc" id="L528">        return List.of(</span>
+<span class="nc" id="L529">            q(1,  &quot;Which command initializes a new Git repository?&quot;,</span>
+<span class="nc" id="L530">                &quot;git start&quot;, &quot;git init&quot;, &quot;git create&quot;, &quot;git new&quot;, 1),</span>
+<span class="nc" id="L531">            q(2,  &quot;What does 'git clone' do?&quot;,</span>
+<span class="nc" id="L532">                &quot;Creates a new branch&quot;, &quot;Copies a remote repository locally&quot;,</span>
+<span class="nc" id="L533">                &quot;Merges two branches&quot;, &quot;Rebases commits&quot;, 1),</span>
+<span class="nc" id="L534">            q(3,  &quot;Which command stages all changes?&quot;,</span>
+<span class="nc" id="L535">                &quot;git commit -a&quot;, &quot;git stage .&quot;, &quot;git add .&quot;, &quot;git push --all&quot;, 2),</span>
+<span class="nc" id="L536">            q(4,  &quot;What does 'git stash' do?&quot;,</span>
+<span class="nc" id="L537">                &quot;Deletes uncommitted changes&quot;,</span>
+<span class="nc" id="L538">                &quot;Temporarily shelves changes not ready to commit&quot;,</span>
+<span class="nc" id="L539">                &quot;Pushes changes to remote&quot;,</span>
+<span class="nc" id="L540">                &quot;Creates a tag&quot;, 1),</span>
+<span class="nc" id="L541">            q(5,  &quot;What is a fast-forward merge?&quot;,</span>
+<span class="nc" id="L542">                &quot;A merge with a new merge commit&quot;,</span>
+<span class="nc" id="L543">                &quot;Moving a branch pointer forward with no diverging history&quot;,</span>
+<span class="nc" id="L544">                &quot;Rebasing before merging&quot;,</span>
+<span class="nc" id="L545">                &quot;A squash merge&quot;, 1),</span>
+<span class="nc" id="L546">            q(6,  &quot;Which command shows the commit history?&quot;,</span>
+<span class="nc" id="L547">                &quot;git status&quot;, &quot;git diff&quot;, &quot;git log&quot;, &quot;git show&quot;, 2),</span>
+<span class="nc" id="L548">            q(7,  &quot;What does 'git rebase' do?&quot;,</span>
+<span class="nc" id="L549">                &quot;Reverts a commit&quot;, &quot;Replays commits on top of another branch&quot;,</span>
+<span class="nc" id="L550">                &quot;Merges branches with a merge commit&quot;, &quot;Squashes commits into tags&quot;, 1),</span>
+<span class="nc" id="L551">            q(8,  &quot;What is the purpose of .gitignore?&quot;,</span>
+<span class="nc" id="L552">                &quot;Tags ignored commits&quot;, &quot;Specifies intentionally untracked files to ignore&quot;,</span>
+<span class="nc" id="L553">                &quot;Marks files as read-only&quot;, &quot;Excludes branches from pushes&quot;, 1),</span>
+<span class="nc" id="L554">            q(9,  &quot;Which command undoes the last commit but keeps changes staged?&quot;,</span>
+<span class="nc" id="L555">                &quot;git revert HEAD&quot;, &quot;git reset --soft HEAD~1&quot;,</span>
+<span class="nc" id="L556">                &quot;git reset --hard HEAD~1&quot;, &quot;git checkout HEAD~1&quot;, 1),</span>
+<span class="nc" id="L557">            q(10, &quot;What does 'git cherry-pick' do?&quot;,</span>
+<span class="nc" id="L558">                &quot;Deletes a branch&quot;, &quot;Applies a specific commit to the current branch&quot;,</span>
+<span class="nc" id="L559">                &quot;Merges all commits from a branch&quot;, &quot;Tags a commit&quot;, 1),</span>
+<span class="nc" id="L560">            q(11, &quot;What is 'origin' in Git?&quot;,</span>
+<span class="nc" id="L561">                &quot;The main branch&quot;, &quot;A default alias for the remote repository URL&quot;,</span>
+<span class="nc" id="L562">                &quot;The first commit&quot;, &quot;The local staging area&quot;, 1),</span>
+<span class="nc" id="L563">            q(12, &quot;Which command creates and switches to a new branch?&quot;,</span>
+<span class="nc" id="L564">                &quot;git branch new-branch&quot;, &quot;git checkout new-branch&quot;,</span>
+<span class="nc" id="L565">                &quot;git checkout -b new-branch&quot;, &quot;git switch --create new-branch&quot;, 2),</span>
+<span class="nc" id="L566">            q(13, &quot;What does 'git fetch' do?&quot;,</span>
+<span class="nc" id="L567">                &quot;Fetches and merges remote changes&quot;,</span>
+<span class="nc" id="L568">                &quot;Downloads remote changes without merging&quot;,</span>
+<span class="nc" id="L569">                &quot;Pushes local commits&quot;,</span>
+<span class="nc" id="L570">                &quot;Resets the working directory&quot;, 1),</span>
+<span class="nc" id="L571">            q(14, &quot;What is a Git tag used for?&quot;,</span>
+<span class="nc" id="L572">                &quot;Marking a branch as protected&quot;,</span>
+<span class="nc" id="L573">                &quot;Marking a specific commit (e.g., a release)&quot;,</span>
+<span class="nc" id="L574">                &quot;Storing credentials&quot;,</span>
+<span class="nc" id="L575">                &quot;Filtering the commit log&quot;, 1),</span>
+<span class="nc" id="L576">            q(15, &quot;Which merge strategy preserves all individual commits?&quot;,</span>
+<span class="nc" id="L577">                &quot;--squash&quot;, &quot;--no-ff&quot;, &quot;--ff-only&quot;, &quot;--rebase&quot;, 1),</span>
+<span class="nc" id="L578">            q(16, &quot;What does 'git diff' show?&quot;,</span>
+<span class="nc" id="L579">                &quot;The commit history&quot;, &quot;Differences between working tree and index&quot;,</span>
+<span class="nc" id="L580">                &quot;Remote tracking branches&quot;, &quot;Staged files only&quot;, 1),</span>
+<span class="nc" id="L581">            q(17, &quot;What command pushes a local branch to a remote?&quot;,</span>
+<span class="nc" id="L582">                &quot;git push origin branch-name&quot;, &quot;git upload origin branch-name&quot;,</span>
+<span class="nc" id="L583">                &quot;git send origin branch-name&quot;, &quot;git push --remote branch-name&quot;, 0),</span>
+<span class="nc" id="L584">            q(18, &quot;What is a pull request (PR)?&quot;,</span>
+<span class="nc" id="L585">                &quot;A command that pulls and compresses changes&quot;,</span>
+<span class="nc" id="L586">                &quot;A request to merge changes, reviewed before integrating&quot;,</span>
+<span class="nc" id="L587">                &quot;An automated CI pipeline&quot;,</span>
+<span class="nc" id="L588">                &quot;A git hook that runs tests&quot;, 1),</span>
+<span class="nc" id="L589">            q(19, &quot;What does 'git bisect' help with?&quot;,</span>
+<span class="nc" id="L590">                &quot;Finding merge conflicts&quot;,</span>
+<span class="nc" id="L591">                &quot;Binary search through commits to find which one introduced a bug&quot;,</span>
+<span class="nc" id="L592">                &quot;Listing all branches&quot;,</span>
+<span class="nc" id="L593">                &quot;Comparing two branches&quot;, 1),</span>
+<span class="nc" id="L594">            q(20, &quot;What is the HEAD in Git?&quot;,</span>
+<span class="nc" id="L595">                &quot;The latest tag&quot;, &quot;A pointer to the currently checked-out commit/branch&quot;,</span>
+<span class="nc" id="L596">                &quot;The remote origin&quot;, &quot;The initial commit&quot;, 1)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 8 · HTML &amp; CSS Fundamentals (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; htmlCssQuestions() {
+<span class="nc" id="L605">        return List.of(</span>
+<span class="nc" id="L606">            q(1,  &quot;Which HTML tag defines the document title shown in the browser tab?&quot;,</span>
+<span class="nc" id="L607">                &quot;&lt;header&gt;&quot;, &quot;&lt;meta&gt;&quot;, &quot;&lt;title&gt;&quot;, &quot;&lt;h1&gt;&quot;, 2),</span>
+<span class="nc" id="L608">            q(2,  &quot;What does the 'alt' attribute on an &lt;img&gt; do?&quot;,</span>
+<span class="nc" id="L609">                &quot;Sets the image size&quot;, &quot;Provides alternative text for accessibility&quot;,</span>
+<span class="nc" id="L610">                &quot;Adds a caption&quot;, &quot;Links to another image&quot;, 1),</span>
+<span class="nc" id="L611">            q(3,  &quot;What is the CSS box model composed of?&quot;,</span>
+<span class="nc" id="L612">                &quot;Content, padding, border, margin&quot;,</span>
+<span class="nc" id="L613">                &quot;Width, height, display, float&quot;,</span>
+<span class="nc" id="L614">                &quot;Block, inline, flex, grid&quot;,</span>
+<span class="nc" id="L615">                &quot;Position, z-index, overflow, visibility&quot;, 0),</span>
+<span class="nc" id="L616">            q(4,  &quot;Which CSS property controls the stacking order of elements?&quot;,</span>
+<span class="nc" id="L617">                &quot;position&quot;, &quot;z-index&quot;, &quot;overflow&quot;, &quot;display&quot;, 1),</span>
+<span class="nc" id="L618">            q(5,  &quot;What does 'display: flex' do?&quot;,</span>
+<span class="nc" id="L619">                &quot;Makes the element invisible&quot;,</span>
+<span class="nc" id="L620">                &quot;Enables a flex formatting context on the container&quot;,</span>
+<span class="nc" id="L621">                &quot;Floats children to the left&quot;,</span>
+<span class="nc" id="L622">                &quot;Creates a grid layout&quot;, 1),</span>
+<span class="nc" id="L623">            q(6,  &quot;Which HTML5 element represents standalone content like a blog post?&quot;,</span>
+<span class="nc" id="L624">                &quot;&lt;section&gt;&quot;, &quot;&lt;div&gt;&quot;, &quot;&lt;article&gt;&quot;, &quot;&lt;aside&gt;&quot;, 2),</span>
+<span class="nc" id="L625">            q(7,  &quot;What does the CSS 'position: absolute' property do?&quot;,</span>
+<span class="nc" id="L626">                &quot;Removes the element from the normal flow, positioned relative to nearest positioned ancestor&quot;,</span>
+<span class="nc" id="L627">                &quot;Fixes the element to the viewport&quot;,</span>
+<span class="nc" id="L628">                &quot;Positions relative to itself&quot;,</span>
+<span class="nc" id="L629">                &quot;Makes the element sticky on scroll&quot;, 0),</span>
+<span class="nc" id="L630">            q(8,  &quot;What is a CSS media query used for?&quot;,</span>
+<span class="nc" id="L631">                &quot;Fetching external stylesheets&quot;,</span>
+<span class="nc" id="L632">                &quot;Applying styles based on device characteristics&quot;,</span>
+<span class="nc" id="L633">                &quot;Querying the DOM&quot;,</span>
+<span class="nc" id="L634">                &quot;Animating elements&quot;, 1),</span>
+<span class="nc" id="L635">            q(9,  &quot;Which selector has the highest specificity?&quot;,</span>
+<span class="nc" id="L636">                &quot;Element selector (div)&quot;, &quot;Class selector (.class)&quot;,</span>
+<span class="nc" id="L637">                &quot;ID selector (#id)&quot;, &quot;Universal selector (*)&quot;, 2),</span>
+<span class="nc" id="L638">            q(10, &quot;What does 'semantic HTML' mean?&quot;,</span>
+<span class="nc" id="L639">                &quot;Using only inline styles&quot;,</span>
+<span class="nc" id="L640">                &quot;Using tags that convey meaning about the content&quot;,</span>
+<span class="nc" id="L641">                &quot;Minimizing the number of HTML elements&quot;,</span>
+<span class="nc" id="L642">                &quot;Writing HTML without CSS&quot;, 1),</span>
+<span class="nc" id="L643">            q(11, &quot;Which CSS property makes text bold?&quot;,</span>
+<span class="nc" id="L644">                &quot;font-style&quot;, &quot;text-weight&quot;, &quot;font-weight&quot;, &quot;text-bold&quot;, 2),</span>
+<span class="nc" id="L645">            q(12, &quot;What attribute makes a form input required?&quot;,</span>
+<span class="nc" id="L646">                &quot;mandatory&quot;, &quot;validate&quot;, &quot;required&quot;, &quot;notempty&quot;, 2),</span>
+<span class="nc" id="L647">            q(13, &quot;What does 'box-sizing: border-box' do?&quot;,</span>
+<span class="nc" id="L648">                &quot;Includes padding and border in the element's total width and height&quot;,</span>
+<span class="nc" id="L649">                &quot;Removes all margins&quot;,</span>
+<span class="nc" id="L650">                &quot;Makes the element a block&quot;,</span>
+<span class="nc" id="L651">                &quot;Sets a default border&quot;, 0),</span>
+<span class="nc" id="L652">            q(14, &quot;Which HTML element creates a hyperlink?&quot;,</span>
+<span class="nc" id="L653">                &quot;&lt;link&gt;&quot;, &quot;&lt;a&gt;&quot;, &quot;&lt;href&gt;&quot;, &quot;&lt;nav&gt;&quot;, 1),</span>
+<span class="nc" id="L654">            q(15, &quot;What is the purpose of the &lt;meta charset='UTF-8'&gt; tag?&quot;,</span>
+<span class="nc" id="L655">                &quot;Sets the viewport width&quot;, &quot;Specifies the character encoding of the document&quot;,</span>
+<span class="nc" id="L656">                &quot;Links a favicon&quot;, &quot;Defines the author&quot;, 1),</span>
+<span class="nc" id="L657">            q(16, &quot;Which CSS unit is relative to the root element's font size?&quot;,</span>
+<span class="nc" id="L658">                &quot;em&quot;, &quot;px&quot;, &quot;rem&quot;, &quot;%&quot;, 2),</span>
+<span class="nc" id="L659">            q(17, &quot;What does 'justify-content: space-between' do in flexbox?&quot;,</span>
+<span class="nc" id="L660">                &quot;Centers all items&quot;, &quot;Adds equal space around each item&quot;,</span>
+<span class="nc" id="L661">                &quot;Distributes items with space between them and no space at the edges&quot;,</span>
+<span class="nc" id="L662">                &quot;Aligns items to the cross axis&quot;, 2),</span>
+<span class="nc" id="L663">            q(18, &quot;What is the default value of the 'position' CSS property?&quot;,</span>
+<span class="nc" id="L664">                &quot;relative&quot;, &quot;absolute&quot;, &quot;fixed&quot;, &quot;static&quot;, 3),</span>
+<span class="nc" id="L665">            q(19, &quot;Which tag is used to embed JavaScript in HTML?&quot;,</span>
+<span class="nc" id="L666">                &quot;&lt;js&gt;&quot;, &quot;&lt;javascript&gt;&quot;, &quot;&lt;script&gt;&quot;, &quot;&lt;code&gt;&quot;, 2),</span>
+<span class="nc" id="L667">            q(20, &quot;What does CSS Grid's 'fr' unit represent?&quot;,</span>
+<span class="nc" id="L668">                &quot;Font rem&quot;, &quot;A fraction of the available space in the grid container&quot;,</span>
+<span class="nc" id="L669">                &quot;Fixed row height&quot;, &quot;Full-width column&quot;, 1)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 9 · Agile &amp; Scrum (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; agileQuestions() {
+<span class="nc" id="L678">        return List.of(</span>
+<span class="nc" id="L679">            q(1,  &quot;What are the three roles in Scrum?&quot;,</span>
+<span class="nc" id="L680">                &quot;Manager, Developer, Tester&quot;,</span>
+<span class="nc" id="L681">                &quot;Product Owner, Scrum Master, Development Team&quot;,</span>
+<span class="nc" id="L682">                &quot;Product Owner, Tech Lead, QA&quot;,</span>
+<span class="nc" id="L683">                &quot;Project Manager, Scrum Master, Developer&quot;, 1),</span>
+<span class="nc" id="L684">            q(2,  &quot;What is a Sprint?&quot;,</span>
+<span class="nc" id="L685">                &quot;A daily standup meeting&quot;,</span>
+<span class="nc" id="L686">                &quot;A time-boxed iteration (usually 1-4 weeks)&quot;,</span>
+<span class="nc" id="L687">                &quot;The set of all backlog items&quot;,</span>
+<span class="nc" id="L688">                &quot;A retrospective meeting&quot;, 1),</span>
+<span class="nc" id="L689">            q(3,  &quot;What is the Product Backlog?&quot;,</span>
+<span class="nc" id="L690">                &quot;A list of bugs only&quot;,</span>
+<span class="nc" id="L691">                &quot;An ordered list of everything that might be done in the product&quot;,</span>
+<span class="nc" id="L692">                &quot;The Sprint goal&quot;,</span>
+<span class="nc" id="L693">                &quot;A burndown chart&quot;, 1),</span>
+<span class="nc" id="L694">            q(4,  &quot;What is the purpose of the Daily Scrum?&quot;,</span>
+<span class="nc" id="L695">                &quot;Sprint planning&quot;, &quot;Reviewing the product increment&quot;,</span>
+<span class="nc" id="L696">                &quot;A 15-minute sync to inspect progress and plan the next 24 hours&quot;,</span>
+<span class="nc" id="L697">                &quot;Retrospective on the last Sprint&quot;, 2),</span>
+<span class="nc" id="L698">            q(5,  &quot;What does the Scrum Master do?&quot;,</span>
+<span class="nc" id="L699">                &quot;Writes code&quot;, &quot;Manages the team's salaries&quot;,</span>
+<span class="nc" id="L700">                &quot;Serves the team by removing impediments and facilitating Scrum&quot;,</span>
+<span class="nc" id="L701">                &quot;Owns the product vision&quot;, 2),</span>
+<span class="nc" id="L702">            q(6,  &quot;What is the Sprint Review?&quot;,</span>
+<span class="nc" id="L703">                &quot;An internal code review&quot;,</span>
+<span class="nc" id="L704">                &quot;A meeting to inspect the increment and adapt the backlog&quot;,</span>
+<span class="nc" id="L705">                &quot;A security audit&quot;,</span>
+<span class="nc" id="L706">                &quot;A performance review of team members&quot;, 1),</span>
+<span class="nc" id="L707">            q(7,  &quot;What is velocity in Scrum?&quot;,</span>
+<span class="nc" id="L708">                &quot;The number of bugs fixed per Sprint&quot;,</span>
+<span class="nc" id="L709">                &quot;The number of lines of code per day&quot;,</span>
+<span class="nc" id="L710">                &quot;The amount of work a team completes in a Sprint&quot;,</span>
+<span class="nc" id="L711">                &quot;The speed of deployment&quot;, 2),</span>
+<span class="nc" id="L712">            q(8,  &quot;What is a burndown chart?&quot;,</span>
+<span class="nc" id="L713">                &quot;A chart showing team morale&quot;,</span>
+<span class="nc" id="L714">                &quot;A visual representation of remaining work vs. time in a Sprint&quot;,</span>
+<span class="nc" id="L715">                &quot;A chart of deployment frequency&quot;,</span>
+<span class="nc" id="L716">                &quot;A diagram of system architecture&quot;, 1),</span>
+<span class="nc" id="L717">            q(9,  &quot;What is the Definition of Done (DoD)?&quot;,</span>
+<span class="nc" id="L718">                &quot;A checklist for the daily standup&quot;,</span>
+<span class="nc" id="L719">                &quot;A shared understanding of what 'complete' means for an increment&quot;,</span>
+<span class="nc" id="L720">                &quot;The sprint planning agenda&quot;,</span>
+<span class="nc" id="L721">                &quot;The product owner's acceptance criteria&quot;, 1),</span>
+<span class="nc" id="L722">            q(10, &quot;Which Agile principle values 'Working software over comprehensive documentation'?&quot;,</span>
+<span class="nc" id="L723">                &quot;Lean principle&quot;, &quot;Kanban rule&quot;,</span>
+<span class="nc" id="L724">                &quot;Agile Manifesto&quot;, &quot;PRINCE2 guideline&quot;, 2),</span>
+<span class="nc" id="L725">            q(11, &quot;What is a user story?&quot;,</span>
+<span class="nc" id="L726">                &quot;A technical specification&quot;,</span>
+<span class="nc" id="L727">                &quot;An informal description of a feature from the end user's perspective&quot;,</span>
+<span class="nc" id="L728">                &quot;A bug report&quot;,</span>
+<span class="nc" id="L729">                &quot;A deployment script&quot;, 1),</span>
+<span class="nc" id="L730">            q(12, &quot;What is Kanban?&quot;,</span>
+<span class="nc" id="L731">                &quot;A Scrum ceremony&quot;,</span>
+<span class="nc" id="L732">                &quot;A visual workflow management method using a board and cards&quot;,</span>
+<span class="nc" id="L733">                &quot;A type of sprint&quot;,</span>
+<span class="nc" id="L734">                &quot;A project management certification&quot;, 1),</span>
+<span class="nc" id="L735">            q(13, &quot;What is the Sprint Retrospective for?&quot;,</span>
+<span class="nc" id="L736">                &quot;Reviewing the product with stakeholders&quot;,</span>
+<span class="nc" id="L737">                &quot;Planning the next sprint backlog&quot;,</span>
+<span class="nc" id="L738">                &quot;Reflecting on the process to improve in the next Sprint&quot;,</span>
+<span class="nc" id="L739">                &quot;Demoing the increment&quot;, 2),</span>
+<span class="nc" id="L740">            q(14, &quot;What is a Story Point?&quot;,</span>
+<span class="nc" id="L741">                &quot;A unit of time (hours)&quot;,</span>
+<span class="nc" id="L742">                &quot;A relative unit of effort/complexity for estimation&quot;,</span>
+<span class="nc" id="L743">                &quot;A line in the product backlog&quot;,</span>
+<span class="nc" id="L744">                &quot;A test case&quot;, 1),</span>
+<span class="nc" id="L745">            q(15, &quot;What does WIP limit mean in Kanban?&quot;,</span>
+<span class="nc" id="L746">                &quot;Weekly iteration planning&quot;,</span>
+<span class="nc" id="L747">                &quot;Maximum number of items allowed in a workflow stage simultaneously&quot;,</span>
+<span class="nc" id="L748">                &quot;Work in progress log&quot;,</span>
+<span class="nc" id="L749">                &quot;Weight of individual processes&quot;, 1),</span>
+<span class="nc" id="L750">            q(16, &quot;What is an Epic?&quot;,</span>
+<span class="nc" id="L751">                &quot;A completed sprint&quot;,</span>
+<span class="nc" id="L752">                &quot;A large user story that can be broken into smaller stories&quot;,</span>
+<span class="nc" id="L753">                &quot;A retrospective finding&quot;,</span>
+<span class="nc" id="L754">                &quot;The entire product backlog&quot;, 1),</span>
+<span class="nc" id="L755">            q(17, &quot;Who is responsible for prioritizing the Product Backlog?&quot;,</span>
+<span class="nc" id="L756">                &quot;Scrum Master&quot;, &quot;Development Team&quot;, &quot;Product Owner&quot;, &quot;Stakeholders&quot;, 2),</span>
+<span class="nc" id="L757">            q(18, &quot;What is 'pair programming'?&quot;,</span>
+<span class="nc" id="L758">                &quot;Two developers working on separate features&quot;,</span>
+<span class="nc" id="L759">                &quot;Two developers collaborating on the same code at one workstation&quot;,</span>
+<span class="nc" id="L760">                &quot;A code review performed by a pair&quot;,</span>
+<span class="nc" id="L761">                &quot;Merging two feature branches&quot;, 1),</span>
+<span class="nc" id="L762">            q(19, &quot;What is Continuous Integration (CI)?&quot;,</span>
+<span class="nc" id="L763">                &quot;Deploying to production continuously&quot;,</span>
+<span class="nc" id="L764">                &quot;Merging code changes frequently with automated build and test&quot;,</span>
+<span class="nc" id="L765">                &quot;Writing tests after code&quot;,</span>
+<span class="nc" id="L766">                &quot;A Scrum ceremony&quot;, 1),</span>
+<span class="nc" id="L767">            q(20, &quot;What does 'timeboxing' mean in Agile?&quot;,</span>
+<span class="nc" id="L768">                &quot;Setting a fixed maximum time for an activity&quot;,</span>
+<span class="nc" id="L769">                &quot;Estimating story points using time&quot;,</span>
+<span class="nc" id="L770">                &quot;Tracking hours per developer&quot;,</span>
+<span class="nc" id="L771">                &quot;Deadlines imposed by managers&quot;, 0)</span>
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // 10 · Cybersecurity Basics (20 questions)
+    // -------------------------------------------------------------------------
+
+    private List&lt;Question&gt; cyberQuestions() {
+<span class="nc" id="L780">        return List.of(</span>
+<span class="nc" id="L781">            q(1,  &quot;What does SQL injection exploit?&quot;,</span>
+<span class="nc" id="L782">                &quot;Weak passwords&quot;, &quot;Unsanitized user input inserted into SQL queries&quot;,</span>
+<span class="nc" id="L783">                &quot;Outdated SSL certificates&quot;, &quot;CSRF tokens&quot;, 1),</span>
+<span class="nc" id="L784">            q(2,  &quot;What is Cross-Site Scripting (XSS)?&quot;,</span>
+<span class="nc" id="L785">                &quot;Injecting SQL into a database&quot;,</span>
+<span class="nc" id="L786">                &quot;Injecting malicious scripts into web pages viewed by others&quot;,</span>
+<span class="nc" id="L787">                &quot;Intercepting HTTP traffic&quot;,</span>
+<span class="nc" id="L788">                &quot;Brute-forcing passwords&quot;, 1),</span>
+<span class="nc" id="L789">            q(3,  &quot;What does HTTPS provide over HTTP?&quot;,</span>
+<span class="nc" id="L790">                &quot;Faster page loads&quot;, &quot;Encryption and server authentication using TLS&quot;,</span>
+<span class="nc" id="L791">                &quot;Compressed responses&quot;, &quot;Stateless sessions&quot;, 1),</span>
+<span class="nc" id="L792">            q(4,  &quot;What is a CSRF attack?&quot;,</span>
+<span class="nc" id="L793">                &quot;Injecting scripts into a page&quot;,</span>
+<span class="nc" id="L794">                &quot;Forging requests on behalf of an authenticated user from another site&quot;,</span>
+<span class="nc" id="L795">                &quot;Intercepting cookies&quot;,</span>
+<span class="nc" id="L796">                &quot;Exploiting SQL queries&quot;, 1),</span>
+<span class="nc" id="L797">            q(5,  &quot;What is the purpose of hashing passwords?&quot;,</span>
+<span class="nc" id="L798">                &quot;Encrypting them for transmission&quot;,</span>
+<span class="nc" id="L799">                &quot;Storing a one-way transformation so the plain password is never stored&quot;,</span>
+<span class="nc" id="L800">                &quot;Compressing them to save space&quot;,</span>
+<span class="nc" id="L801">                &quot;Converting them to base64&quot;, 1),</span>
+<span class="nc" id="L802">            q(6,  &quot;What is a Man-in-the-Middle (MITM) attack?&quot;,</span>
+<span class="nc" id="L803">                &quot;Overloading a server with requests&quot;,</span>
+<span class="nc" id="L804">                &quot;Intercepting communication between two parties without their knowledge&quot;,</span>
+<span class="nc" id="L805">                &quot;Injecting code into a database&quot;,</span>
+<span class="nc" id="L806">                &quot;Phishing via email&quot;, 1),</span>
+<span class="nc" id="L807">            q(7,  &quot;What is the principle of least privilege?&quot;,</span>
+<span class="nc" id="L808">                &quot;Giving all users admin rights for efficiency&quot;,</span>
+<span class="nc" id="L809">                &quot;Granting users only the permissions they need to perform their tasks&quot;,</span>
+<span class="nc" id="L810">                &quot;Encrypting all data at rest&quot;,</span>
+<span class="nc" id="L811">                &quot;Using MFA everywhere&quot;, 1),</span>
+<span class="nc" id="L812">            q(8,  &quot;What does a JWT (JSON Web Token) consist of?&quot;,</span>
+<span class="nc" id="L813">                &quot;Username and password in base64&quot;,</span>
+<span class="nc" id="L814">                &quot;Header, payload, and signature&quot;,</span>
+<span class="nc" id="L815">                &quot;Session ID and expiry&quot;,</span>
+<span class="nc" id="L816">                &quot;An asymmetric key pair&quot;, 1),</span>
+<span class="nc" id="L817">            q(9,  &quot;What is a brute-force attack?&quot;,</span>
+<span class="nc" id="L818">                &quot;Guessing credentials by systematically trying all possibilities&quot;,</span>
+<span class="nc" id="L819">                &quot;Injecting malicious SQL&quot;,</span>
+<span class="nc" id="L820">                &quot;Intercepting network packets&quot;,</span>
+<span class="nc" id="L821">                &quot;Exploiting an XSS vulnerability&quot;, 0),</span>
+<span class="nc" id="L822">            q(10, &quot;What is two-factor authentication (2FA)?&quot;,</span>
+<span class="nc" id="L823">                &quot;Two passwords entered sequentially&quot;,</span>
+<span class="nc" id="L824">                &quot;A second layer of verification in addition to a password&quot;,</span>
+<span class="nc" id="L825">                &quot;Biometric login only&quot;,</span>
+<span class="nc" id="L826">                &quot;A VPN-based login&quot;, 1),</span>
+<span class="nc" id="L827">            q(11, &quot;What does 'encryption at rest' mean?&quot;,</span>
+<span class="nc" id="L828">                &quot;Encrypting data during transmission&quot;,</span>
+<span class="nc" id="L829">                &quot;Encrypting stored data so it is unreadable without the key&quot;,</span>
+<span class="nc" id="L830">                &quot;Hashing passwords&quot;,</span>
+<span class="nc" id="L831">                &quot;Using HTTPS&quot;, 1),</span>
+<span class="nc" id="L832">            q(12, &quot;What is a DDoS attack?&quot;,</span>
+<span class="nc" id="L833">                &quot;Injecting malicious code into a server&quot;,</span>
+<span class="nc" id="L834">                &quot;Flooding a server with traffic from multiple sources to make it unavailable&quot;,</span>
+<span class="nc" id="L835">                &quot;Stealing cookies&quot;,</span>
+<span class="nc" id="L836">                &quot;Intercepting DNS queries&quot;, 1),</span>
+<span class="nc" id="L837">            q(13, &quot;What is the purpose of a Content Security Policy (CSP) header?&quot;,</span>
+<span class="nc" id="L838">                &quot;Controlling browser caching&quot;,</span>
+<span class="nc" id="L839">                &quot;Preventing XSS by specifying allowed content sources&quot;,</span>
+<span class="nc" id="L840">                &quot;Encrypting cookies&quot;,</span>
+<span class="nc" id="L841">                &quot;Limiting request size&quot;, 1),</span>
+<span class="nc" id="L842">            q(14, &quot;Which hashing algorithm is currently recommended for passwords?&quot;,</span>
+<span class="nc" id="L843">                &quot;MD5&quot;, &quot;SHA-1&quot;, &quot;bcrypt / Argon2&quot;, &quot;SHA-256&quot;, 2),</span>
+<span class="nc" id="L844">            q(15, &quot;What does 'secure' flag on a cookie do?&quot;,</span>
+<span class="nc" id="L845">                &quot;Makes the cookie HTTP-only&quot;,</span>
+<span class="nc" id="L846">                &quot;Ensures the cookie is only sent over HTTPS connections&quot;,</span>
+<span class="nc" id="L847">                &quot;Encrypts the cookie value&quot;,</span>
+<span class="nc" id="L848">                &quot;Prevents the cookie from expiring&quot;, 1),</span>
+<span class="nc" id="L849">            q(16, &quot;What is a security audit?&quot;,</span>
+<span class="nc" id="L850">                &quot;Automated penetration testing&quot;,</span>
+<span class="nc" id="L851">                &quot;A systematic evaluation of a system's security posture&quot;,</span>
+<span class="nc" id="L852">                &quot;A log of all login attempts&quot;,</span>
+<span class="nc" id="L853">                &quot;A firewall rule review&quot;, 1),</span>
+<span class="nc" id="L854">            q(17, &quot;What is an OWASP Top 10?&quot;,</span>
+<span class="nc" id="L855">                &quot;Ten best coding practices&quot;,</span>
+<span class="nc" id="L856">                &quot;A list of the ten most critical web application security risks&quot;,</span>
+<span class="nc" id="L857">                &quot;Ten security tools&quot;,</span>
+<span class="nc" id="L858">                &quot;Ten encryption algorithms&quot;, 1),</span>
+<span class="nc" id="L859">            q(18, &quot;What is rate limiting used for?&quot;,</span>
+<span class="nc" id="L860">                &quot;Speeding up API responses&quot;,</span>
+<span class="nc" id="L861">                &quot;Controlling how many requests a client can make in a time period&quot;,</span>
+<span class="nc" id="L862">                &quot;Encrypting API keys&quot;,</span>
+<span class="nc" id="L863">                &quot;Validating JWT tokens&quot;, 1),</span>
+<span class="nc" id="L864">            q(19, &quot;What does input validation prevent?&quot;,</span>
+<span class="nc" id="L865">                &quot;Slow queries&quot;, &quot;Unauthorized data being processed by the application&quot;,</span>
+<span class="nc" id="L866">                &quot;Memory leaks&quot;, &quot;SSL errors&quot;, 1),</span>
+<span class="nc" id="L867">            q(20, &quot;What is a penetration test (pen test)?&quot;,</span>
+<span class="nc" id="L868">                &quot;A performance load test&quot;,</span>
+<span class="nc" id="L869">                &quot;An authorized simulated attack to find vulnerabilities&quot;,</span>
+<span class="nc" id="L870">                &quot;A code review for security bugs&quot;,</span>
+<span class="nc" id="L871">                &quot;A network bandwidth test&quot;, 1)</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

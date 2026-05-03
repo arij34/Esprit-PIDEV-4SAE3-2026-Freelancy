@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProctoringTestHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.utils</a> &gt; <span class="el_source">ProctoringTestHelper.java</span></div><h1>ProctoringTestHelper.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.utils;
+
+import tn.esprit.examquizservice.dtos.RecordViolationRequest;
+import tn.esprit.examquizservice.dtos.RecordViolationResponse;
+import tn.esprit.examquizservice.entities.ExamViolationType;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Test and integration helper utility for the proctoring system.
+ * Provides sample violation requests and response validators.
+ */
+<span class="fc" id="L12">@Slf4j</span>
+<span class="nc" id="L13">public class ProctoringTestHelper {</span>
+    
+    /**
+     * Creates a sample violation request for testing.
+     */
+    public static RecordViolationRequest createSampleViolation(Long examId, Long userId, ExamViolationType type) {
+<span class="fc" id="L19">        return RecordViolationRequest.builder()</span>
+<span class="fc" id="L20">                .examId(examId)</span>
+<span class="fc" id="L21">                .userId(userId)</span>
+<span class="fc" id="L22">                .type(type)</span>
+<span class="fc" id="L23">                .details(&quot;Test violation - &quot; + type.name())</span>
+<span class="fc" id="L24">                .build();</span>
+    }
+    
+    /**
+     * Validates a RecordViolationResponse.
+     */
+    public static boolean isValidResponse(RecordViolationResponse response) {
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        return response != null </span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">            &amp;&amp; response.getStatus() != null </span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">            &amp;&amp; response.getViolationCount() != null </span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            &amp;&amp; response.getMessage() != null;</span>
+    }
+    
+    /**
+     * Logs violation response details.
+     */
+    public static void logViolationResponse(RecordViolationResponse response) {
+<span class="fc" id="L41">        log.info(&quot;Violation Response - Status: {}, ViolationCount: {}, Action: {}, Message: {}&quot;, </span>
+<span class="fc" id="L42">                response.getStatus(), </span>
+<span class="fc" id="L43">                response.getViolationCount(), </span>
+<span class="fc" id="L44">                response.getAction(), </span>
+<span class="fc" id="L45">                response.getMessage());</span>
+<span class="fc" id="L46">    }</span>
+    
+    /**
+     * Sample test data for common violation types.
+     */
+<span class="fc" id="L51">    public enum SampleViolations {</span>
+<span class="fc" id="L52">        PHONE_DETECTED(ExamViolationType.PHONE_DETECTED, &quot;Phone detected in camera feed&quot;),</span>
+<span class="fc" id="L53">        MULTIPLE_PEOPLE(ExamViolationType.MULTIPLE_PEOPLE, &quot;Multiple faces detected in frame&quot;),</span>
+<span class="fc" id="L54">        LOOKING_AWAY(ExamViolationType.LOOKING_AWAY, &quot;Student looking away from screen&quot;),</span>
+<span class="fc" id="L55">        NO_FACE(ExamViolationType.NO_FACE, &quot;No face detected in camera&quot;),</span>
+<span class="fc" id="L56">        TAB_SWITCH(ExamViolationType.TAB_SWITCH, &quot;Browser tab switch detected&quot;),</span>
+<span class="fc" id="L57">        EXIT_FULLSCREEN(ExamViolationType.EXIT_FULLSCREEN, &quot;Fullscreen mode exited&quot;),</span>
+<span class="fc" id="L58">        SUSPICIOUS_MOVEMENT(ExamViolationType.SUSPICIOUS_MOVEMENT, &quot;Suspicious movement detected&quot;);</span>
+        
+        private final ExamViolationType type;
+        private final String description;
+        
+<span class="fc" id="L63">        SampleViolations(ExamViolationType type, String description) {</span>
+<span class="fc" id="L64">            this.type = type;</span>
+<span class="fc" id="L65">            this.description = description;</span>
+<span class="fc" id="L66">        }</span>
+        
+        public ExamViolationType getType() {
+<span class="fc" id="L69">            return type;</span>
+        }
+        
+        public String getDescription() {
+<span class="fc" id="L73">            return description;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

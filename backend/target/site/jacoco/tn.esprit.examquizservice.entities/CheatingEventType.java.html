@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheatingEventType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.entities</a> &gt; <span class="el_source">CheatingEventType.java</span></div><h1>CheatingEventType.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.entities;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+
+<span class="fc" id="L5">public enum CheatingEventType {</span>
+<span class="fc" id="L6">    TAB_SWITCH,</span>
+<span class="fc" id="L7">    FULLSCREEN_EXIT,</span>
+<span class="fc" id="L8">    COPY_PASTE,</span>
+<span class="fc" id="L9">    WINDOW_BLUR,</span>
+<span class="fc" id="L10">    MULTIPLE_LOGIN,</span>
+<span class="fc" id="L11">    WEBCAM_DISABLED,</span>
+<span class="fc" id="L12">    IP_CHANGED,</span>
+<span class="fc" id="L13">    DEVICE_CHANGED,</span>
+<span class="fc" id="L14">    PAGE_REFRESH,</span>
+<span class="fc" id="L15">    KEYBOARD_SHORTCUT,</span>
+<span class="fc" id="L16">    RIGHT_CLICK,</span>
+<span class="fc" id="L17">    MULTIPLE_MONITORS,</span>
+<span class="fc" id="L18">    SUSPICIOUS_ACTIVITY;</span>
+
+    @JsonCreator
+    public static CheatingEventType fromValue(String value) {
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        if (value == null) return null;</span>
+<span class="nc bnc" id="L23" title="All 14 branches missed.">        return switch (value.trim().toUpperCase()) {</span>
+<span class="nc" id="L24">            case &quot;TAB_SWITCH&quot; -&gt; TAB_SWITCH;</span>
+<span class="nc" id="L25">            case &quot;FULLSCREEN_EXIT&quot; -&gt; FULLSCREEN_EXIT;</span>
+<span class="nc" id="L26">            case &quot;COPY_PASTE&quot; -&gt; COPY_PASTE;</span>
+<span class="nc" id="L27">            case &quot;WINDOW_BLUR&quot; -&gt; WINDOW_BLUR;</span>
+<span class="nc" id="L28">            case &quot;MULTIPLE_LOGIN&quot; -&gt; MULTIPLE_LOGIN;</span>
+<span class="nc" id="L29">            case &quot;WEBCAM_DISABLED&quot; -&gt; WEBCAM_DISABLED;</span>
+<span class="nc" id="L30">            case &quot;IP_CHANGED&quot; -&gt; IP_CHANGED;</span>
+<span class="nc" id="L31">            case &quot;DEVICE_CHANGED&quot; -&gt; DEVICE_CHANGED;</span>
+<span class="nc" id="L32">            case &quot;PAGE_REFRESH&quot; -&gt; PAGE_REFRESH;</span>
+<span class="nc" id="L33">            case &quot;KEYBOARD_SHORTCUT&quot; -&gt; KEYBOARD_SHORTCUT;</span>
+<span class="nc" id="L34">            case &quot;RIGHT_CLICK&quot; -&gt; RIGHT_CLICK;</span>
+<span class="nc" id="L35">            case &quot;MULTIPLE_MONITORS&quot; -&gt; MULTIPLE_MONITORS;</span>
+<span class="nc" id="L36">            case &quot;SUSPICIOUS_ACTIVITY&quot; -&gt; SUSPICIOUS_ACTIVITY;</span>
+<span class="nc" id="L37">            default -&gt; throw new IllegalArgumentException(&quot;Unknown cheating event type: &quot; + value);</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

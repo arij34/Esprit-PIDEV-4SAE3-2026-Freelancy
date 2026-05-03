@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExamSessionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.controllers</a> &gt; <span class="el_source">ExamSessionController.java</span></div><h1>ExamSessionController.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.controllers;
+
+import tn.esprit.examquizservice.dtos.*;
+import tn.esprit.examquizservice.services.ExamSessionService;
+import tn.esprit.examquizservice.services.AntiCheatingService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/api/exam-sessions&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+@RequiredArgsConstructor
+<span class="nc" id="L16">@Slf4j</span>
+public class ExamSessionController {
+    
+    private final ExamSessionService examSessionService;
+    private final AntiCheatingService antiCheatingService;
+    
+    /**
+     * Start a new exam session
+     */
+    @PostMapping(&quot;/start&quot;)
+    public ResponseEntity&lt;StartExamResponse&gt; startExam(@RequestBody StartExamRequest request) {
+<span class="nc" id="L27">        log.info(&quot;Starting exam session for user {} on exam {}&quot;, request.getUserId(), request.getExamId());</span>
+        try {
+<span class="nc" id="L29">            StartExamResponse response = examSessionService.startExam(request);</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">            if (response.getAttemptId() != null) {</span>
+<span class="nc" id="L31">                return ResponseEntity.ok(response);</span>
+            } else {
+<span class="nc" id="L33">                return ResponseEntity.badRequest().body(response);</span>
+            }
+<span class="nc" id="L35">        } catch (Exception e) {</span>
+<span class="nc" id="L36">            log.error(&quot;Error starting exam session&quot;, e);</span>
+<span class="nc" id="L37">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L38">                .body(StartExamResponse.builder()</span>
+<span class="nc" id="L39">                    .message(&quot;Error starting exam session: &quot; + e.getMessage())</span>
+<span class="nc" id="L40">                    .build());</span>
+        }
+    }
+    
+    /**
+     * Submit exam with all answers and cheating events
+     */
+    @PostMapping(&quot;/submit&quot;)
+    public ResponseEntity&lt;SubmitExamResponse&gt; submitExam(@RequestBody SubmitExamRequest request) {
+<span class="nc" id="L49">        log.info(&quot;Submitting exam for attempt {}&quot;, request.getAttemptId());</span>
+        try {
+<span class="nc" id="L51">            SubmitExamResponse response = examSessionService.submitExam(request);</span>
+<span class="nc" id="L52">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L53">        } catch (Exception e) {</span>
+<span class="nc" id="L54">            log.error(&quot;Error submitting exam&quot;, e);</span>
+<span class="nc" id="L55">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L56">                .body(SubmitExamResponse.builder()</span>
+<span class="nc" id="L57">                    .message(&quot;Error submitting exam: &quot; + e.getMessage())</span>
+<span class="nc" id="L58">                    .build());</span>
+        }
+    }
+    
+    /**
+     * Save individual answer (used for continuous auto-save)
+     */
+    @PostMapping(&quot;/save-answer&quot;)
+    public ResponseEntity&lt;String&gt; saveAnswer(@RequestBody SaveAnswerRequest request) {
+<span class="nc" id="L67">        log.debug(&quot;Saving answer for attempt {}, question {}&quot;, request.getAttemptId(), request.getQuestionId());</span>
+        try {
+            // Validate session token
+<span class="nc" id="L70">            if (!antiCheatingService.validateSessionToken(</span>
+<span class="nc" id="L71">                request.getSessionToken(), </span>
+<span class="nc" id="L72">                request.getIpAddress(), </span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                request.getDeviceFingerprint())) {</span>
+<span class="nc" id="L74">                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
+<span class="nc" id="L75">                    .body(&quot;Invalid or expired session token&quot;);</span>
+            }
+            
+<span class="nc" id="L78">            examSessionService.saveAnswer(</span>
+<span class="nc" id="L79">                request.getAttemptId(),</span>
+<span class="nc" id="L80">                request.getQuestionId(),</span>
+<span class="nc" id="L81">                request.getAnswerText(),</span>
+<span class="nc" id="L82">                request.getTimeTakenSeconds()</span>
+            );
+            
+<span class="nc" id="L85">            return ResponseEntity.ok(&quot;Answer saved successfully&quot;);</span>
+<span class="nc" id="L86">        } catch (Exception e) {</span>
+<span class="nc" id="L87">            log.error(&quot;Error saving answer&quot;, e);</span>
+<span class="nc" id="L88">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L89">                .body(&quot;Error saving answer: &quot; + e.getMessage());</span>
+        }
+    }
+    
+    /**
+     * Report a cheating event (tab switch, fullscreen exit, etc.)
+     */
+    @PostMapping(&quot;/report-event&quot;)
+    public ResponseEntity&lt;String&gt; reportCheatingEvent(@RequestBody CheatingEventDTO event) {
+<span class="nc" id="L98">        log.warn(&quot;Cheating event reported for attempt {}: {}&quot;, event.getAttemptId(), event.getEventType());</span>
+        try {
+            // Validate session token
+<span class="nc" id="L101">            if (!antiCheatingService.validateSessionToken(</span>
+<span class="nc" id="L102">                event.getSessionToken(), </span>
+<span class="nc" id="L103">                event.getIpAddress(), </span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                event.getDeviceFingerprint())) {</span>
+<span class="nc" id="L105">                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
+<span class="nc" id="L106">                    .body(&quot;Invalid or expired session token&quot;);</span>
+            }
+            
+<span class="nc" id="L109">            antiCheatingService.recordCheatingEvent(event.getAttemptId(), event);</span>
+            
+<span class="nc" id="L111">            return ResponseEntity.ok(&quot;Event recorded successfully&quot;);</span>
+<span class="nc" id="L112">        } catch (Exception e) {</span>
+<span class="nc" id="L113">            log.error(&quot;Error reporting cheating event&quot;, e);</span>
+<span class="nc" id="L114">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L115">                .body(&quot;Error reporting event: &quot; + e.getMessage());</span>
+        }
+    }
+    
+    /**
+     * Check IP address change
+     */
+    @PostMapping(&quot;/validate-ip&quot;)
+    public ResponseEntity&lt;String&gt; validateIp(
+        @RequestParam Long attemptId,
+        @RequestParam String ipAddress,
+        @RequestParam String sessionToken) {
+        
+<span class="nc" id="L128">        log.debug(&quot;Validating IP for attempt {}&quot;, attemptId);</span>
+        try {
+            // Validate session token
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            if (!antiCheatingService.validateSessionToken(sessionToken, ipAddress, &quot;&quot;)) {</span>
+<span class="nc" id="L132">                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
+<span class="nc" id="L133">                    .body(&quot;Invalid or expired session token&quot;);</span>
+            }
+            
+<span class="nc" id="L136">            return ResponseEntity.ok(&quot;IP validation passed&quot;);</span>
+<span class="nc" id="L137">        } catch (Exception e) {</span>
+<span class="nc" id="L138">            log.error(&quot;Error validating IP&quot;, e);</span>
+<span class="nc" id="L139">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L140">                .body(&quot;Error validating IP: &quot; + e.getMessage());</span>
+        }
+    }
+    
+    /**
+     * Auto-submit exam when time expires
+     */
+    @PostMapping(&quot;/auto-submit/{attemptId}&quot;)
+    public ResponseEntity&lt;SubmitExamResponse&gt; autoSubmitExam(
+        @PathVariable Long attemptId,
+        @RequestParam String sessionToken) {
+        
+<span class="nc" id="L152">        log.info(&quot;Auto-submitting exam for attempt {}&quot;, attemptId);</span>
+        try {
+<span class="nc" id="L154">            SubmitExamResponse response = examSessionService.autoSubmitExam(attemptId);</span>
+<span class="nc" id="L155">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L156">        } catch (Exception e) {</span>
+<span class="nc" id="L157">            log.error(&quot;Error auto-submitting exam&quot;, e);</span>
+<span class="nc" id="L158">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L159">                .body(SubmitExamResponse.builder()</span>
+<span class="nc" id="L160">                    .message(&quot;Error auto-submitting exam: &quot; + e.getMessage())</span>
+<span class="nc" id="L161">                    .build());</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

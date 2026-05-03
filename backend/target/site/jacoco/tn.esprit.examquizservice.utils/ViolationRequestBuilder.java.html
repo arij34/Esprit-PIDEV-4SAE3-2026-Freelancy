@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViolationRequestBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ExamQuiz-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.examquizservice.utils</a> &gt; <span class="el_source">ViolationRequestBuilder.java</span></div><h1>ViolationRequestBuilder.java</h1><pre class="source lang-java linenums">package tn.esprit.examquizservice.utils;
+
+import tn.esprit.examquizservice.dtos.RecordViolationRequest;
+import tn.esprit.examquizservice.dtos.ViolationDTO;
+import tn.esprit.examquizservice.entities.ExamViolationType;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Builder utility for creating violation requests.
+ * Provides a fluent API for constructing RecordViolationRequest objects.
+ */
+@Component
+<span class="fc" id="L16">public class ViolationRequestBuilder {</span>
+    
+<span class="fc" id="L18">    private final Map&lt;String, Object&gt; fields = new HashMap&lt;&gt;();</span>
+    
+    public ViolationRequestBuilder examId(Long examId) {
+<span class="fc" id="L21">        fields.put(&quot;examId&quot;, examId);</span>
+<span class="fc" id="L22">        return this;</span>
+    }
+    
+    public ViolationRequestBuilder userId(Long userId) {
+<span class="fc" id="L26">        fields.put(&quot;userId&quot;, userId);</span>
+<span class="fc" id="L27">        return this;</span>
+    }
+    
+    public ViolationRequestBuilder type(ExamViolationType type) {
+<span class="nc" id="L31">        fields.put(&quot;type&quot;, type);</span>
+<span class="nc" id="L32">        return this;</span>
+    }
+    
+    public ViolationRequestBuilder type(String typeString) {
+        try {
+<span class="fc" id="L37">            fields.put(&quot;type&quot;, ExamViolationType.valueOf(typeString.toUpperCase()));</span>
+<span class="fc" id="L38">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L39">            throw new IllegalArgumentException(&quot;Invalid violation type: &quot; + typeString);</span>
+        }
+<span class="fc" id="L41">        return this;</span>
+    }
+    
+    public ViolationRequestBuilder details(String details) {
+<span class="fc" id="L45">        fields.put(&quot;details&quot;, details);</span>
+<span class="fc" id="L46">        return this;</span>
+    }
+    
+    public RecordViolationRequest build() {
+<span class="fc" id="L50">        return RecordViolationRequest.builder()</span>
+<span class="fc" id="L51">                .examId((Long) fields.get(&quot;examId&quot;))</span>
+<span class="fc" id="L52">                .userId((Long) fields.get(&quot;userId&quot;))</span>
+<span class="fc" id="L53">                .type((ExamViolationType) fields.get(&quot;type&quot;))</span>
+<span class="fc" id="L54">                .details((String) fields.getOrDefault(&quot;details&quot;, null))</span>
+<span class="fc" id="L55">                .build();</span>
+    }
+    
+    public static ViolationRequestBuilder builder() {
+<span class="fc" id="L59">        return new ViolationRequestBuilder();</span>
+    }
+    
+    public void reset() {
+<span class="fc" id="L63">        fields.clear();</span>
+<span class="fc" id="L64">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

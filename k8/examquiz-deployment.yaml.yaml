@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: examquiz-deployment
+  namespace: freelancy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: examquiz-service
+  template:
+    metadata:
+      labels:
+        app: examquiz-service
+    spec:
+      containers:
+        - name: examquiz-service
+          image: ameni221/examquiz-service:latest
+          ports:
+            - containerPort: 8150
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-examquiz-service:3306/exam_quiz_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-examquiz-secret
+                  key: mysql-root-password
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: com.mysql.cj.jdbc.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-service:8761/eureka
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: examquiz-service
+  namespace: freelancy
+spec:
+  selector:
+    app: examquiz-service
+  ports:
+    - protocol: TCP
+      port: 8150
+      targetPort: 8150
+      nodePort: 30150
+  type: NodePort
