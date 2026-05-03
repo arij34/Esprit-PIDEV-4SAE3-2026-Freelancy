@@ -59,7 +59,7 @@ pipeline {
         }
         stage('4 — Deploy MySQL') {
             steps {
-                sh "kubectl apply -f k8/mysql-examquiz-deployment.yaml.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/mysql-examquiz-deployment.yaml -n ${NAMESPACE}"
                 sh "kubectl rollout status deployment/mysql-examquiz -n ${NAMESPACE} --timeout=120s"
                 echo "MySQL ExamQuiz ready"
             }
@@ -79,7 +79,7 @@ pipeline {
         }
         stage('7 — Deploy ExamQuiz Service') {
             steps {
-                sh "kubectl apply -f k8/examquiz-deployment.yaml.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/examquiz-deployment.yaml -n ${NAMESPACE}"
                 sh "kubectl rollout status deployment/examquiz-deployment -n ${NAMESPACE} --timeout=120s"
                 echo "ExamQuiz service deployed"
             }
