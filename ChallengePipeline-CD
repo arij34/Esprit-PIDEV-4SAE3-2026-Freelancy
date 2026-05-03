@@ -9,11 +9,17 @@ pipeline {
 
     stages {
 
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('1 — Checkout Manifests') {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/Challenge-Service']],
+                    branches: [[name: '*/Challenge-Module']],
                     extensions: [[
                         $class: 'CloneOption',
                         shallow: true,
