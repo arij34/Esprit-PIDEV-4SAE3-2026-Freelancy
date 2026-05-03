@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: skill-deployment
-  namespace: skill
+  namespace: freelancy
 spec:
   replicas: 2
   selector:
@@ -13,6 +13,10 @@ spec:
       labels:
         app: skill-management
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox
+          command: ['sh', '-c', 'until nc -z mysql-service 3306; do echo waiting for mysql; sleep 5; done']
       containers:
         - name: skill-management
           image: arijachach/skill-management:latest
@@ -21,6 +25,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: skill-config
+            - secretRef:
+                name: skill-secret
           readinessProbe:
             httpGet:
               path: /actuator/health
