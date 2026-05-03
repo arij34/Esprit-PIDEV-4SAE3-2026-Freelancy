@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = "ameni221/examquiz-service"   // ← change to teammate's Docker Hub image
+        IMAGE_NAME = "ameni221/examquiz-service"
         IMAGE_TAG  = "latest"
         NAMESPACE  = "freelancy"
     }
@@ -15,7 +15,7 @@ pipeline {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/ExamQuiz-Service']],   // ← change to actual branch name
+                    branches: [[name: '*/ExamQuiz-Service']],
                     extensions: [
                         [
                             $class: 'CloneOption',
@@ -27,7 +27,7 @@ pipeline {
                         [
                             $class: 'SparseCheckoutPaths',
                             sparseCheckoutPaths: [
-                                [path: 'k8s/']
+                                [path: 'k8/']
                             ]
                         ]
                     ],
@@ -59,27 +59,27 @@ pipeline {
         }
         stage('4 — Deploy MySQL') {
             steps {
-                sh "kubectl apply -f k8s/mysql-examquiz-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/mysql-examquiz-deployment.yaml.yaml -n ${NAMESPACE}"
                 sh "kubectl rollout status deployment/mysql-examquiz -n ${NAMESPACE} --timeout=120s"
                 echo "MySQL ExamQuiz ready"
             }
         }
         stage('5 — Deploy Prometheus') {
             steps {
-                sh "kubectl apply -f k8s/prometheus-config.yaml -n ${NAMESPACE}"
-                sh "kubectl apply -f k8s/prometheus-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/prometheus-config.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/prometheus-deployment.yaml -n ${NAMESPACE}"
                 echo "Prometheus deployed"
             }
         }
         stage('6 — Deploy Grafana') {
             steps {
-                sh "kubectl apply -f k8s/grafana-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/grafana-deployment.yaml -n ${NAMESPACE}"
                 echo "Grafana deployed"
             }
         }
         stage('7 — Deploy ExamQuiz Service') {
             steps {
-                sh "kubectl apply -f k8s/examquiz-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f k8/examquiz-deployment.yaml.yaml -n ${NAMESPACE}"
                 sh "kubectl rollout status deployment/examquiz-deployment -n ${NAMESPACE} --timeout=120s"
                 echo "ExamQuiz service deployed"
             }
