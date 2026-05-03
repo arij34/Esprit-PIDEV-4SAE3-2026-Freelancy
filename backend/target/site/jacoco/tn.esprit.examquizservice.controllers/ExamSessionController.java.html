@@ -67,10 +67,10 @@ public class ExamSessionController {
 <span class="nc" id="L67">        log.debug(&quot;Saving answer for attempt {}, question {}&quot;, request.getAttemptId(), request.getQuestionId());</span>
         try {
             // Validate session token
-<span class="nc" id="L70">            if (!antiCheatingService.validateSessionToken(</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (!antiCheatingService.validateSessionToken(</span>
 <span class="nc" id="L71">                request.getSessionToken(), </span>
 <span class="nc" id="L72">                request.getIpAddress(), </span>
-<span class="nc bnc" id="L73" title="All 2 branches missed.">                request.getDeviceFingerprint())) {</span>
+<span class="nc" id="L73">                request.getDeviceFingerprint())) {</span>
 <span class="nc" id="L74">                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
 <span class="nc" id="L75">                    .body(&quot;Invalid or expired session token&quot;);</span>
             }
@@ -98,10 +98,10 @@ public class ExamSessionController {
 <span class="nc" id="L98">        log.warn(&quot;Cheating event reported for attempt {}: {}&quot;, event.getAttemptId(), event.getEventType());</span>
         try {
             // Validate session token
-<span class="nc" id="L101">            if (!antiCheatingService.validateSessionToken(</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (!antiCheatingService.validateSessionToken(</span>
 <span class="nc" id="L102">                event.getSessionToken(), </span>
 <span class="nc" id="L103">                event.getIpAddress(), </span>
-<span class="nc bnc" id="L104" title="All 2 branches missed.">                event.getDeviceFingerprint())) {</span>
+<span class="nc" id="L104">                event.getDeviceFingerprint())) {</span>
 <span class="nc" id="L105">                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
 <span class="nc" id="L106">                    .body(&quot;Invalid or expired session token&quot;);</span>
             }

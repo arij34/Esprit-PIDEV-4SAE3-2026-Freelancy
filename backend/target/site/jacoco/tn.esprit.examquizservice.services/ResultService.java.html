@@ -58,7 +58,7 @@ public class ResultService {
         ResultStatus status;
 <span class="fc bfc" id="L59" title="All 2 branches covered.">        if (Boolean.TRUE.equals(request.getAutoSubmitted())) {</span>
 <span class="fc" id="L60">            status = ResultStatus.AUTO_SUBMITTED;</span>
-<span class="fc" id="L61">        } else {</span>
+        } else {
 <span class="pc bpc" id="L62" title="1 of 2 branches missed.">            double passing = exam.getPassingScore() != null ? exam.getPassingScore() : 50.0;</span>
 <span class="pc bpc" id="L63" title="1 of 2 branches missed.">            status = percent &gt;= passing ? ResultStatus.PASSED : ResultStatus.FAILED;</span>
         }
@@ -67,9 +67,9 @@ public class ResultService {
 <span class="fc bfc" id="L67" title="All 2 branches covered.">        if (request.getAnswers() != null) {</span>
             try {
 <span class="nc" id="L69">                answersJson = objectMapper.writeValueAsString(request.getAnswers());</span>
-<span class="pc" id="L70">            } catch (JsonProcessingException e) {</span>
+<span class="fc" id="L70">            } catch (JsonProcessingException e) {</span>
 <span class="fc" id="L71">                answersJson = request.getAnswers().toString();</span>
-            }
+<span class="nc" id="L72">            }</span>
         }
 
 <span class="fc" id="L75">        ExamResult result = ExamResult.builder()</span>
@@ -104,7 +104,7 @@ public class ResultService {
                     ResultStatus status;
 <span class="nc bnc" id="L105" title="All 2 branches missed.">                    if (Boolean.TRUE.equals(autoSubmitted)) {</span>
 <span class="nc" id="L106">                        status = ResultStatus.AUTO_SUBMITTED;</span>
-<span class="nc" id="L107">                    } else {</span>
+                    } else {
 <span class="nc bnc" id="L108" title="All 2 branches missed.">                        double passing = passingScore != null ? passingScore : 50.0;</span>
 <span class="nc bnc" id="L109" title="All 2 branches missed.">                        status = percent &gt;= passing ? ResultStatus.PASSED : ResultStatus.FAILED;</span>
                     }
@@ -122,9 +122,9 @@ public class ResultService {
 
     /** GET /api/results/me?examId=... */
     public ResultResponse getMyResult(Long userId, Long examId) {
-<span class="pc" id="L125">        ExamResult result = resultRepository.findByUserIdAndExamId(userId, examId)</span>
+<span class="fc" id="L125">        ExamResult result = resultRepository.findByUserIdAndExamId(userId, examId)</span>
 <span class="pc" id="L126">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
-<span class="fc" id="L127">                        &quot;No result found for userId=&quot; + userId + &quot; examId=&quot; + examId));</span>
+                        &quot;No result found for userId=&quot; + userId + &quot; examId=&quot; + examId));
 <span class="nc" id="L128">        return toResponse(result);</span>
     }
 
@@ -132,7 +132,7 @@ public class ResultService {
     public ResultResponse getByAttempt(Long attemptId) {
 <span class="nc" id="L133">        ExamResult result = resultRepository.findByAttemptId(attemptId)</span>
 <span class="nc" id="L134">                .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
-<span class="nc" id="L135">                        &quot;No result found for attemptId=&quot; + attemptId));</span>
+                        &quot;No result found for attemptId=&quot; + attemptId));
 <span class="nc" id="L136">        return toResponse(result);</span>
     }
 
@@ -164,10 +164,10 @@ public class ResultService {
 <span class="fc bfc" id="L164" title="All 2 branches covered.">        ExamResult result = (examId != null)</span>
 <span class="fc" id="L165">                ? resultRepository.findByUserIdAndExamId(userId, examId)</span>
 <span class="pc" id="L166">                    .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
-<span class="pc" id="L167">                            &quot;No result found for userId=&quot; + userId + &quot; examId=&quot; + examId))</span>
+                            &quot;No result found for userId=&quot; + userId + &quot; examId=&quot; + examId))
 <span class="fc" id="L168">                : resultRepository.findTopByUserIdOrderBySubmittedAtDescIdDesc(userId)</span>
 <span class="pc" id="L169">                    .orElseThrow(() -&gt; new ResourceNotFoundException(</span>
-<span class="nc" id="L170">                            &quot;No result found for userId=&quot; + userId));</span>
+                            &quot;No result found for userId=&quot; + userId));
 
 <span class="pc bpc" id="L172" title="1 of 2 branches missed.">        double currentEarned = result.getEarnedPoints() != null ? result.getEarnedPoints() : 0.0;</span>
 <span class="pc bpc" id="L173" title="1 of 2 branches missed.">        double total = result.getTotalPoints() != null ? result.getTotalPoints() : 0.0;</span>
@@ -201,9 +201,9 @@ public class ResultService {
         try {
 <span class="fc" id="L202">            userServiceClient.addExperiencePoints(userId, earnedPoints);</span>
 <span class="fc" id="L203">            log.info(&quot;Awarded {} XP to userId={}&quot;, earnedPoints, userId);</span>
-<span class="pc" id="L204">        } catch (Exception e) {</span>
+<span class="nc" id="L204">        } catch (Exception e) {</span>
 <span class="nc" id="L205">            log.warn(&quot;Failed to award XP to userId={}: {}&quot;, userId, e.getMessage());</span>
-        }
+<span class="fc" id="L206">        }</span>
 <span class="fc" id="L207">    }</span>
 
     public ResultResponse toResponse(ExamResult r) {

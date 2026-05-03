@@ -236,7 +236,7 @@ public class ExamSessionService {
 <span class="nc" id="L236">            att.setStatus(AttemptStatus.AUTO_SUBMITTED);</span>
 <span class="nc" id="L237">            log.warn(&quot;Attempt {} marked AUTO_SUBMITTED (tokenValid={}, timedOut={})&quot;,</span>
 <span class="nc" id="L238">                att.getId(), tokenValid, timedOut);</span>
-<span class="nc" id="L239">        } else {</span>
+        } else {
 <span class="nc" id="L240">            att.setStatus(AttemptStatus.SUBMITTED);</span>
         }
         
@@ -412,7 +412,7 @@ public class ExamSessionService {
 <span class="pc bpc" id="L412" title="2 of 4 branches missed.">                if (aa.getQuestion() != null &amp;&amp; aa.getQuestion().getPoints() != null) {</span>
 <span class="fc" id="L413">                    score += aa.getQuestion().getPoints();</span>
                 }
-            }
+<span class="fc" id="L415">            }</span>
         }
         
 <span class="fc" id="L418">        return score;</span>

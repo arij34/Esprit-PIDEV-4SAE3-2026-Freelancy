@@ -1,0 +1,11 @@
+tn\esprit\examquizservice\services\ExamSessionServiceTest.class
+tn\esprit\examquizservice\services\ExamParticipationServiceImplTest.class
+tn\esprit\examquizservice\services\ResultServiceTest$1.class
+tn\esprit\examquizservice\services\QuestionServiceTest.class
+tn\esprit\examquizservice\utils\ProctoringUtilsTest.class
+tn\esprit\examquizservice\services\AdminMonitoringServiceTest.class
+tn\esprit\examquizservice\services\ProctoringServiceTest.class
+tn\esprit\examquizservice\services\AntiCheatingServiceTest.class
+tn\esprit\examquizservice\services\ResultServiceTest.class
+tn\esprit\examquizservice\services\SimpleCrudServicesTest.class
+tn\esprit\examquizservice\services\ExamServiceTest.class

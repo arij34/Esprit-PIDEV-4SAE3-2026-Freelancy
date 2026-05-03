@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-<span class="nc" id="L29">@Slf4j</span>
+<span class="fc" id="L29">@Slf4j</span>
 public class ProctoringService {
     
     private final ExamViolationRepository violationRepository;
@@ -55,72 +55,72 @@ public class ProctoringService {
     @Transactional
     public RecordViolationResponse recordViolation(Long examId, Long userId, Long attemptId,
                                                     ExamViolationType type, String severity, String details) {
-<span class="nc" id="L58">        log.info(&quot;Recording violation - examId: {}, userId: {}, type: {}&quot;, examId, userId, type);</span>
+<span class="fc" id="L58">        log.info(&quot;Recording violation - examId: {}, userId: {}, type: {}&quot;, examId, userId, type);</span>
 
         // Parse severity, default LOW
-<span class="nc" id="L61">        ViolationSeverity sev = ViolationSeverity.LOW;</span>
-<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (severity != null) {</span>
-<span class="nc" id="L63">            try { sev = ViolationSeverity.valueOf(severity.toUpperCase()); }</span>
-<span class="nc" id="L64">            catch (IllegalArgumentException ignored) {}</span>
+<span class="fc" id="L61">        ViolationSeverity sev = ViolationSeverity.LOW;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (severity != null) {</span>
+<span class="fc" id="L63">            try { sev = ViolationSeverity.valueOf(severity.toUpperCase()); }</span>
+<span class="pc" id="L64">            catch (IllegalArgumentException ignored) {}</span>
         }
         
         try {
             // Count existing violations to derive snapshot (new one not yet saved)
-<span class="nc" id="L69">            int currentViolationCount = violationRepository.countByUserIdAndExamId(userId, examId).intValue() + 1;</span>
+<span class="fc" id="L69">            int currentViolationCount = violationRepository.countByUserIdAndExamId(userId, examId).intValue() + 1;</span>
 
-<span class="nc" id="L71">            Long currentTypeCount = violationRepository.countByExamIdAndUserIdAndType(examId, userId, type);</span>
-<span class="nc" id="L72">            int thresholdForType = getThresholdForType(type);</span>
+<span class="fc" id="L71">            Long currentTypeCount = violationRepository.countByExamIdAndUserIdAndType(examId, userId, type);</span>
+<span class="fc" id="L72">            int thresholdForType = getThresholdForType(type);</span>
             // +1 because the new violation hasn't been persisted yet at this point
-<span class="nc" id="L74">            long newTypeCount = currentTypeCount + 1;</span>
+<span class="fc" id="L74">            long newTypeCount = currentTypeCount + 1;</span>
 
             // Determine the action taken
             String actionTaken;
-<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (newTypeCount &gt;= thresholdForType) {</span>
-<span class="nc" id="L79">                actionTaken = &quot;AUTO_SUBMIT&quot;;</span>
-<span class="nc" id="L80">            } else {</span>
-<span class="nc" id="L81">                actionTaken = &quot;WARNING&quot;;</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (newTypeCount &gt;= thresholdForType) {</span>
+<span class="fc" id="L79">                actionTaken = &quot;AUTO_SUBMIT&quot;;</span>
+            } else {
+<span class="fc" id="L81">                actionTaken = &quot;WARNING&quot;;</span>
             }
 
             // Create violation record
-<span class="nc" id="L85">            ExamViolation violation = ExamViolation.builder()</span>
-<span class="nc" id="L86">                    .examId(examId)</span>
-<span class="nc" id="L87">                    .userId(userId)</span>
-<span class="nc" id="L88">                    .attemptId(attemptId)</span>
-<span class="nc" id="L89">                    .type(type)</span>
-<span class="nc" id="L90">                    .severity(sev)</span>
-<span class="nc" id="L91">                    .timestamp(LocalDateTime.now())</span>
-<span class="nc" id="L92">                    .details(details)</span>
-<span class="nc" id="L93">                    .actionTaken(actionTaken)</span>
-<span class="nc" id="L94">                    .countSnapshot(currentViolationCount)</span>
-<span class="nc" id="L95">                    .build();</span>
+<span class="fc" id="L85">            ExamViolation violation = ExamViolation.builder()</span>
+<span class="fc" id="L86">                    .examId(examId)</span>
+<span class="fc" id="L87">                    .userId(userId)</span>
+<span class="fc" id="L88">                    .attemptId(attemptId)</span>
+<span class="fc" id="L89">                    .type(type)</span>
+<span class="fc" id="L90">                    .severity(sev)</span>
+<span class="fc" id="L91">                    .timestamp(LocalDateTime.now())</span>
+<span class="fc" id="L92">                    .details(details)</span>
+<span class="fc" id="L93">                    .actionTaken(actionTaken)</span>
+<span class="fc" id="L94">                    .countSnapshot(currentViolationCount)</span>
+<span class="fc" id="L95">                    .build();</span>
 
-<span class="nc" id="L97">            ExamViolation savedViolation = violationRepository.save(violation);</span>
-<span class="nc" id="L98">            log.debug(&quot;Violation saved successfully - violationId: {}&quot;, savedViolation.getId());</span>
+<span class="fc" id="L97">            ExamViolation savedViolation = violationRepository.save(violation);</span>
+<span class="fc" id="L98">            log.debug(&quot;Violation saved successfully - violationId: {}&quot;, savedViolation.getId());</span>
 
             // Apply business rules
-<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (newTypeCount &gt;= thresholdForType) {</span>
-<span class="nc" id="L102">                log.warn(&quot;Violation type threshold reached ({}) for {} - auto-submitting exam. ExamId: {}, UserId: {}&quot;,</span>
-<span class="nc" id="L103">                        thresholdForType, type, examId, userId);</span>
-<span class="nc" id="L104">                examSessionService.autoSubmitExam(attemptId);</span>
-<span class="nc" id="L105">                return RecordViolationResponse.builder()</span>
-<span class="nc" id="L106">                        .status(ViolationStatus.AUTO_SUBMITTED)</span>
-<span class="nc" id="L107">                        .violationCount(currentViolationCount)</span>
-<span class="nc" id="L108">                        .message(&quot;Exam auto-submitted: &quot; + type + &quot; reached &quot;</span>
-<span class="nc" id="L109">                                + thresholdForType + &quot; violations&quot;)</span>
-<span class="nc" id="L110">                        .action(&quot;AUTO_SUBMIT&quot;)</span>
-<span class="nc" id="L111">                        .build();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            if (newTypeCount &gt;= thresholdForType) {</span>
+<span class="fc" id="L102">                log.warn(&quot;Violation type threshold reached ({}) for {} - auto-submitting exam. ExamId: {}, UserId: {}&quot;,</span>
+<span class="fc" id="L103">                        thresholdForType, type, examId, userId);</span>
+<span class="fc" id="L104">                examSessionService.autoSubmitExam(attemptId);</span>
+<span class="fc" id="L105">                return RecordViolationResponse.builder()</span>
+<span class="fc" id="L106">                        .status(ViolationStatus.AUTO_SUBMITTED)</span>
+<span class="fc" id="L107">                        .violationCount(currentViolationCount)</span>
+<span class="fc" id="L108">                        .message(&quot;Exam auto-submitted: &quot; + type + &quot; reached &quot;</span>
+                                + thresholdForType + &quot; violations&quot;)
+<span class="fc" id="L110">                        .action(&quot;AUTO_SUBMIT&quot;)</span>
+<span class="fc" id="L111">                        .build();</span>
             }
 
             // Issue warning
-<span class="nc" id="L115">            log.info(&quot;Violation recorded as warning. Current count: {}. {} count is {}/{}&quot;,</span>
-<span class="nc" id="L116">                    currentViolationCount, type, newTypeCount, thresholdForType);</span>
-<span class="nc" id="L117">            return RecordViolationResponse.builder()</span>
-<span class="nc" id="L118">                    .status(ViolationStatus.WARNING)</span>
-<span class="nc" id="L119">                    .violationCount(currentViolationCount)</span>
-<span class="nc" id="L120">                    .message(&quot;Violation recorded. You have &quot; + Math.max(0, thresholdForType - newTypeCount)</span>
-<span class="nc" id="L121">                            + &quot; remaining &quot; + type + &quot; warnings before auto-submission&quot;)</span>
-<span class="nc" id="L122">                    .action(&quot;CONTINUE&quot;)</span>
-<span class="nc" id="L123">                    .build();</span>
+<span class="fc" id="L115">            log.info(&quot;Violation recorded as warning. Current count: {}. {} count is {}/{}&quot;,</span>
+<span class="fc" id="L116">                    currentViolationCount, type, newTypeCount, thresholdForType);</span>
+<span class="fc" id="L117">            return RecordViolationResponse.builder()</span>
+<span class="fc" id="L118">                    .status(ViolationStatus.WARNING)</span>
+<span class="fc" id="L119">                    .violationCount(currentViolationCount)</span>
+<span class="fc" id="L120">                    .message(&quot;Violation recorded. You have &quot; + Math.max(0, thresholdForType - newTypeCount)</span>
+                            + &quot; remaining &quot; + type + &quot; warnings before auto-submission&quot;)
+<span class="fc" id="L122">                    .action(&quot;CONTINUE&quot;)</span>
+<span class="fc" id="L123">                    .build();</span>
 
 <span class="nc" id="L125">        } catch (Exception e) {</span>
 <span class="nc" id="L126">            log.error(&quot;Error recording violation&quot;, e);</span>
@@ -133,13 +133,13 @@ public class ProctoringService {
      */
     @Transactional(readOnly = true)
     public List&lt;ViolationDTO&gt; getViolationsByExamAndUser(Long examId, Long userId) {
-<span class="nc" id="L136">        log.debug(&quot;Fetching violations - examId: {}, userId: {}&quot;, examId, userId);</span>
+<span class="fc" id="L136">        log.debug(&quot;Fetching violations - examId: {}, userId: {}&quot;, examId, userId);</span>
         
-<span class="nc" id="L138">        List&lt;ExamViolation&gt; violations = violationRepository.findByExamIdAndUserId(examId, userId);</span>
+<span class="fc" id="L138">        List&lt;ExamViolation&gt; violations = violationRepository.findByExamIdAndUserId(examId, userId);</span>
         
-<span class="nc" id="L140">        return violations.stream()</span>
-<span class="nc" id="L141">                .map(this::mapToViolationDTO)</span>
-<span class="nc" id="L142">                .collect(Collectors.toList());</span>
+<span class="fc" id="L140">        return violations.stream()</span>
+<span class="fc" id="L141">                .map(this::mapToViolationDTO)</span>
+<span class="fc" id="L142">                .collect(Collectors.toList());</span>
     }
     
     /**
@@ -180,39 +180,39 @@ public class ProctoringService {
      */
     @Transactional(readOnly = true)
     public Map&lt;String, Object&gt; getViolationSummary(Long examId, Long userId) {
-<span class="nc" id="L183">        List&lt;ExamViolation&gt; list = violationRepository.findByExamIdAndUserId(examId, userId);</span>
-<span class="nc" id="L184">        long total = list.size();</span>
-<span class="nc bnc" id="L185" title="All 2 branches missed.">        String lastAction = list.isEmpty() ? null : list.get(list.size() - 1).getActionTaken();</span>
-<span class="nc" id="L186">        Map&lt;String, Object&gt; summary = new java.util.LinkedHashMap&lt;&gt;();</span>
-<span class="nc" id="L187">        summary.put(&quot;examId&quot;, examId);</span>
-<span class="nc" id="L188">        summary.put(&quot;userId&quot;, userId);</span>
-<span class="nc" id="L189">        summary.put(&quot;totalViolations&quot;, total);</span>
-<span class="nc" id="L190">        summary.put(&quot;lastAction&quot;, lastAction);</span>
-<span class="nc" id="L191">        return summary;</span>
+<span class="fc" id="L183">        List&lt;ExamViolation&gt; list = violationRepository.findByExamIdAndUserId(examId, userId);</span>
+<span class="fc" id="L184">        long total = list.size();</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        String lastAction = list.isEmpty() ? null : list.get(list.size() - 1).getActionTaken();</span>
+<span class="fc" id="L186">        Map&lt;String, Object&gt; summary = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L187">        summary.put(&quot;examId&quot;, examId);</span>
+<span class="fc" id="L188">        summary.put(&quot;userId&quot;, userId);</span>
+<span class="fc" id="L189">        summary.put(&quot;totalViolations&quot;, total);</span>
+<span class="fc" id="L190">        summary.put(&quot;lastAction&quot;, lastAction);</span>
+<span class="fc" id="L191">        return summary;</span>
     }
 
     /**
      * Maps ExamViolation entity to ViolationDTO.
      */
     private ViolationDTO mapToViolationDTO(ExamViolation violation) {
-<span class="nc" id="L198">        return ViolationDTO.builder()</span>
-<span class="nc" id="L199">                .id(violation.getId())</span>
-<span class="nc" id="L200">                .examId(violation.getExamId())</span>
-<span class="nc" id="L201">                .userId(violation.getUserId())</span>
-<span class="nc" id="L202">                .attemptId(violation.getAttemptId())</span>
-<span class="nc" id="L203">                .type(violation.getType())</span>
-<span class="nc" id="L204">                .severity(violation.getSeverity())</span>
-<span class="nc" id="L205">                .timestamp(violation.getTimestamp())</span>
-<span class="nc" id="L206">                .details(violation.getDetails())</span>
-<span class="nc" id="L207">                .actionTaken(violation.getActionTaken())</span>
-<span class="nc" id="L208">                .countSnapshot(violation.getCountSnapshot())</span>
-<span class="nc" id="L209">                .build();</span>
+<span class="fc" id="L198">        return ViolationDTO.builder()</span>
+<span class="fc" id="L199">                .id(violation.getId())</span>
+<span class="fc" id="L200">                .examId(violation.getExamId())</span>
+<span class="fc" id="L201">                .userId(violation.getUserId())</span>
+<span class="fc" id="L202">                .attemptId(violation.getAttemptId())</span>
+<span class="fc" id="L203">                .type(violation.getType())</span>
+<span class="fc" id="L204">                .severity(violation.getSeverity())</span>
+<span class="fc" id="L205">                .timestamp(violation.getTimestamp())</span>
+<span class="fc" id="L206">                .details(violation.getDetails())</span>
+<span class="fc" id="L207">                .actionTaken(violation.getActionTaken())</span>
+<span class="fc" id="L208">                .countSnapshot(violation.getCountSnapshot())</span>
+<span class="fc" id="L209">                .build();</span>
     }
     
     private int getThresholdForType(ExamViolationType type) {
-<span class="nc bnc" id="L213" title="All 4 branches missed.">        return switch (type) {</span>
-<span class="nc" id="L214">            case PHONE_DETECTED -&gt; phoneDetectedThreshold;</span>
-<span class="nc" id="L215">            case TAB_SWITCH -&gt; tabSwitchThreshold;</span>
+<span class="pc bpc" id="L213" title="2 of 4 branches missed.">        return switch (type) {</span>
+<span class="fc" id="L214">            case PHONE_DETECTED -&gt; phoneDetectedThreshold;</span>
+<span class="fc" id="L215">            case TAB_SWITCH -&gt; tabSwitchThreshold;</span>
 <span class="nc" id="L216">            case LOOKING_AWAY -&gt; lookingAwayThreshold;</span>
 <span class="nc" id="L217">            default -&gt; defaultThreshold;</span>
         };
