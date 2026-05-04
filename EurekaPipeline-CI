@@ -1,33 +1,48 @@
 pipeline {
     agent any
-
     tools {
         maven "Maven3"
     }
-
     environment {
         DOCKER_IMAGE  = "ameni221/eureka-service:latest"
         SONAR_ORG     = "freelancy-organization"
         SONAR_PROJECT = "freelancy-organization_eureka"
         SERVICE_DIR   = "backend"
     }
-
     stages {
-
         stage('Clean Workspace') {
             steps {
                 deleteDir()
             }
         }
-
         stage('Git Checkout') {
             steps {
-                git branch: 'eureka-server',
-                    credentialsId: 'github-credentials',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/eureka-server']],
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 1,
+                            timeout: 60,
+                            noTags: true
+                        ],
+                        [
+                            $class: 'SparseCheckoutPaths',
+                            sparseCheckoutPaths: [
+                                [path: 'backend/']
+                            ]
+                        ]
+                    ],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
+                echo 'Code retrieved successfully'
             }
         }
-
         stage('Build') {
             steps {
                 dir("${SERVICE_DIR}") {
@@ -35,7 +50,6 @@ pipeline {
                 }
             }
         }
-
         stage('SonarCloud Analysis') {
             steps {
                 dir("${SERVICE_DIR}") {
@@ -51,7 +65,6 @@ pipeline {
                 }
             }
         }
-
         stage('Docker Build') {
             steps {
                 dir("${SERVICE_DIR}") {
@@ -59,7 +72,6 @@ pipeline {
                 }
             }
         }
-
         stage('Docker Push') {
             steps {
                 withCredentials([usernamePassword(
@@ -75,7 +87,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo '✅ CI Pipeline completed! Triggering CD pipeline...'
