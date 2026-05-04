@@ -1,8 +1,21 @@
+# ✅ PersistentVolumeClaim — les données MySQL survivent aux redémarrages
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-skill-pvc
+  namespace: freelancy
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql-skill
-  namespace: freelancy          # ✅ Corrigé: skill → freelancy
+  namespace: freelancy
 spec:
   replicas: 1
   selector:
@@ -32,13 +45,15 @@ spec:
               mountPath: /var/lib/mysql
       volumes:
         - name: mysql-storage
-          emptyDir: {}
+          # ✅ PVC à la place de emptyDir — données persistantes
+          persistentVolumeClaim:
+            claimName: mysql-skill-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: mysql-service
-  namespace: freelancy          # ✅ Corrigé: skill → freelancy
+  namespace: freelancy
 spec:
   selector:
     app: mysql-skill

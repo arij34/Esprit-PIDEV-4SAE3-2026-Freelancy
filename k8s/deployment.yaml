@@ -12,6 +12,11 @@ spec:
     metadata:
       labels:
         app: skill-management
+      # ✅ Annotations pour que Prometheus auto-découvre ce pod
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8086"
     spec:
       initContainers:
         - name: wait-for-mysql
@@ -27,6 +32,7 @@ spec:
                 name: skill-config
             - secretRef:
                 name: skill-secret
+          # ✅ ReadinessProbe — K8s attend que le service soit prêt avant d'envoyer du trafic
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -34,3 +40,11 @@ spec:
             initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 10
+          # ✅ LivenessProbe — K8s redémarre le pod s'il est bloqué
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8086
+            initialDelaySeconds: 210
+            periodSeconds: 20
+            failureThreshold: 5
