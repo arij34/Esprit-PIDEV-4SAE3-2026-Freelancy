@@ -1,1 +1,13 @@
+tn\esprit\challengeservice\ChallengeServiceApplicationTests.class
+tn\esprit\challengeservice\services\ChallengeServiceImplTest.class
+tn\esprit\challengeservice\services\GitHubServiceTest.class
+tn\esprit\challengeservice\controllers\UserTestControllerTest.class
+tn\esprit\challengeservice\controllers\TaskControllerTest.class
+tn\esprit\challengeservice\config\GlobalExceptionHandlerTest.class
 tn\esprit\challengeservice\config\SecurityConfigTest.class
+tn\esprit\challengeservice\services\ParticipationServiceImplTest.class
+tn\esprit\challengeservice\services\TaskServiceImplTest.class
+tn\esprit\challengeservice\controllers\ChallengeControllerTest.class
+tn\esprit\challengeservice\config\KeycloakRealmRoleConverterTest.class
+tn\esprit\challengeservice\controllers\ParticipationControllerTest.class
+tn\esprit\challengeservice\services\PipelineStatusSchedulerTest.class

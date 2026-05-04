@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: tn.esprit.challengeservice.controllers.ChallengeControllerTest
--------------------------------------------------------------------------------
-Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.368 s -- in tn.esprit.challengeservice.controllers.ChallengeControllerTest
