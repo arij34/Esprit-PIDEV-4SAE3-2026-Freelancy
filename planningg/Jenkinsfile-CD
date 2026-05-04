@@ -2,11 +2,13 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = "jaff2003/planning:latest"
-        KUBECONFIG   = "/var/lib/jenkins/.kube/config"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
     stages {
         stage('CLEAN') {
-            steps { deleteDir() }
+            steps {
+                deleteDir()
+            }
         }
         stage('GIT') {
             steps {
@@ -17,45 +19,41 @@ pipeline {
         }
         stage('VERIFY IMAGE DOCKER HUB') {
             steps {
-                sh "docker pull \"
-                echo "Image \ disponible sur Docker Hub"
+                sh 'docker pull jaff2003/planning:latest'
+                echo 'Image jaff2003/planning:latest disponible sur Docker Hub'
             }
         }
         stage('DEPLOY TO KUBERNETES') {
             steps {
-                sh '''
-                    kubectl apply -f planningg/k8s/namespace.yaml
-                    kubectl apply -f planningg/k8s/secret.yaml
-                    kubectl apply -f planningg/k8s/configmap.yaml
-                    kubectl apply -f planningg/k8s/mysql-deployment.yaml
-                    kubectl apply -f planningg/k8s/deployment.yaml
-                    kubectl apply -f planningg/k8s/service.yaml
-                    kubectl rollout restart deployment/planning-deployment -n freelancy
-                '''
+                sh 'kubectl apply -f planningg/k8s/namespace.yaml'
+                sh 'kubectl apply -f planningg/k8s/secret.yaml'
+                sh 'kubectl apply -f planningg/k8s/configmap.yaml'
+                sh 'kubectl apply -f planningg/k8s/mysql-deployment.yaml'
+                sh 'kubectl apply -f planningg/k8s/deployment.yaml'
+                sh 'kubectl apply -f planningg/k8s/service.yaml'
+                sh 'kubectl rollout restart deployment/planning-deployment -n freelancy'
             }
         }
         stage('VERIFY DEPLOYMENT') {
             steps {
-                sh '''
-                    kubectl rollout status deployment/planning-deployment -n freelancy --timeout=300s
-                    kubectl get pods -n freelancy
-                    kubectl get svc -n freelancy
-                    kubectl get deployments -n freelancy
-                '''
+                sh 'kubectl rollout status deployment/planning-deployment -n freelancy --timeout=300s'
+                sh 'kubectl get pods -n freelancy'
+                sh 'kubectl get svc -n freelancy'
+                sh 'kubectl get deployments -n freelancy'
             }
         }
         stage('SMOKE TEST') {
             steps {
-                sh '''
-                    kubectl get pods -n freelancy -o wide
-                    kubectl get services -n freelancy
-                '''
+                sh 'kubectl get pods -n freelancy -o wide'
+                sh 'kubectl get services -n freelancy'
                 echo 'Planning service accessible via NodePort 30089'
             }
         }
     }
     post {
-        success { echo 'Deploiement Kubernetes planning reussi !' }
+        success {
+            echo 'Deploiement Kubernetes planning reussi !'
+        }
         failure {
             sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
             echo 'Deploiement Kubernetes planning echoue !'
