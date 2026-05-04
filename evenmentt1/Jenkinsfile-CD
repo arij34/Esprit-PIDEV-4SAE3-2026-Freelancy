@@ -2,12 +2,11 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = "jaff2003/event:latest"
+        KUBECONFIG   = "/var/lib/jenkins/.kube/config"
     }
     stages {
         stage('CLEAN') {
-            steps {
-                deleteDir()
-            }
+            steps { deleteDir() }
         }
         stage('GIT') {
             steps {
@@ -18,8 +17,8 @@ pipeline {
         }
         stage('VERIFY IMAGE DOCKER HUB') {
             steps {
-                sh "docker pull ${DOCKER_IMAGE}"
-                echo "Image ${DOCKER_IMAGE} disponible sur Docker Hub"
+                sh "docker pull \"
+                echo "Image \ disponible sur Docker Hub"
             }
         }
         stage('DEPLOY TO KUBERNETES') {
@@ -56,12 +55,10 @@ pipeline {
         }
     }
     post {
-        success {
-            echo 'Déploiement Kubernetes event réussi !'
-        }
+        success { echo 'Deploiement Kubernetes event reussi !' }
         failure {
             sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
-            echo 'Déploiement Kubernetes event échoué !'
+            echo 'Deploiement Kubernetes event echoue !'
         }
     }
 }
