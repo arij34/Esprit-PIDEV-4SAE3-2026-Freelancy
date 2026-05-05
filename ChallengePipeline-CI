@@ -6,7 +6,7 @@ pipeline {
 
     environment {
         MS_NAME            = "backend"
-        IMAGE_NAME         = "pidevfreelancy/challenge-service"
+        IMAGE_NAME         = "ameni221/challenge-service"
         IMAGE_TAG          = "latest"
         SONAR_PROJECT_KEY  = "freelancy-challenge-service"
         SONAR_PROJECT_NAME = "challenge-service"
