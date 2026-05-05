@@ -60,4 +60,8 @@ public class PaymentController {
     ) {
         return paymentStatsService.lastMonths(months);
     }
+    @GetMapping("/test")
+public String test() {
+    return "Payment OK";
+}
 }
