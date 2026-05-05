@@ -80,7 +80,7 @@ export class HeaderComponent implements OnInit {
     }
 
     this.http.get<{ count: number }>(
-      `http://localhost:8087/invitations/freelancer/${freelancerId}/pending-count`
+      `/api/invitations/freelancer/${freelancerId}/pending-count`
     ).subscribe({
       next: (res) => {
         this.pendingInvitationsCount = res.count;
