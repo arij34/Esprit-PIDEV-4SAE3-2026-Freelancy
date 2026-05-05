@@ -25,7 +25,13 @@ pipeline {
                 }
                 deleteDir()
                 retry(2) {
-                    checkout scm
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: env.BRANCH_NAME ?: '*/project_management']],
+                        userRemoteConfigs: [[url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git']],
+                        extensions: [
+                            [$class: 'CloneOption', shallow: true, noTags: false, depth: 1, timeout: 10]
+                        ]
+                    ])
                 }
             }
         }
