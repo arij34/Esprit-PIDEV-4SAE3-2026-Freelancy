@@ -4,7 +4,7 @@ pipeline {
         maven "M2_HOME"
     }
     environment {
-        DOCKER_IMAGE = "arijachach/matching-module:latest"
+        DOCKER_IMAGE = "pidevfreelancy/matching-module:latest"
     }
     stages {
         stage('CLEAN') {
