@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projet-deployment
+  namespace: freelancy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: projet
+  template:
+    metadata:
+      labels:
+        app: projet
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8085"
+    spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox
+          command: ['sh', '-c', 'until nc -z mysql-service 3306; do echo waiting for mysql; sleep 5; done']
+      containers:
+        - name: projet
+          image: syrinebouden/projet:latest
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: projet-config
+            - secretRef:
+                name: projet-secret
+          # ✅ ReadinessProbe — K8s attend que le service soit prêt avant d'envoyer du trafic
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 180
+            periodSeconds: 15
+            failureThreshold: 10
+          # ✅ LivenessProbe — K8s redémarre le pod s'il est bloqué
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 210
+            periodSeconds: 20
+            failureThreshold: 5

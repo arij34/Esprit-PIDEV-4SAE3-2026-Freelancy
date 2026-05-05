@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+    environment {
+        SERVICE_DIR = "projet/Esprit-PIDEV-4SAE3-2026-Freelancy"
+        DOCKER_IMAGE = "syrinebouden/projet:latest"
+    }
+    stages {
+        stage('CLEAN') {
+            steps {
+                deleteDir()
+            }
+        }
+        stage('GIT') {
+            steps {
+                git branch: 'project_management',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                    credentialsId: 'github-credentials'
+            }
+        }
+        stage('BUILD') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh 'chmod +x mvnw'
+                    sh './mvnw -B clean package -DskipTests'
+                }
+            }
+        }
+        stage('TESTS UNITAIRES') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh './mvnw -B test'
+                }
+            }
+        }
+        stage('JACOCO REPORT') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh './mvnw -B jacoco:report'
+                }
+            }
+        }
+        stage('SONARQUBE ANALYSIS') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    dir("${SERVICE_DIR}") {
+                        sh """
+                        ./mvnw -B sonar:sonar \
+                        -Dsonar.projectKey=ProjetManagement \
+                        -Dsonar.projectName=ProjetManagement \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    """
+                    }
+                }
+            }
+        }
+        stage('DOCKER BUILD IMAGE') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+        stage('DOCKER PUSH IMAGE') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    """
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline CI terminé avec succès — lancement du CD...'
+            build job: 'projet-CD',
+                  wait: true,
+                  propagate: true
+        }
+        failure {
+            echo 'Pipeline CI échoué !'
+        }
+    }
+}
