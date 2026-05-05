@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "ameni221/eureka-service:latest"
+        DOCKER_IMAGE = "pidevfreelancy/eureka-service:latest"
         NAMESPACE    = "freelancy"
         KUBECONFIG   = "/var/jenkins_home/kubeconfig"
     }
