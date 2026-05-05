@@ -17,7 +17,13 @@ data:
         metrics_path: '/actuator/prometheus'
         static_configs:
           - targets: ['challenge-service:8077']
+
       - job_name: 'examquiz-service'
         metrics_path: '/actuator/prometheus'
         static_configs:
           - targets: ['examquiz-service:8150']
+
+      - job_name: 'api-gateway'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['api-gateway-service:8091']
