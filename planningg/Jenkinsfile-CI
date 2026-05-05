@@ -12,10 +12,30 @@ pipeline {
                     credentialsId: 'github-token'
             }
         }
-        stage('MVN CLEAN')   { steps { dir('planningg') { sh 'mvn clean' } } }
-        stage('MVN COMPILE') { steps { dir('planningg') { sh 'mvn compile' } } }
-        stage('MVN TEST')    { steps { dir('planningg') { sh 'mvn test -DskipTests' } } }
-        stage('MVN PACKAGE') { steps { dir('planningg') { sh 'mvn package -DskipTests' } } }
+        stage('MVN CLEAN') {
+            steps { dir('planningg') { sh 'mvn clean' } }
+        }
+        stage('MVN COMPILE') {
+            steps { dir('planningg') { sh 'mvn compile' } }
+        }
+        stage('MVN TEST') {
+            steps { dir('planningg') { sh 'mvn test -DskipTests' } }
+        }
+        stage('MVN PACKAGE') {
+            steps { dir('planningg') { sh 'mvn package -DskipTests' } }
+        }
+        stage('JACOCO REPORT') {
+            steps { dir('planningg') { sh 'mvn jacoco:report' } }
+        }
+        stage('SONARQUBE ANALYSIS') {
+            steps {
+                dir('planningg') {
+                    withSonarQubeEnv('sonar') {
+                        sh 'mvn sonar:sonar -Dsonar.projectKey=planning -Dsonar.projectName=planning -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
+                    }
+                }
+            }
+        }
         stage('DOCKER BUILD') {
             steps {
                 dir('planningg') {
