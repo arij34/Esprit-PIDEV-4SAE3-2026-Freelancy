@@ -3,24 +3,27 @@ pipeline {
     tools {
         maven "Maven3"
     }
+
     environment {
-        MS_NAME       = "backend"
-        IMAGE_NAME    = "ameni221/examquiz-service"
-        IMAGE_TAG     = "latest"
-        SONAR_ORG     = "freelancy-organization"
-        SONAR_PROJECT = "freelancy-organization_examquiz-service"
-        DOCKER_CREDS  = credentials('docker-hub-credentials')
+        MS_NAME            = "backend"
+        IMAGE_NAME         = "pidevfreelancy/examquiz-service"
+        IMAGE_TAG          = "latest"
+        SONAR_PROJECT_KEY  = "freelancy-examquiz-service"
+        SONAR_PROJECT_NAME = "examquiz-service"
+        DOCKER_CREDS       = credentials('docker-hub-credentials')
     }
+
     stages {
-        stage('1 — Checkout') {
+        stage('1 - Checkout') {
             steps {
                 git branch: 'ExamQuiz-Service',
                     credentialsId: 'github-credentials',
                     url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
-                echo "Code retrieved from GitHub — branch ExamQuiz-Service"
+                echo "Code retrieved from GitHub - branch ExamQuiz-Service"
             }
         }
-        stage('2 — Build Maven') {
+
+        stage('2 - Build Maven') {
             steps {
                 dir("${MS_NAME}") {
                     sh 'mvn clean package -DskipTests'
@@ -28,21 +31,12 @@ pipeline {
                 }
             }
         }
-        stage('3 — Tests + Coverage + SonarCloud') {
+
+        stage('3 - Tests + JaCoCo') {
             steps {
                 dir("${MS_NAME}") {
-                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                        sh """
-                            mvn clean verify sonar:sonar \
-                            -Dsonar.token=${SONAR_TOKEN} \
-                            -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=${SONAR_ORG} \
-                            -Dsonar.projectKey=${SONAR_PROJECT} \
-                            -Dsonar.projectName=examquiz-service \
-                            -Dsonar.java.source=17 \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
-                    }
+                    sh 'mvn test jacoco:report'
+                    sh 'test -f target/site/jacoco/jacoco.xml'
                 }
             }
             post {
@@ -50,11 +44,58 @@ pipeline {
                     junit "backend/target/surefire-reports/*.xml"
                 }
                 failure {
-                    error 'Tests/Analysis failed — stopping pipeline'
+                    error 'Tests failed - stopping pipeline'
                 }
             }
         }
-        stage('4 — Docker Build') {
+
+        stage('4 - Ensure Sonar Project Exists') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            set -e
+
+                            echo "Checking Sonar project: ${SONAR_PROJECT_KEY}"
+
+                            if curl -s -f -u "${SONAR_TOKEN}:" \
+                              "${SONAR_HOST_URL}/api/components/show?component=${SONAR_PROJECT_KEY}" >/dev/null; then
+                              echo "Sonar project already exists: ${SONAR_PROJECT_KEY}"
+                            else
+                              echo "Creating Sonar project: ${SONAR_PROJECT_KEY}"
+                              curl -s -f -u "${SONAR_TOKEN}:" -X POST \
+                                "${SONAR_HOST_URL}/api/projects/create" \
+                                --data-urlencode "project=${SONAR_PROJECT_KEY}" \
+                                --data-urlencode "name=${SONAR_PROJECT_NAME}" >/dev/null
+                              echo "Sonar project created: ${SONAR_PROJECT_KEY}"
+                            fi
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('5 - SonarQube Analysis') {
+            steps {
+                dir("${MS_NAME}") {
+                    withSonarQubeEnv('sonar') {
+                        withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
+                            sh '''
+                                mvn sonar:sonar \
+                                  -Dsonar.host.url=${SONAR_HOST_URL} \
+                                  -Dsonar.token=${SONAR_TOKEN} \
+                                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                  -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                                  -Dsonar.java.source=17 \
+                                  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('6 - Docker Build') {
             steps {
                 dir("${MS_NAME}") {
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
@@ -62,7 +103,8 @@ pipeline {
                 }
             }
         }
-        stage('5 — Docker Push') {
+
+        stage('7 - Docker Push') {
             steps {
                 sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
                 sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
@@ -70,17 +112,18 @@ pipeline {
             }
         }
     }
+
     post {
         success {
-            echo "✅ CI Pipeline completed — image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
+            echo "CI Pipeline completed - image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
             build job: 'ExamQuizPipeline-CD', wait: false
         }
         failure {
-            echo "❌ CI Pipeline failed — check logs above"
+            echo "CI Pipeline failed - check logs above"
         }
         always {
             sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
-            echo '🔄 CI Pipeline finished.'
+            echo "CI Pipeline finished."
         }
     }
 }
