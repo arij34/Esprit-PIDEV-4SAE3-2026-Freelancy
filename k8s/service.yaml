@@ -3,11 +3,14 @@ kind: Service
 metadata:
   name: matching-service
   namespace: freelancy
+  labels:
+    app: matching-module
 spec:
   selector:
     app: matching-module
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8087
       targetPort: 8087
       nodePort: 30087

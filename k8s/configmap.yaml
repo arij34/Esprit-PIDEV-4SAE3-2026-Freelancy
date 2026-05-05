@@ -7,3 +7,6 @@ data:
   SPRING_DATASOURCE_URL: jdbc:mysql://mysql-matching:3306/matching_db?createDatabaseIfNotExist=true
   SPRING_DATASOURCE_USERNAME: matching_user
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka
+  EUREKA_CLIENT_ENABLED: "false"
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+  EUREKA_CLIENT_FETCH_REGISTRY: "false"

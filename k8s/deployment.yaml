@@ -12,7 +12,15 @@ spec:
     metadata:
       labels:
         app: matching-module
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8087"
     spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox
+          command: ['sh', '-c', 'until nc -z mysql-matching 3306; do echo waiting for mysql; sleep 5; done']
       containers:
         - name: matching-module
           image: arijachach/matching-module:latest
@@ -27,5 +35,13 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8087
-            initialDelaySeconds: 60
+            initialDelaySeconds: 180
             periodSeconds: 15
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8087
+            initialDelaySeconds: 210
+            periodSeconds: 20
+            failureThreshold: 5
