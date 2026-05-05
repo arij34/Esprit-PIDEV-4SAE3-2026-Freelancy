@@ -1,63 +1,69 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout(true)
+    }
     environment {
-        SERVICE_DIR = "contrat/Esprit-PIDEV-4SAE3-2026-Freelancy"
-        DOCKER_IMAGE = "syrinebouden/contrat:latest"
+        DOCKER_IMAGE_REPO = "syrinebouden/contrat"
+        DOCKER_IMAGE_TAG = "latest"
+        SONAR_PROJECT_KEY = "ContratManagement"
+        SONAR_PROJECT_NAME = "ContratManagement"
+        SONAR_HOST_URL = "https://sonarcloud.io"
     }
     stages {
-        stage('CLEAN') {
+        stage('CHECKOUT') {
             steps {
                 deleteDir()
-            }
-        }
-        stage('GIT') {
-            steps {
-                git branch: 'contract_management',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                    credentialsId: 'github-credentials'
+                checkout scm
             }
         }
         stage('BUILD') {
             steps {
-                dir("${SERVICE_DIR}") {
-                    sh 'chmod +x mvnw'
-                    sh './mvnw -B clean package -DskipTests'
-                }
+                sh '''
+                    if [ -f ./mvnw ]; then
+                      chmod +x ./mvnw
+                      MVN=./mvnw
+                    else
+                      MVN=mvn
+                    fi
+                    $MVN -B clean package -DskipTests
+                '''
             }
         }
         stage('TESTS UNITAIRES') {
             steps {
-                dir("${SERVICE_DIR}") {
-                    sh './mvnw -B test'
-                }
+                sh '''
+                    if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
+                    $MVN -B test
+                '''
             }
         }
         stage('JACOCO REPORT') {
             steps {
-                dir("${SERVICE_DIR}") {
-                    sh './mvnw -B jacoco:report'
-                }
+                sh '''
+                    if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
+                    $MVN -B jacoco:report
+                '''
             }
         }
         stage('SONARQUBE ANALYSIS') {
             steps {
-                withSonarQubeEnv('sonar') {
-                    dir("${SERVICE_DIR}") {
-                        sh """
-                        ./mvnw -B sonar:sonar \
-                        -Dsonar.projectKey=ContratManagement \
-                        -Dsonar.projectName=ContratManagement \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                    """
-                    }
+                withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
+                        $MVN -B sonar:sonar \
+                          -Dsonar.host.url=${SONAR_HOST_URL} \
+                          -Dsonar.login=${SONAR_TOKEN} \
+                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                          -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    '''
                 }
             }
         }
         stage('DOCKER BUILD IMAGE') {
             steps {
-                dir("${SERVICE_DIR}") {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
-                }
+                sh 'docker build -t ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} .'
             }
         }
         stage('DOCKER PUSH IMAGE') {
@@ -69,7 +75,7 @@ pipeline {
                 )]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE}
+                        docker push ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG}
                     """
                 }
             }
