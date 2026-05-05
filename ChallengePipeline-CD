@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = "ameni221/challenge-service"
+        IMAGE_NAME = "pidevfreelancy/challenge-service"
         IMAGE_TAG  = "latest"
         NAMESPACE  = "freelancy"
     }
