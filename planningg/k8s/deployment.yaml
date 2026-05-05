@@ -13,6 +13,10 @@ spec:
       labels:
         app: planning
     spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox
+        command: ['sh', '-c', 'until nc -z mysql-planning 3306; do echo waiting; sleep 3; done']
       containers:
       - name: planning
         image: pidevfreelancy/planning:latest
