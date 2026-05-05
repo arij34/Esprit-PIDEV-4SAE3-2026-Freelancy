@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    environment {
+        SERVICE_DIR = "smart-analysis"
+        DOCKER_IMAGE = "syrinebouden/smart-analysis:latest"
+    }
+    stages {
+        stage('CLEAN') { steps { deleteDir() } }
+        stage('GIT') {
+            steps {
+                git branch: 'smart_analysis',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                    credentialsId: 'github-credentials'
+            }
+        }
+        stage('VERIFY IMAGE DOCKER HUB') {
+            steps {
+                sh "docker pull ${DOCKER_IMAGE}"
+                echo "Image ${DOCKER_IMAGE} disponible sur Docker Hub"
+            }
+        }
+        stage('DEPLOY TO KUBERNETES') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    sh '''
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/configmap.yaml
+                        kubectl apply -f k8s/secret.yaml
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                        kubectl rollout restart deployment/smart-analysis-deployment -n freelancy
+                    '''
+                }
+            }
+        }
+        stage('VERIFY DEPLOYMENT') {
+            steps {
+                sh '''
+                    sleep 20
+                    kubectl get pods -n freelancy
+                    kubectl get svc -n freelancy
+                '''
+            }
+        }
+        stage('SMOKE TEST') {
+            steps {
+                sh '''
+                    kubectl get pods -n freelancy -o wide
+                    kubectl get services -n freelancy
+                '''
+                echo 'Service accessible via NodePort 30080'
+            }
+        }
+    }
+    post {
+        success { echo 'Déploiement Kubernetes réussi !' }
+        failure {
+            sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
+            echo 'Déploiement Kubernetes échoué !'
+        }
+    }
+}

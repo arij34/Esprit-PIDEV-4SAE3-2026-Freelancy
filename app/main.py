@@ -7,6 +7,8 @@ from groq import Groq
 import json
 import re
 import os
+from prometheus_fastapi_instrumentator import Instrumentator
+from fastapi import HTTPException
 
 app = FastAPI(
     title="Smart Analysis API",
@@ -23,6 +25,9 @@ app.add_middleware(
 )
 
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
+
+# Prometheus instrumentation: expose /metrics
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/")
 def root():
@@ -80,8 +85,9 @@ Rules for phase detection:
 Choose the phase that best matches the discussion content.
 progress_percent must be a number: ETUDE=10-25, DEVELOPPEMENT=25-70, TEST=70-90, DEPLOIEMENT=90-100"""
 
-    # ── Clé API dans variable d'environnement (plus sécurisé) ──
-    api_key = os.environ.get("GROQ_API_KEY", "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")
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set")
 
     client = Groq(api_key=api_key)
 
