@@ -5,7 +5,7 @@ import { SubscriptionsMonthlyStatsResponse } from '../models/subscription-stats.
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionStatsApiService {
-  private readonly baseUrl = 'http://localhost:8091/api';
+  private readonly baseUrl = '/api';
 
   constructor(private readonly http: HttpClient) {}
 

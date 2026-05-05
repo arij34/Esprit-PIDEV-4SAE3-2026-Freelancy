@@ -29,7 +29,7 @@ export function initializeKeycloak(keycloak: KeycloakService) {
         // static assets
         '/assets',
         // backend public endpoints (no token required)
-        'http://localhost:8090/api/public',
+        '/api/public',
         // Exclude blog and analytics services from Keycloak bearer interceptor
         'http://localhost:8050',
         'http://localhost:8053'

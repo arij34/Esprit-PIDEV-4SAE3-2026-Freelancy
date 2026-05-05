@@ -15,8 +15,8 @@ export interface AnalysisResult {
 @Injectable({ providedIn: 'root' })
 export class AnalysisService {
 
-  private apiUrl     = 'http://localhost:8085/analysis/analyze';
-  private projectUrl = 'http://localhost:8085/projects';
+  private apiUrl     = '/api/analysis/analyze';
+  private projectUrl = '/api/projects';
 
   constructor(private http: HttpClient) {}
 

@@ -135,7 +135,7 @@ sendInvitation(f: FreelancerMatch): void {
         matchScore: f.matchScore
     };
 
-    this.http.post('http://localhost:8087/invitations/send', body).subscribe({
+    this.http.post('/api/invitations/send', body).subscribe({
         next: () => {
             console.log('✅ Invitation envoyée');
             this.sentInvitations.add(f.id);

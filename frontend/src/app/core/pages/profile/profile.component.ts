@@ -543,7 +543,7 @@ export class ProfileComponent implements OnInit {
     firstName: '', lastName: '', email: '', password: ''
   };
 
-  private readonly baseUrl = 'http://localhost:8090/api/me';
+  private readonly baseUrl = '/api/me';
 
   constructor(
     private readonly meService: MeService,

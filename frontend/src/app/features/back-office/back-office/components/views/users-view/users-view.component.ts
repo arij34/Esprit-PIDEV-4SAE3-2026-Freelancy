@@ -764,7 +764,7 @@ export class UsersViewComponent implements OnInit {
   saving = false;
   searchQuery = '';
 
-  private readonly baseUrl = 'http://localhost:8090/api/admin/users';
+  private readonly baseUrl = '/api/admin/users';
 
   modalOpen = false;
   modalMode: 'add' | 'update' = 'add';

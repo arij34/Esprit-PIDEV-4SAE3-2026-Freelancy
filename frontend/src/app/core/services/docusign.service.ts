@@ -31,7 +31,7 @@ export interface SignatureStatus {
   providedIn: 'root'
 })
 export class DocuSignService {
-  private readonly API_URL = 'http://localhost:8087/api/contracts';
+  private readonly API_URL = '/api/contracts';
 
   constructor(private http: HttpClient) {}
 

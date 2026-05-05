@@ -5,7 +5,7 @@ import { AdminSubscription, SubscriptionStatus, SubscriptionType } from '../mode
 
 @Injectable({ providedIn: 'root' })
 export class AdminSubscriptionsApiService {
-  private readonly baseUrl = 'http://localhost:8091/api/admin/subscriptions';
+  private readonly baseUrl = '/api/admin/subscriptions';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -15,13 +15,13 @@ export class AdminSubscriptionsApiService {
 
   updateStatus(id: number, status: SubscriptionStatus): Promise<AdminSubscription> {
     return firstValueFrom(
-      this.http.put<AdminSubscription>(`http://localhost:8091/api/admin/subscriptions/${id}/status`, { status })
+      this.http.put<AdminSubscription>(`/api/admin/subscriptions/${id}/status`, { status })
     );
   }
 
   update(id: number, payload: { type: SubscriptionType; status: SubscriptionStatus; endDate?: string | null }): Promise<AdminSubscription> {
     return firstValueFrom(
-      this.http.put<AdminSubscription>(`http://localhost:8091/api/admin/subscriptions/${id}`, payload)
+      this.http.put<AdminSubscription>(`/api/admin/subscriptions/${id}`, payload)
     );
   }
 

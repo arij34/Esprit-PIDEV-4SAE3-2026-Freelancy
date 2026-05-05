@@ -4,7 +4,7 @@ import { Observable, forkJoin } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class StatsService {
-  private api = 'http://localhost:8085/stats';
+  private api = '/api/stats';
 
   constructor(private http: HttpClient) {}
 

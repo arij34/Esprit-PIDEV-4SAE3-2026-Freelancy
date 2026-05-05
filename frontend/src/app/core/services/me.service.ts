@@ -16,7 +16,7 @@ export interface MeDto {
   providedIn: 'root'
 })
 export class MeService {
-  private readonly baseUrl = 'http://localhost:8090/api/me';
+  private readonly baseUrl = '/api/me';
 
   constructor(private readonly http: HttpClient) {}
 

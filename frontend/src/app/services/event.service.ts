@@ -18,7 +18,7 @@ export interface Event {
 })
 export class EventService {
   // ✅ URL corrigée avec context-path /evenment
-  private apiUrl = 'http://localhost:8084/evenment/api/events';
+  private apiUrl = '/api/evenment/api/events';
 
   constructor(private http: HttpClient) {}
 

@@ -68,8 +68,8 @@ export class ProjectInvitationsComponent implements OnInit {
   // peut‑on encore éditer (<=24h) ?
   canEditMap: { [invitationId: number]: boolean } = {};
 
-  private baseUrl = 'http://localhost:8087/invitations';
-  private formResponseUrl = 'http://localhost:8087/form-response';
+  private baseUrl = '/api/invitations';
+  private formResponseUrl = '/api/form-response';
 
   constructor(
     private http: HttpClient,
@@ -273,7 +273,7 @@ export class ProjectInvitationsComponent implements OnInit {
 
     // 1) charger les questions
     this.questions = [];
-    this.http.get<ApplicationQuestion[]>(`http://localhost:8087/application-questions/invitation/${inv.id}`)
+    this.http.get<ApplicationQuestion[]>(`/api/application-questions/invitation/${inv.id}`)
       .subscribe({
         next: (qs) => {
           this.questions = qs || [];

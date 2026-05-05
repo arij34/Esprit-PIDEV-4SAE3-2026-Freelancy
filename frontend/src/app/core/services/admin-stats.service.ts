@@ -16,7 +16,7 @@ export interface UsersStatsDto {
 })
 export class AdminStatsService {
   // Backend runs on 8090; if you have an API gateway you can change this later.
-  private readonly baseUrl = 'http://localhost:8090/api/admin/stats';
+  private readonly baseUrl = '/api/admin/stats';
 
   constructor(private readonly http: HttpClient) {}
 

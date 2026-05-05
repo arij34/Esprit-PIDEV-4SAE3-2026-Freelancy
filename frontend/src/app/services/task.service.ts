@@ -35,7 +35,7 @@ export interface AiTaskSuggestionResponse {
   providedIn: 'root'
 })
 export class TaskService {
-  private apiUrl = 'http://localhost:8089/planning/api/tasks';
+  private apiUrl = '/api/planning/api/tasks';
 
   constructor(private http: HttpClient) {}
 

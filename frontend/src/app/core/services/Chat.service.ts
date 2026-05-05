@@ -17,7 +17,7 @@ export class ChatService {
   private client!: Client;
   private messageSubject = new Subject<ChatMessage>();
   private onConnectedCallback?: () => void;
-  private apiUrl = 'http://localhost:8085'; // ← adapte le port si nécessaire
+  private apiUrl = '';
 
   constructor(private http: HttpClient) {}
 

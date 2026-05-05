@@ -26,7 +26,7 @@ export interface PlanningAnalysis {
   providedIn: 'root'
 })
 export class PlanningService {
-  private apiUrl = 'http://localhost:8089/planning/api/plannings';
+  private apiUrl = '/api/planning/api/plannings';
 
   constructor(private http: HttpClient) {}
 

@@ -5,7 +5,7 @@ import { PaymentHistory } from '../models/payment-history.model';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentHistoryApiService {
-  private readonly baseUrl = 'http://localhost:8092/api';
+  private readonly baseUrl = '/api';
 
   constructor(private readonly http: HttpClient) {}
 

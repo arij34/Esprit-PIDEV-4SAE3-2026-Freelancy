@@ -14,7 +14,7 @@ export interface Participant {
   providedIn: 'root'
 })
 export class ParticipantService {
-  private apiUrl = 'http://localhost:8084/evenment/api/participants';
+  private apiUrl = '/api/evenment/api/participants';
 
   constructor(private http: HttpClient) {}
 

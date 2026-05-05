@@ -11,8 +11,8 @@ import { Contract, ContractMilestone, ContractClause, ContractNotification, Cont
 @Injectable({ providedIn: 'root' })
 export class ContractService {
 
-  private readonly BASE = 'http://localhost:8087/api/contracts';
-  private readonly PAYMENTS_BASE = 'http://localhost:8087/api/payments';
+  private readonly BASE = '/api/contracts';
+  private readonly PAYMENTS_BASE = '/api/payments';
 
   // ── Notification & Activity streams ──────────────────────────
   private _notifications$ = new BehaviorSubject<ContractNotification[]>([]);

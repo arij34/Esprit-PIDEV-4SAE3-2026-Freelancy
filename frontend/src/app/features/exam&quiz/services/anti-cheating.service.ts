@@ -34,7 +34,7 @@ export interface ExamSessionConfig {
   providedIn: 'root'
 })
 export class AntiCheatingService {
-  private readonly apiUrl = 'http://localhost:8150/api';
+  private readonly apiUrl = '/api';
   
   // Configuration
   private cheatingThreshold = 5.0; 
