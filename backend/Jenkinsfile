@@ -1,0 +1,86 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = "ameni221/api-gateway:latest"
+    }
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git(
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                    branch: 'main',
+                    credentialsId: 'github-credentials'
+                )
+            }
+        }
+        stage('Build with Maven') {
+            steps {
+                dir('api-gateway') {
+                    sh 'mvn clean install -DskipTests'
+                }
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                dir('api-gateway') {
+                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            mvn sonar:sonar \
+                            -Dsonar.login=$SONAR_TOKEN \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.organization=ameny323 \
+                            -Dsonar.projectKey=ameny323_api-gateway
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Check Workspace') {
+            steps {
+                sh '''
+                    echo "Current directory:"
+                    pwd
+                    echo "Files in workspace:"
+                    ls -la
+                '''
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                dir('api-gateway') {
+                    sh 'docker build -t ameni221/api-gateway:latest .'
+                }
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ameni221/api-gateway:latest
+                    '''
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh '''
+                    docker-compose pull api-gateway
+                    docker-compose up -d --no-deps api-gateway
+                '''
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}

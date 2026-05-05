@@ -29,11 +29,12 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/eureka/**").permitAll()
+                        .pathMatchers("/actuator/**").permitAll()  // ← ADD THIS
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtDecoder(reactiveJwtDecoder(
-                            "http://keycloak:8080/realms/smart-platform/protocol/openid-connect/certs"
+                                "http://keycloak:8080/realms/smart-platform/protocol/openid-connect/certs"
                         )))
                 )
                 .build();
