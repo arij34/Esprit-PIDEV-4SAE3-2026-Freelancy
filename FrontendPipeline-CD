@@ -59,68 +59,7 @@ pipeline {
             }
         }
 
-        stage('4 — Deploy Prometheus') {
-            steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/promotheus-grafana']],
-                    extensions: [
-                        [
-                            $class: 'CloneOption',
-                            shallow: true,
-                            depth: 1,
-                            timeout: 30,
-                            noTags: true
-                        ]
-                    ],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                        credentialsId: 'github-credentials'
-                    ]]
-                ])
-                sh "kubectl apply -f prometheus-config.yaml -n ${NAMESPACE}"
-                sh "kubectl apply -f prometheus-deployment.yaml -n ${NAMESPACE}"
-                echo "Prometheus deployed"
-            }
-        }
-
-        stage('5 — Deploy Grafana') {
-            steps {
-                sh "kubectl apply -f grafana-deployment.yaml -n ${NAMESPACE}"
-                echo "Grafana deployed"
-            }
-        }
-
-        stage('6 — Checkout Frontend Manifests Again') {
-            steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/Frontend-Devops']],
-                    extensions: [
-                        [
-                            $class: 'CloneOption',
-                            shallow: true,
-                            depth: 1,
-                            timeout: 30,
-                            noTags: true
-                        ],
-                        [
-                            $class: 'SparseCheckoutPaths',
-                            sparseCheckoutPaths: [
-                                [path: 'k8s/']
-                            ]
-                        ]
-                    ],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                        credentialsId: 'github-credentials'
-                    ]]
-                ])
-                echo 'Frontend manifests re-retrieved'
-            }
-        }
-
-        stage('7 — Deploy Frontend') {
+        stage('4 — Deploy Frontend') {
             steps {
                 sh "kubectl apply -f k8s/frontend-deployment.yaml -n ${NAMESPACE}"
                 sh "kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${NAMESPACE} --timeout=120s"
@@ -128,13 +67,11 @@ pipeline {
             }
         }
 
-        stage('8 — Smoke Test') {
+        stage('5 — Smoke Test') {
             steps {
                 sh "kubectl get pods -n ${NAMESPACE} -o wide"
                 sh "kubectl get services -n ${NAMESPACE}"
-                echo "Frontend:   http://192.168.49.2:30080"
-                echo "Prometheus: http://localhost:30090"
-                echo "Grafana:    http://localhost:30030 (admin/admin123)"
+                echo "Frontend: http://192.168.49.2:30080"
             }
         }
     }
