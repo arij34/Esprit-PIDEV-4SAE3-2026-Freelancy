@@ -15,15 +15,19 @@ spec:
     spec:
       containers:
       - name: event
-        image: jaff2003/event:latest
+        image: pidevfreelancy/event:latest
         ports:
         - containerPort: 8084
-        envFrom:
-        - configMapRef:
-            name: event-config
         env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-event:3306/eventdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
         - name: SPRING_DATASOURCE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: event-secret
-              key: mysql-password
+          value: "rootpass"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SERVER_PORT
+          value: "8084"

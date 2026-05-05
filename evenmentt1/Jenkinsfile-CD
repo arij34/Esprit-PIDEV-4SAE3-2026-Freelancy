@@ -1,26 +1,18 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = "jaff2003/event:latest"
+        DOCKER_IMAGE = "pidevfreelancy/event:latest"
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
     stages {
         stage('CLEAN') {
-            steps {
-                deleteDir()
-            }
+            steps { deleteDir() }
         }
         stage('GIT') {
             steps {
                 git branch: 'event',
                     url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
                     credentialsId: 'github-token'
-            }
-        }
-        stage('VERIFY IMAGE DOCKER HUB') {
-            steps {
-                sh 'docker pull jaff2003/event:latest'
-                echo 'Image jaff2003/event:latest disponible sur Docker Hub'
             }
         }
         stage('DEPLOY TO KUBERNETES') {
@@ -39,21 +31,18 @@ pipeline {
                 sh 'kubectl rollout status deployment/event-deployment -n freelancy --timeout=300s'
                 sh 'kubectl get pods -n freelancy'
                 sh 'kubectl get svc -n freelancy'
-                sh 'kubectl get deployments -n freelancy'
             }
         }
         stage('SMOKE TEST') {
             steps {
                 sh 'kubectl get pods -n freelancy -o wide'
                 sh 'kubectl get services -n freelancy'
-                echo 'Event service accessible via NodePort 30084'
+                echo 'Event accessible via NodePort 30084'
             }
         }
     }
     post {
-        success {
-            echo 'Deploiement Kubernetes event reussi !'
-        }
+        success { echo 'Deploiement Kubernetes event reussi !' }
         failure {
             sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
             echo 'Deploiement Kubernetes event echoue !'
