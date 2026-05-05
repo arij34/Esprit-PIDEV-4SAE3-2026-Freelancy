@@ -3,9 +3,6 @@
     "target": "http://localhost:8091",
     "changeOrigin": true,
     "secure": false,
-    "pathRewrite": {
-      "^/api": ""
-    },
     "logLevel": "debug"
   },
   "/ws-notifications": {
