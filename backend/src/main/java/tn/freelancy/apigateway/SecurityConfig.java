@@ -3,6 +3,7 @@ package tn.freelancy.apigateway;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.JwtValidators;
@@ -15,6 +16,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class SecurityConfig {
 
     @Bean
+    @Lazy
     public ReactiveJwtDecoder reactiveJwtDecoder(
             @Value("${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/smart-platform/protocol/openid-connect/certs}") String jwkSetUri
     ) {
@@ -29,7 +31,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers("/eureka/**").permitAll()
-                        .pathMatchers("/actuator/**").permitAll()  // ← ADD THIS
+                        .pathMatchers("/actuator/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth
