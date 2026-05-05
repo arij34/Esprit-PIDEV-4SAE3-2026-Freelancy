@@ -1,93 +1,71 @@
 pipeline {
     agent any
-    tools {
-        maven "Maven3"
-    }
+
     environment {
-        MS_NAME       = "backend"
-        IMAGE_NAME    = "ameni221/examquiz-service"
-        IMAGE_TAG     = "latest"
-        SONAR_ORG     = "freelancy-organization"
-        SONAR_PROJECT = "freelancy-organization_examquiz-service"
-        DOCKER_CREDS  = credentials('docker-hub-credentials')
+        IMAGE_NAME   = "ameni221/freelancy-frontend"
+        IMAGE_TAG    = "latest"
+        SERVICE_DIR  = "frontend"
+        DOCKER_CREDS = credentials('docker-hub-credentials')
     }
+
     stages {
+
         stage('1 — Checkout') {
             steps {
-                git branch: 'ExamQuiz-Service',
-                    credentialsId: 'github-credentials',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
-                echo "Code retrieved from GitHub — branch ExamQuiz-Service"
+                git(
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                    branch: 'Frontend-Devops',
+                    credentialsId: 'github-credentials'
+                )
+                echo "✅ Code récupéré depuis GitHub — branche Frontend-Devops"
             }
         }
-        stage('2 — Build Maven') {
+
+        stage('2 — Install Dependencies') {
             steps {
-                dir("${MS_NAME}") {
-                    sh 'mvn clean package -DskipTests'
-                    echo "Maven build completed: ${MS_NAME}"
-                }
-            }
-        }
-        stage('3 — Tests') {
-            steps {
-                dir("${MS_NAME}") {
-                    sh 'mvn verify'
-                }
-            }
-            post {
-                always {
-                    junit "backend/target/surefire-reports/*.xml"
-                }
-                failure {
-                    error 'Tests failed — stopping pipeline'
+                dir("${SERVICE_DIR}") {
+                    sh 'npm install'
+                    echo "✅ npm install terminé"
                 }
             }
         }
-        stage('4 — SonarCloud Analysis') {
+
+        stage('3 — Build Angular') {
             steps {
-                dir("${MS_NAME}") {
-                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                        sh """
-                            mvn sonar:sonar \
-                            -Dsonar.login=${SONAR_TOKEN} \
-                            -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=${SONAR_ORG} \
-                            -Dsonar.projectKey=${SONAR_PROJECT} \
-                            -Dsonar.projectName=examquiz-service \
-                            -Dsonar.java.source=17 \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
-                    }
+                dir("${SERVICE_DIR}") {
+                    sh 'npm run build -- --configuration production'
+                    echo "✅ Build Angular terminé"
                 }
             }
         }
-        stage('5 — Docker Build') {
+
+        stage('4 — Docker Build') {
             steps {
-                dir("${MS_NAME}") {
+                dir("${SERVICE_DIR}") {
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                    echo "Docker image built: ${IMAGE_NAME}:${IMAGE_TAG}"
+                    echo "✅ Image Docker construite : ${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
-        stage('6 — Docker Push') {
+
+        stage('5 — Docker Push') {
             steps {
                 sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
                 sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
-                echo "Image published on Docker Hub: ${IMAGE_NAME}:${IMAGE_TAG}"
+                echo "✅ Image publiée sur Docker Hub"
             }
         }
     }
+
     post {
         success {
-            echo "✅ CI Pipeline completed — image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
-            build job: 'ExamQuizPipeline-CD', wait: false
+            echo "✅ CI réussi — ${IMAGE_NAME}:${IMAGE_TAG} disponible sur Docker Hub"
         }
         failure {
-            echo "❌ CI Pipeline failed — check logs above"
+            echo "❌ CI échoué — vérifier les logs"
         }
         always {
             sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
-            echo '🔄 CI Pipeline finished.'
         }
     }
 }
