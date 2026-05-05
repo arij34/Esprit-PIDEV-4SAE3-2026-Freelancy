@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = "arijachach/matching-module:latest"
+        KUBECONFIG = "/var/jenkins_home/kubeconfig"
     }
     stages {
         stage('CLEAN') {
@@ -24,31 +25,31 @@ pipeline {
         stage('DEPLOY TO KUBERNETES') {
             steps {
                 sh '''
-                    kubectl apply -f k8s/namespace.yaml
-                    kubectl apply -f k8s/mysql-deployment.yaml
-                    kubectl apply -f k8s/configmap.yaml
-                    kubectl apply -f k8s/secret.yaml
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    kubectl rollout restart deployment/matching-deployment -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/namespace.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/mysql-deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/configmap.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/secret.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/service.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout restart deployment/matching-deployment -n freelancy
                 '''
             }
         }
         stage('VERIFY DEPLOYMENT') {
             steps {
                 sh '''
-                    kubectl rollout status deployment/matching-deployment -n freelancy --timeout=300s
-                    kubectl get pods -n freelancy
-                    kubectl get svc -n freelancy
-                    kubectl get deployments -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout status deployment/matching-deployment -n freelancy --timeout=300s
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get svc -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get deployments -n freelancy
                 '''
             }
         }
         stage('SMOKE TEST') {
             steps {
                 sh '''
-                    kubectl get pods -n freelancy -o wide
-                    kubectl get services -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy -o wide
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get services -n freelancy
                 '''
                 echo 'Service accessible via NodePort 30087'
             }
@@ -56,11 +57,13 @@ pipeline {
     }
     post {
         success {
-            echo 'Déploiement Kubernetes réussi !'
+            echo 'Deploiement Kubernetes reussi !'
         }
         failure {
-            sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
-            echo 'Déploiement Kubernetes échoué !'
+            sh '''
+                kubectl --kubeconfig=/var/jenkins_home/kubeconfig get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20
+            '''
+            echo 'Deploiement Kubernetes echoue !'
         }
     }
 }
