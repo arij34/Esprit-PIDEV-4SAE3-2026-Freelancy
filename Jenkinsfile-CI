@@ -3,12 +3,15 @@ pipeline {
     options {
         skipDefaultCheckout(true)
     }
+    parameters {
+        string(name: 'SONAR_ORGANIZATION', defaultValue: 'arij34', description: 'SonarCloud organization key')
+    }
     environment {
         DOCKER_IMAGE_REPO = "syrinebouden/contrat"
         DOCKER_IMAGE_TAG = "latest"
         SONAR_PROJECT_KEY = "ContratManagement"
         SONAR_PROJECT_NAME = "ContratManagement"
-        SONAR_ORGANIZATION = "syrinebouden"
+        SONAR_ORGANIZATION = "${params.SONAR_ORGANIZATION}"
         SONAR_HOST_URL = "https://sonarcloud.io"
     }
     stages {
