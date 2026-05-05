@@ -4,15 +4,14 @@ pipeline {
         skipDefaultCheckout(true)
     }
     parameters {
-        string(name: 'SONAR_ORGANIZATION', defaultValue: 'syrine1506', description: 'SonarCloud organization key')
+        string(name: 'SONAR_HOST_URL', defaultValue: 'http://localhost:9000', description: 'SonarQube server URL (reachable from Jenkins inside the VM)')
     }
     environment {
         DOCKER_IMAGE_REPO = "syrinebouden/projet"
         DOCKER_IMAGE_TAG = "latest"
         SONAR_PROJECT_KEY = "ProjetManagement"
         SONAR_PROJECT_NAME = "ProjetManagement"
-        SONAR_ORGANIZATION = "${params.SONAR_ORGANIZATION}"
-        SONAR_HOST_URL = "https://sonarcloud.io"
+        SONAR_HOST_URL = "${params.SONAR_HOST_URL}"
     }
     stages {
         stage('CHECKOUT') {
@@ -58,7 +57,6 @@ pipeline {
                         $MVN -B org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar \
                           -Dsonar.host.url=${SONAR_HOST_URL} \
                           -Dsonar.login=${SONAR_TOKEN} \
-                                                    -Dsonar.organization=${SONAR_ORGANIZATION} \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                           -Dsonar.projectName=${SONAR_PROJECT_NAME} \
                           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
