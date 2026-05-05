@@ -15,9 +15,18 @@ pipeline {
     }
     stages {
         stage('CHECKOUT') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
             steps {
+                script {
+                    echo "Testing Git connectivity to GitHub..."
+                    sh 'timeout 10s git ls-remote --heads https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git || exit 1'
+                }
                 deleteDir()
-                checkout scm
+                retry(2) {
+                    checkout scm
+                }
             }
         }
         stage('BUILD') {
