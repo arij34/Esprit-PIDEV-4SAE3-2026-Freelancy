@@ -4,7 +4,7 @@ pipeline {
         skipDefaultCheckout(true)
     }
     parameters {
-        string(name: 'SONAR_ORGANIZATION', defaultValue: 'arij34', description: 'SonarCloud organization key')
+        string(name: 'SONAR_ORGANIZATION', defaultValue: 'syrine1506', description: 'SonarCloud organization key')
     }
     environment {
         DOCKER_IMAGE_REPO = "syrinebouden/contrat"
