@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: contrat-service
+  namespace: freelancy
+spec:
+  selector:
+    app: contrat
+  ports:
+    - protocol: TCP
+      port: 8087
+      targetPort: 8087
+      nodePort: 30087
+  type: NodePort
