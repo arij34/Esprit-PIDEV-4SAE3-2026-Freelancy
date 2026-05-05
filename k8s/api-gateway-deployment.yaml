@@ -21,20 +21,23 @@ spec:
           env:
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: http://eureka-service:8761/eureka
-            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_ID
-              value: challenge-service
-            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
-              value: http://challenge-service:8077
-            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_ID
-              value: examquiz-service
-            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
-              value: http://examquiz-service:8150
+            - name: SPRING_CLOUD_CONFIG_ENABLED
+              value: "false"
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:"
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8091
             initialDelaySeconds: 40
             periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8091
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
