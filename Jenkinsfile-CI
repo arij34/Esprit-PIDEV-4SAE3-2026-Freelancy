@@ -54,6 +54,33 @@ pipeline {
                 withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
                     sh '''
                         if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
+
+                                                echo "Waiting for SonarQube to be UP at ${SONAR_HOST_URL} ..."
+                                                if command -v curl >/dev/null 2>&1; then
+                                                    fetch() { curl -fsS "$1"; }
+                                                elif command -v wget >/dev/null 2>&1; then
+                                                    fetch() { wget -qO- "$1"; }
+                                                else
+                                                    echo "Neither curl nor wget is available to check SonarQube readiness."
+                                                    exit 2
+                                                fi
+
+                                                i=1
+                                                status=""
+                                                while [ $i -le 120 ]; do
+                                                    status="$(fetch "${SONAR_HOST_URL}/api/system/status" 2>/dev/null || true)"
+                                                    echo "$status" | grep -q '"status":"UP"' && break
+                                                    echo "SonarQube not ready yet (attempt $i/120)."
+                                                    i=$((i+1))
+                                                    sleep 5
+                                                done
+
+                                                if [ $i -gt 120 ]; then
+                                                    echo "SonarQube is still not UP at ${SONAR_HOST_URL}."
+                                                    echo "Last status: $status"
+                                                    exit 1
+                                                fi
+
                         $MVN -B org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar \
                           -Dsonar.host.url=${SONAR_HOST_URL} \
                           -Dsonar.login=${SONAR_TOKEN} \
