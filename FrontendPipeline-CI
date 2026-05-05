@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'NodeJS-22'   
+    }
+
     environment {
         IMAGE_NAME   = "ameni221/freelancy-frontend"
         IMAGE_TAG    = "latest"
@@ -24,6 +28,8 @@ pipeline {
         stage('2 — Install Dependencies') {
             steps {
                 dir("${SERVICE_DIR}") {
+                    sh 'node -v'     // confirms Node 22 is active
+                    sh 'npm -v'      // confirms npm version
                     sh 'npm install'
                     echo "✅ npm install terminé"
                 }
