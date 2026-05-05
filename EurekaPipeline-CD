@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "ameni221/eureka-service:latest"
         NAMESPACE    = "freelancy"
+        KUBECONFIG   = "/var/jenkins_home/kubeconfig"
     }
 
     stages {
@@ -23,19 +24,19 @@ pipeline {
 
         stage('Create Namespace') {
             steps {
-                sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
+                sh "kubectl --kubeconfig=/var/jenkins_home/kubeconfig create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl --kubeconfig=/var/jenkins_home/kubeconfig apply -f -"
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh "kubectl apply -f k8/eureka-deployment.yaml -n ${NAMESPACE}"
+                sh "kubectl --kubeconfig=/var/jenkins_home/kubeconfig apply -f k8/eureka-deployment.yaml -n ${NAMESPACE}"
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                sh "kubectl rollout status deployment/eureka-deployment -n ${NAMESPACE} --timeout=120s"
+                sh "kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout status deployment/eureka-deployment -n ${NAMESPACE} --timeout=180s"
             }
         }
     }
@@ -46,7 +47,7 @@ pipeline {
         }
         failure {
             echo '❌ Pipeline failed! Check the logs above.'
-            sh "kubectl get events -n ${NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -10"
+            sh "kubectl --kubeconfig=/var/jenkins_home/kubeconfig get events -n ${NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -10"
         }
         always {
             echo '🔄 CD Pipeline finished.'
