@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planning-deployment
+  namespace: freelancy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: planning
+  template:
+    metadata:
+      labels:
+        app: planning
+    spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox
+        command: ['sh', '-c', 'until nc -z mysql-planning 3306; do echo waiting; sleep 3; done']
+      containers:
+      - name: planning
+        image: pidevfreelancy/planning:latest
+        ports:
+        - containerPort: 8089
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-planning:3306/planningdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "rootpass"
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.MySQL8Dialect"
+        - name: SERVER_PORT
+          value: "8089"
