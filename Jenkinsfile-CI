@@ -51,7 +51,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
                     sh '''
                         if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
-                        $MVN -B sonar:sonar \
+                        $MVN -B org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar \
                           -Dsonar.host.url=${SONAR_HOST_URL} \
                           -Dsonar.login=${SONAR_TOKEN} \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
