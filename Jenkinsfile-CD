@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = "arijachach/skill-management:latest"
+        KUBECONFIG = "/var/jenkins_home/kubeconfig"
     }
     stages {
         stage('CLEAN') {
@@ -35,15 +36,15 @@ pipeline {
             }
         }
         stage('VERIFY DEPLOYMENT') {
-    steps {
-        sh '''
-            sleep 30
-            kubectl get pods -n freelancy
-            kubectl get svc -n freelancy
-            kubectl get deployments -n freelancy
-        '''
-    }
-}
+            steps {
+                sh '''
+                    sleep 30
+                    kubectl get pods -n freelancy
+                    kubectl get svc -n freelancy
+                    kubectl get deployments -n freelancy
+                '''
+            }
+        }
         stage('SMOKE TEST') {
             steps {
                 sh '''
@@ -56,11 +57,13 @@ pipeline {
     }
     post {
         success {
-            echo 'Déploiement Kubernetes réussi !'
+            echo 'Deploiement Kubernetes reussi !'
         }
         failure {
-            sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
-            echo 'Déploiement Kubernetes échoué !'
+            sh '''
+                kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20
+            '''
+            echo 'Deploiement Kubernetes echoue !'
         }
     }
 }
