@@ -36,8 +36,16 @@ pipeline {
     }
     post {
         success {
-            echo 'CI terminé — déclenchement du CD...'
-            build job: 'smart-analysis-CD', wait: true, propagate: true
+            script {
+                def jobName = env.JOB_NAME ?: ''
+                def lastSlashIndex = jobName.lastIndexOf('/')
+                def prefix = lastSlashIndex >= 0 ? jobName.substring(0, lastSlashIndex + 1) : ''
+                def base = lastSlashIndex >= 0 ? jobName.substring(lastSlashIndex + 1) : jobName
+                def cdBase = base.endsWith('-CI') ? base.replaceFirst(/-CI$/, '-CD') : (base + '-CD')
+                def cdJob = prefix + cdBase
+                echo "CI terminé — déclenchement du CD: ${cdJob}"
+                build job: cdJob, wait: true, propagate: true
+            }
         }
         failure { echo 'CI échoué !' }
     }
