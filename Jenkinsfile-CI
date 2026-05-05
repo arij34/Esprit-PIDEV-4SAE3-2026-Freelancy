@@ -57,9 +57,9 @@ pipeline {
 
                                                 echo "Waiting for SonarQube to be UP at ${SONAR_HOST_URL} ..."
                                                 if command -v curl >/dev/null 2>&1; then
-                                                    fetch() { curl -fsS "$1"; }
+                                                    fetch() { curl -fsS --connect-timeout 2 --max-time 3 "$1"; }
                                                 elif command -v wget >/dev/null 2>&1; then
-                                                    fetch() { wget -qO- "$1"; }
+                                                    fetch() { wget -qO- --timeout=3 "$1"; }
                                                 else
                                                     echo "Neither curl nor wget is available to check SonarQube readiness."
                                                     exit 2
