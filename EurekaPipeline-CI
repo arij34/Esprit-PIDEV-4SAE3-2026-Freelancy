@@ -5,8 +5,6 @@ pipeline {
     }
     environment {
         DOCKER_IMAGE  = "ameni221/eureka-service:latest"
-        SONAR_ORG     = "freelancy-organization"
-        SONAR_PROJECT = "freelancy-organization_eureka"
         SERVICE_DIR   = "backend"
     }
     stages {
@@ -50,16 +48,14 @@ pipeline {
                 }
             }
         }
-        stage('SonarCloud Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 dir("${SERVICE_DIR}") {
-                    withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('sonar') {
                         sh """
                             mvn sonar:sonar \
-                            -Dsonar.login=${SONAR_TOKEN} \
-                            -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.organization=${SONAR_ORG} \
-                            -Dsonar.projectKey=${SONAR_PROJECT}
+                            -Dsonar.projectKey=eureka-service \
+                            -Dsonar.projectName=eureka-service
                         """
                     }
                 }
