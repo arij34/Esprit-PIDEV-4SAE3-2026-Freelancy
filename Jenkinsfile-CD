@@ -31,6 +31,10 @@ pipeline {
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/secret.yaml
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/deployment.yaml
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/service.yaml
+
+                    echo "Attente que MySQL soit pret..."
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout status deployment/mysql-matching -n freelancy --timeout=120s
+
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout restart deployment/matching-deployment -n freelancy
                 '''
             }
@@ -38,7 +42,7 @@ pipeline {
         stage('VERIFY DEPLOYMENT') {
             steps {
                 sh '''
-                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout status deployment/matching-deployment -n freelancy --timeout=300s
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout status deployment/matching-deployment -n freelancy --timeout=600s
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig get svc -n freelancy
                     kubectl --kubeconfig=/var/jenkins_home/kubeconfig get deployments -n freelancy
@@ -62,6 +66,7 @@ pipeline {
         failure {
             sh '''
                 kubectl --kubeconfig=/var/jenkins_home/kubeconfig get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20
+                kubectl --kubeconfig=/var/jenkins_home/kubeconfig describe pods -n freelancy | grep -A 10 "Events:"
             '''
             echo 'Deploiement Kubernetes echoue !'
         }
