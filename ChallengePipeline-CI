@@ -50,32 +50,31 @@ pipeline {
             }
         }
 
-        stage('4 - Ensure Sonar Project Exists') {
-            steps {
-                withSonarQubeEnv('sonar') {
-                    // SAME style as frontend pipeline: use the same working credential
-                    withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            set -e
-                            echo "Checking Sonar project: ${SONAR_PROJECT_KEY}"
-                            SEARCH_RESP=$(curl -s -u "${SONAR_TOKEN}:" \
-                              "${SONAR_HOST_URL}/api/projects/search?projects=${SONAR_PROJECT_KEY}")
+       stage('4 - Ensure Sonar Project Exists') {
+    steps {
+        withSonarQubeEnv('sonar') {
+            withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
+                sh '''
+                    set -e
 
-                            if echo "$SEARCH_RESP" | grep -q "\"key\":\"${SONAR_PROJECT_KEY}\""; then
-                              echo "Sonar project already exists: ${SONAR_PROJECT_KEY}"
-                            else
-                              echo "Creating Sonar project: ${SONAR_PROJECT_KEY}"
-                              curl -s -f -u "${SONAR_TOKEN}:" -X POST \
-                                "${SONAR_HOST_URL}/api/projects/create" \
-                                --data-urlencode "project=${SONAR_PROJECT_KEY}" \
-                                --data-urlencode "name=${SONAR_PROJECT_NAME}" >/dev/null
-                              echo "Sonar project created: ${SONAR_PROJECT_KEY}"
-                            fi
-                        '''
-                    }
-                }
+                    echo "Checking Sonar project: ${SONAR_PROJECT_KEY}"
+
+                    if curl -s -f -u "${SONAR_TOKEN}:" \
+                      "${SONAR_HOST_URL}/api/components/show?component=${SONAR_PROJECT_KEY}" >/dev/null; then
+                      echo "Sonar project already exists: ${SONAR_PROJECT_KEY}"
+                    else
+                      echo "Creating Sonar project: ${SONAR_PROJECT_KEY}"
+                      curl -s -f -u "${SONAR_TOKEN}:" -X POST \
+                        "${SONAR_HOST_URL}/api/projects/create" \
+                        --data-urlencode "project=${SONAR_PROJECT_KEY}" \
+                        --data-urlencode "name=${SONAR_PROJECT_NAME}" >/dev/null
+                      echo "Sonar project created: ${SONAR_PROJECT_KEY}"
+                    fi
+                '''
             }
         }
+    }
+}
 
         stage('5 - SonarQube Analysis') {
             steps {
