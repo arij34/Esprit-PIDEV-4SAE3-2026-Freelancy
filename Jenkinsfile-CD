@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = "arijachach/skill-management:latest"
+        DOCKER_IMAGE = "pidevfreelancy/skill-management:latest"
     }
     stages {
         stage('CLEAN') {
