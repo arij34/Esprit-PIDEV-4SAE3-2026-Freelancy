@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME   = "ameni221/freelancy-frontend"
+        IMAGE_NAME   = "pidevfreelancy/freelancy-frontend"
         IMAGE_TAG    = "latest"
         SERVICE_DIR  = "frontend"
         DOCKER_CREDS = credentials('docker-hub-credentials')

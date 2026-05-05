@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: challenge-deployment
+  namespace: freelancy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: challenge-service
+  template:
+    metadata:
+      labels:
+        app: challenge-service
+    spec:
+      containers:
+        - name: challenge-service
+          image: ameni221/challenge-service:latest
+          ports:
+            - containerPort: 8077
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-service:3306/challenge_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-root-password
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: com.mysql.cj.jdbc.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-service:8761/eureka
+            - name: APP_KEYCLOAK_ISSUER
+              value: http://keycloak:8080/realms/smart-platform
+            - name: APP_KEYCLOAK_JWK_SET_URI
+              value: http://keycloak:8080/realms/smart-platform/protocol/openid-connect/certs
+            - name: KEYCLOAK_ADMIN_URL
+              value: http://keycloak:8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: challenge-service
+  namespace: freelancy
+spec:
+  selector:
+    app: challenge-service
+  ports:
+    - protocol: TCP
+      port: 8077
+      targetPort: 8077
+      nodePort: 30077
+  type: NodePort

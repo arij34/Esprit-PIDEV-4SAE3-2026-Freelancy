@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME      = "ameni221/freelancy-frontend"
+        IMAGE_NAME      = "pidevfreelancy/freelancy-frontend"
         IMAGE_TAG       = "latest"
         NAMESPACE       = "freelancy"
         DEPLOYMENT_NAME = "frontend-deployment"
