@@ -15,8 +15,11 @@ export class AuthTokenInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Appliquer uniquement sur les requêtes /api/
-    if (!req.url.startsWith('/api/')) {
+    // Apply token on both relative (/api/...) and absolute (.../api/...) API URLs.
+    const resolvedUrl = new URL(req.url, window.location.origin);
+    const isApiRequest = resolvedUrl.pathname === '/api' || resolvedUrl.pathname.startsWith('/api/');
+
+    if (!isApiRequest) {
       return next.handle(req);
     }
 

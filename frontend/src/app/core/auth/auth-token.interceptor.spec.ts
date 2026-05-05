@@ -37,6 +37,14 @@ describe('AuthTokenInterceptor', () => {
     req.flush({});
   });
 
+  it('should add token header for absolute API URLs', () => {
+    http.get('http://localhost:8091/api/participations/my/challenges').subscribe();
+
+    const req = httpMock.expectOne('http://localhost:8091/api/participations/my/challenges');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer abc123');
+    req.flush({});
+  });
+
   it('should not add token header for non /api URLs', () => {
     http.get('/assets/logo.png').subscribe();
 
