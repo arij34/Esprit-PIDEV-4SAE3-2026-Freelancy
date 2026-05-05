@@ -3,81 +3,48 @@ pipeline {
     tools {
         maven "Maven3"
     }
-
     environment {
-        MS_NAME            = "backend"
-        IMAGE_NAME         = "pidevfreelancy/api-gateway"
-        IMAGE_TAG          = "latest"
-        SONAR_PROJECT_KEY  = "freelancy-api-gateway"
-        SONAR_PROJECT_NAME = "api-gateway"
-        DOCKER_CREDS       = credentials('docker-hub-credentials')
+        DOCKER_IMAGE        = "pidevfreelancy/api-gateway:latest"
+        SERVICE_DIR         = "backend"
+        SONAR_PROJECT_KEY   = "freelancy-api-gateway"
+        SONAR_PROJECT_NAME  = "api-gateway"
     }
-
     stages {
         stage('1 - Checkout') {
             steps {
                 git branch: 'api-gateway',
                     credentialsId: 'github-credentials',
                     url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
-                echo "Code retrieved from GitHub - branch api-gateway"
+                echo 'Code retrieved from GitHub - branch api-gateway'
             }
         }
 
         stage('2 - Build Maven') {
             steps {
-                dir("${MS_NAME}") {
+                dir("${SERVICE_DIR}") {
                     sh 'mvn clean package -DskipTests'
-                    echo "Maven build completed: ${MS_NAME}"
+                    echo 'Maven build completed: backend'
                 }
             }
         }
 
         stage('3 - Tests + JaCoCo') {
             steps {
-                dir("${MS_NAME}") {
+                dir("${SERVICE_DIR}") {
                     sh 'mvn test jacoco:report'
                     sh 'test -f target/site/jacoco/jacoco.xml'
                 }
             }
             post {
                 always {
-                    junit "backend/target/surefire-reports/*.xml"
-                }
-                failure {
-                    error 'Tests failed - stopping pipeline'
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                 }
             }
         }
 
-        stage('4 - Ensure Sonar Project Exists') {
+        stage('4 - SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar') {
-                    withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            set -e
-
-                            echo "Checking Sonar project: ${SONAR_PROJECT_KEY}"
-
-                            if curl -s -f -u "${SONAR_TOKEN}:" \
-                              "${SONAR_HOST_URL}/api/components/show?component=${SONAR_PROJECT_KEY}" >/dev/null; then
-                              echo "Sonar project already exists: ${SONAR_PROJECT_KEY}"
-                            else
-                              echo "Creating Sonar project: ${SONAR_PROJECT_KEY}"
-                              curl -s -f -u "${SONAR_TOKEN}:" -X POST \
-                                "${SONAR_HOST_URL}/api/projects/create" \
-                                --data-urlencode "project=${SONAR_PROJECT_KEY}" \
-                                --data-urlencode "name=${SONAR_PROJECT_NAME}" >/dev/null
-                              echo "Sonar project created: ${SONAR_PROJECT_KEY}"
-                            fi
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('5 - SonarQube Analysis') {
-            steps {
-                dir("${MS_NAME}") {
+                dir("${SERVICE_DIR}") {
                     withSonarQubeEnv('sonar') {
                         withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
                             sh '''
@@ -86,7 +53,6 @@ pipeline {
                                   -Dsonar.token=${SONAR_TOKEN} \
                                   -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                                   -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                                  -Dsonar.java.source=17 \
                                   -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                             '''
                         }
@@ -95,35 +61,39 @@ pipeline {
             }
         }
 
-        stage('6 - Docker Build') {
+        stage('5 - Docker Build') {
             steps {
-                dir("${MS_NAME}") {
-                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                    echo "Docker image built: ${IMAGE_NAME}:${IMAGE_TAG}"
+                dir("${SERVICE_DIR}") {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
 
-        stage('7 - Docker Push') {
+        stage('6 - Docker Push') {
             steps {
-                sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
-                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
-                echo "Image published on Docker Hub: ${IMAGE_NAME}:${IMAGE_TAG}"
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    '''
+                }
             }
         }
     }
-
     post {
+        always {
+            sh "docker rmi ${DOCKER_IMAGE} || true"
+            echo 'CI Pipeline finished.'
+        }
         success {
-            echo "CI Pipeline completed - image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
-            build job: 'ApiGatewayPipeline-CD', wait: false
+            echo 'CI Pipeline completed!'
         }
         failure {
-            echo "CI Pipeline failed - check logs above"
-        }
-        always {
-            sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
-            echo "CI Pipeline finished."
+            echo 'CI Pipeline failed - check logs above'
         }
     }
 }
