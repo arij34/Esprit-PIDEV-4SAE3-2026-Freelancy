@@ -6,61 +6,151 @@ pipeline {
         IMAGE_TAG       = "latest"
         NAMESPACE       = "freelancy"
         DEPLOYMENT_NAME = "frontend-deployment"
-        DOCKER_CREDS    = credentials('docker-hub-credentials')
     }
 
     stages {
 
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('1 — Checkout Manifests') {
             steps {
-                git(
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                    branch: 'Frontend-Devops',
-                    credentialsId: 'github-credentials'
-                )
-                echo "✅ Manifests K8s récupérés"
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/Frontend-Devops']],
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 1,
+                            timeout: 30,
+                            noTags: true
+                        ],
+                        [
+                            $class: 'SparseCheckoutPaths',
+                            sparseCheckoutPaths: [
+                                [path: 'k8s/']
+                            ]
+                        ]
+                    ],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
+                echo 'Frontend manifests retrieved'
             }
         }
 
-        stage('2 — Verify Image on Docker Hub') {
+        stage('2 — Verify Image Docker Hub') {
             steps {
-                sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
                 sh "docker pull ${IMAGE_NAME}:${IMAGE_TAG}"
-                echo "✅ Image ${IMAGE_NAME}:${IMAGE_TAG} vérifiée sur Docker Hub"
+                echo "Image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
             }
         }
 
-        stage('3 — Deploy to Kubernetes') {
+        stage('3 — Prepare Namespace') {
             steps {
-                sh "kubectl apply -f k8s/"
-                echo "✅ Manifests appliqués sur le cluster K8s"
+                sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
+                echo "Namespace ready"
             }
         }
 
-        stage('4 — Wait for Rollout') {
+        stage('4 — Deploy Prometheus') {
             steps {
-                sh "kubectl rollout restart deployment/${DEPLOYMENT_NAME} -n ${NAMESPACE}"
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/promotheus-grafana']],
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 1,
+                            timeout: 30,
+                            noTags: true
+                        ]
+                    ],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
+                sh "kubectl apply -f prometheus-config.yaml -n ${NAMESPACE}"
+                sh "kubectl apply -f prometheus-deployment.yaml -n ${NAMESPACE}"
+                echo "Prometheus deployed"
+            }
+        }
+
+        stage('5 — Deploy Grafana') {
+            steps {
+                sh "kubectl apply -f grafana-deployment.yaml -n ${NAMESPACE}"
+                echo "Grafana deployed"
+            }
+        }
+
+        stage('6 — Checkout Frontend Manifests Again') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/Frontend-Devops']],
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 1,
+                            timeout: 30,
+                            noTags: true
+                        ],
+                        [
+                            $class: 'SparseCheckoutPaths',
+                            sparseCheckoutPaths: [
+                                [path: 'k8s/']
+                            ]
+                        ]
+                    ],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
+                echo 'Frontend manifests re-retrieved'
+            }
+        }
+
+        stage('7 — Deploy Frontend') {
+            steps {
+                sh "kubectl apply -f k8s/frontend-deployment.yaml -n ${NAMESPACE}"
                 sh "kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${NAMESPACE} --timeout=120s"
-                echo "✅ Déploiement frontend opérationnel"
+                echo "Frontend deployed"
             }
         }
 
-        stage('5 — Health Check') {
+        stage('8 — Smoke Test') {
             steps {
-                sh "kubectl get pods -n ${NAMESPACE} -l app=frontend"
-                sh "kubectl get service frontend-service -n ${NAMESPACE}"
-                echo "✅ Frontend accessible sur http://[IP_NODE]:30080"
+                sh "kubectl get pods -n ${NAMESPACE} -o wide"
+                sh "kubectl get services -n ${NAMESPACE}"
+                echo "Frontend:   http://192.168.49.2:30080"
+                echo "Prometheus: http://localhost:30090"
+                echo "Grafana:    http://localhost:30030 (admin/admin123)"
             }
         }
     }
 
     post {
         success {
-            echo "✅ CD réussi — Frontend accessible sur http://[IP_NODE]:30080"
+            echo '✅ CD Pipeline completed! Frontend deployed.'
         }
         failure {
-            sh "kubectl get events -n ${NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
-            echo "❌ CD échoué — voir les events K8s ci-dessus"
+            script {
+                sh "kubectl get events -n ${env.NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
+            }
+            echo '❌ CD Pipeline failed!'
+        }
+        always {
+            echo '🔄 CD Pipeline finished.'
         }
     }
 }
