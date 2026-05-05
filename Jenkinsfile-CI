@@ -1,25 +1,22 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout(true)
+    }
     environment {
-        SERVICE_DIR = "smart-analysis"
-        DOCKER_IMAGE = "syrinebouden/smart-analysis:latest"
+        DOCKER_IMAGE_REPO = "syrinebouden/smart-analysis"
+        DOCKER_IMAGE_TAG = "latest"
     }
     stages {
-        stage('CLEAN') {
-            steps { deleteDir() }
-        }
-        stage('GIT') {
+        stage('CHECKOUT') {
             steps {
-                git branch: 'smart_analysis',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                    credentialsId: 'github-credentials'
+                deleteDir()
+                checkout scm
             }
         }
         stage('DOCKER BUILD IMAGE') {
             steps {
-                dir("${SERVICE_DIR}") {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
-                }
+                sh 'docker build -t ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} .'
             }
         }
         stage('DOCKER PUSH IMAGE') {
@@ -31,7 +28,7 @@ pipeline {
                 )]) {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE}
+                        docker push ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG}
                     '''
                 }
             }

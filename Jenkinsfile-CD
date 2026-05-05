@@ -1,36 +1,35 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout(true)
+    }
     environment {
-        SERVICE_DIR = "smart-analysis"
-        DOCKER_IMAGE = "syrinebouden/smart-analysis:latest"
+        DOCKER_IMAGE_REPO = "syrinebouden/smart-analysis"
+        DOCKER_IMAGE_TAG = "latest"
     }
     stages {
-        stage('CLEAN') { steps { deleteDir() } }
-        stage('GIT') {
+        stage('CHECKOUT') {
             steps {
-                git branch: 'smart_analysis',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                    credentialsId: 'github-credentials'
+                deleteDir()
+                checkout scm
             }
         }
         stage('VERIFY IMAGE DOCKER HUB') {
             steps {
-                sh "docker pull ${DOCKER_IMAGE}"
-                echo "Image ${DOCKER_IMAGE} disponible sur Docker Hub"
+                sh "docker pull ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG}"
+                echo "Image ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} disponible sur Docker Hub"
             }
         }
         stage('DEPLOY TO KUBERNETES') {
             steps {
-                dir("${SERVICE_DIR}") {
-                    sh '''
-                        kubectl apply -f k8s/namespace.yaml
-                        kubectl apply -f k8s/configmap.yaml
-                        kubectl apply -f k8s/secret.yaml
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
-                        kubectl rollout restart deployment/smart-analysis-deployment -n freelancy
-                    '''
-                }
+                sh '''
+                    kubectl apply -f k8s/namespace.yaml
+                    kubectl apply -f k8s/configmap.yaml
+                    kubectl apply -f k8s/secret.yaml
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
+                    kubectl rollout restart deployment/smart-analysis-deployment -n freelancy
+                '''
             }
         }
         stage('VERIFY DEPLOYMENT') {

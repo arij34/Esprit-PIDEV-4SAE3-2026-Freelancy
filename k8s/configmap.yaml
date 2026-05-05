@@ -5,5 +5,4 @@ metadata:
   namespace: freelancy
 data:
   # Exemple de configuration (override en production)
-  GROQ_API_KEY: ""
   FRONTEND_URL: "http://localhost:4200"
