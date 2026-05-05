@@ -2,7 +2,6 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = "arijachach/skill-management:latest"
-        KUBECONFIG = "/var/jenkins_home/kubeconfig"
     }
     stages {
         stage('CLEAN') {
@@ -25,13 +24,13 @@ pipeline {
         stage('DEPLOY TO KUBERNETES') {
             steps {
                 sh '''
-                    kubectl apply -f k8s/namespace.yaml
-                    kubectl apply -f k8s/mysql-deployment.yaml
-                    kubectl apply -f k8s/configmap.yaml
-                    kubectl apply -f k8s/secret.yaml
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    kubectl rollout restart deployment/skill-deployment -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/namespace.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/mysql-deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/configmap.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/secret.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/service.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout restart deployment/skill-deployment -n freelancy
                 '''
             }
         }
@@ -39,17 +38,17 @@ pipeline {
             steps {
                 sh '''
                     sleep 30
-                    kubectl get pods -n freelancy
-                    kubectl get svc -n freelancy
-                    kubectl get deployments -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get svc -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get deployments -n freelancy
                 '''
             }
         }
         stage('SMOKE TEST') {
             steps {
                 sh '''
-                    kubectl get pods -n freelancy -o wide
-                    kubectl get services -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy -o wide
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get services -n freelancy
                 '''
                 echo 'Service accessible via NodePort 30086'
             }
@@ -61,7 +60,7 @@ pipeline {
         }
         failure {
             sh '''
-                kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20
+                kubectl --kubeconfig=/var/jenkins_home/kubeconfig get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20
             '''
             echo 'Deploiement Kubernetes echoue !'
         }
