@@ -42,20 +42,16 @@ pipeline {
             }
         }
 
-        stage('4 - SonarQube Analysis') {
+       stage('4 - SonarQube Analysis') {
             steps {
                 dir("${SERVICE_DIR}") {
                     withSonarQubeEnv('sonar') {
-                        withCredentials([string(credentialsId: 'sonar-admin-token', variable: 'SONAR_TOKEN')]) {
-                            sh '''
-                                mvn sonar:sonar \
-                                  -Dsonar.host.url=${SONAR_HOST_URL} \
-                                  -Dsonar.token=${SONAR_TOKEN} \
-                                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                  -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                                  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                            '''
-                        }
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=api-gateway \
+                            -Dsonar.projectName=api-gateway \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        """
                     }
                 }
             }

@@ -5,6 +5,8 @@ spring:
   application:
     name: api-gateway
   cloud:
+    config:
+      enabled: false
     gateway:
       routes:
         - id: skill-management
@@ -56,6 +58,13 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: examquiz-service
+          uri: lb://ExamQuiz-service
+          predicates:
+            - Path=/api/exams/**,/api/questions/**,/api/answers/**,/api/attempts/**,/api/attempt-answers/**,/api/exam-participations/**,/api/exam-sessions/**,/api/exam-settings/**,/api/cheating-logs/**,/api/proctoring/**,/api/quiz-settings/**,/api/results/**,/api/admin/monitoring/**
+          filters:
+            - StripPrefix=0
+
         - id: RoadMap-Carrer
           uri: lb://roadmap-service
           predicates:
@@ -103,19 +112,22 @@ spring:
           predicates:
             - Path=/api/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=0
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,info,prometheus,metrics,gateway
   endpoint:
     health:
       show-details: always
     prometheus:
+      enabled: true
+    gateway:
       enabled: true
