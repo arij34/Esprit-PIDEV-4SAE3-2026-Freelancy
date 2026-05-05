@@ -10,9 +10,20 @@ pipeline {
         }
         stage('GIT') {
             steps {
-                git branch: 'event',
-                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
-                    credentialsId: 'github-token'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/event']],
+                    extensions: [[
+                        $class: 'CloneOption',
+                        shallow: true,
+                        depth: 1,
+                        noTags: true
+                    ]],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git',
+                        credentialsId: 'github-token'
+                    ]]
+                ])
             }
         }
         stage('DEPLOY TO KUBERNETES') {
