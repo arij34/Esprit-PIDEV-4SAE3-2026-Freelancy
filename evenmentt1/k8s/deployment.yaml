@@ -13,6 +13,10 @@ spec:
       labels:
         app: event
     spec:
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox
+        command: ['sh', '-c', 'until nc -z mysql-event 3306; do echo waiting; sleep 3; done']
       containers:
       - name: event
         image: pidevfreelancy/event:latest
