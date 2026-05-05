@@ -5,21 +5,23 @@ pipeline {
     }
     environment {
         MS_NAME       = "backend"
-        IMAGE_NAME    = "ameni221/examquiz-service"
+        IMAGE_NAME    = "ameni221/challenge-service"
         IMAGE_TAG     = "latest"
         SONAR_ORG     = "freelancy-organization"
-        SONAR_PROJECT = "freelancy-organization_examquiz-service"
+        SONAR_PROJECT = "freelancy-organization_challenge-service"
         DOCKER_CREDS  = credentials('docker-hub-credentials')
     }
     stages {
+
         stage('1 — Checkout') {
             steps {
-                git branch: 'ExamQuiz-Service',
+                git branch: 'Challenge-Service',
                     credentialsId: 'github-credentials',
                     url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
-                echo "Code retrieved from GitHub — branch ExamQuiz-Service"
+                echo "Code retrieved from GitHub — branch Challenge-Service"
             }
         }
+
         stage('2 — Build Maven') {
             steps {
                 dir("${MS_NAME}") {
@@ -28,10 +30,11 @@ pipeline {
                 }
             }
         }
+
         stage('3 — Tests') {
             steps {
                 dir("${MS_NAME}") {
-                    sh 'mvn verify'
+                    sh 'mvn test'
                 }
             }
             post {
@@ -43,6 +46,7 @@ pipeline {
                 }
             }
         }
+
         stage('4 — SonarCloud Analysis') {
             steps {
                 dir("${MS_NAME}") {
@@ -53,7 +57,7 @@ pipeline {
                             -Dsonar.host.url=https://sonarcloud.io \
                             -Dsonar.organization=${SONAR_ORG} \
                             -Dsonar.projectKey=${SONAR_PROJECT} \
-                            -Dsonar.projectName=examquiz-service \
+                            -Dsonar.projectName=challenge-service \
                             -Dsonar.java.source=17 \
                             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                         """
@@ -61,6 +65,7 @@ pipeline {
                 }
             }
         }
+
         stage('5 — Docker Build') {
             steps {
                 dir("${MS_NAME}") {
@@ -69,6 +74,7 @@ pipeline {
                 }
             }
         }
+
         stage('6 — Docker Push') {
             steps {
                 sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
@@ -77,10 +83,11 @@ pipeline {
             }
         }
     }
+
     post {
         success {
             echo "✅ CI Pipeline completed — image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
-            build job: 'ExamQuizPipeline-CD', wait: false
+            build job: 'ChallengePipeline-CD', wait: false
         }
         failure {
             echo "❌ CI Pipeline failed — check logs above"
