@@ -55,9 +55,11 @@ pipeline {
                 withSonarQubeEnv('sonar') {
                     sh """
                         mvn sonar:sonar \
-                        -Dsonar.projectKey=SkillManagement \
-                        -Dsonar.projectName=SkillManagement \
+                         Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                        -Dsonar.java.source=17 \
                         -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
                     """
                 }
             }
