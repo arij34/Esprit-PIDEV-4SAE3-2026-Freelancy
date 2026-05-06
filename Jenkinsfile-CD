@@ -1,53 +1,54 @@
 pipeline {
     agent any
-    options {
-        skipDefaultCheckout(true)
-    }
     environment {
-        DOCKER_IMAGE_REPO = "syrinebouden/contrat"
-        DOCKER_IMAGE_TAG = "latest"
+        DOCKER_IMAGE = "pidevfreelancy/contract-management:latest"
     }
     stages {
-        stage('CHECKOUT') {
+        stage('CLEAN') {
             steps {
                 deleteDir()
-                checkout scm
+            }
+        }
+        stage('GIT') {
+            steps {
+                git branch: 'contract_management',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
             }
         }
         stage('VERIFY IMAGE DOCKER HUB') {
             steps {
-                sh "docker pull ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG}"
-                echo "Image ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} disponible sur Docker Hub"
+                sh "docker pull ${DOCKER_IMAGE}"
+                echo "Image ${DOCKER_IMAGE} disponible sur Docker Hub"
             }
         }
         stage('DEPLOY TO KUBERNETES') {
             steps {
                 sh '''
-                    kubectl apply -f k8s/namespace.yaml
-                    kubectl apply -f k8s/mysql-deployment.yaml
-                    kubectl apply -f k8s/configmap.yaml
-                    kubectl apply -f k8s/secret.yaml
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    kubectl rollout restart deployment/contrat-deployment -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/namespace.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/mysql-deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/configmap.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/secret.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/deployment.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig --validate=false apply -f k8s/service.yaml
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig rollout restart deployment/contrat-deployment -n freelancy
                 '''
             }
         }
         stage('VERIFY DEPLOYMENT') {
-    steps {
-        sh '''
-            sleep 30
-            kubectl get pods -n freelancy
-            kubectl get svc -n freelancy
-            kubectl get deployments -n freelancy
-        '''
-    }
-}
+            steps {
+                sh '''
+                    sleep 30
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get svc -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get deployments -n freelancy
+                '''
+            }
+        }
         stage('SMOKE TEST') {
             steps {
                 sh '''
-                    kubectl get pods -n freelancy -o wide
-                    kubectl get services -n freelancy
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get pods -n freelancy -o wide
+                    kubectl --kubeconfig=/var/jenkins_home/kubeconfig get services -n freelancy
                 '''
                 echo 'Service accessible via NodePort 30087'
             }
@@ -58,7 +59,9 @@ pipeline {
             echo 'Déploiement Kubernetes réussi !'
         }
         failure {
-            sh 'kubectl get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20'
+            sh '''
+                kubectl --kubeconfig=/var/jenkins_home/kubeconfig get events -n freelancy --sort-by=.metadata.creationTimestamp | tail -20
+            '''
             echo 'Déploiement Kubernetes échoué !'
         }
     }

@@ -2,9 +2,26 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: contrat-config
-  namespace: freelancy          # ✅ Corrigé: skill → freelancy
+  namespace: freelancy
 data:
-  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-service:3306/contrat_dbdb?createDatabaseIfNotExist=true
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-contrat-service:3306/contrat_dbdb?createDatabaseIfNotExist=true
   SPRING_DATASOURCE_USERNAME: root
+  SERVER_PORT: "8087"
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka
-  # ✅ Corrigé: SPRING_DATASOURCE_PASSWORD supprimé d'ici (déplacé dans secret.yaml)
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+  EUREKA_CLIENT_FETCH_REGISTRY: "true"
+  KEYCLOAK_ADMIN_URL: http://keycloak-service:8081
+  KEYCLOAK_ADMIN_REALM: smart-platform
+  KEYCLOAK_ADMIN_USERNAME: admin
+  ANTHROPIC_API_URL: https://api.anthropic.com/v1/messages
+  USER_SERVICE_URL: http://user-service:8090
+  SPRING_MAIL_HOST: smtp.gmail.com
+  SPRING_MAIL_PORT: "587"
+  SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+  SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+  SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+  APP_MAIL_FROM: "Freelancy Platform <noreply@freelancy.tn>"
+  APP_FRONTEND_URL: http://localhost:4200
+  DOCUSIGN_BASE_PATH: https://demo.docusign.net/restapi
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
+  MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"

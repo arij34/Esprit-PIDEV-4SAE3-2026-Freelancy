@@ -20,10 +20,11 @@ spec:
       initContainers:
         - name: wait-for-mysql
           image: busybox
-          command: ['sh', '-c', 'until nc -z mysql-service 3306; do echo waiting for mysql; sleep 5; done']
+          command: ['sh', '-c', 'until nc -z mysql-contrat-service 3306; do echo waiting for mysql; sleep 5; done']
+          # ✅ Corrigé: mysql-service → mysql-contrat-service
       containers:
         - name: contrat
-          image: syrinebouden/contrat:latest
+          image: pidevfreelancy/contract-management:latest   # ✅ Corrigé
           ports:
             - containerPort: 8087
           envFrom:
@@ -31,7 +32,6 @@ spec:
                 name: contrat-config
             - secretRef:
                 name: contrat-secret
-          # ✅ ReadinessProbe — K8s attend que le service soit prêt avant d'envoyer du trafic
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -39,7 +39,6 @@ spec:
             initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 10
-          # ✅ LivenessProbe — K8s redémarre le pod s'il est bloqué
           livenessProbe:
             httpGet:
               path: /actuator/health
