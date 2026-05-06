@@ -1,50 +1,89 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout(true)
+    }
 
     environment {
+        PROJECT_HOME = '/home/vagrant/DEVOPS/blog-service'
         DOCKER_IMAGE = 'pidevfreelancy/blog-service:latest'
         SONAR_PROJECT_KEY = 'blog-service'
+        SONAR_GOAL = 'org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
-                sh 'chmod +x mvnw'
+                script {
+                    def useLocalProject = (sh(
+                        script: "[ -f '${env.PROJECT_HOME}/pom.xml' ] && [ -f '${env.PROJECT_HOME}/mvnw' ]",
+                        returnStatus: true
+                    ) == 0)
+
+                    env.BUILD_DIR = useLocalProject ? env.PROJECT_HOME : env.WORKSPACE
+
+                    if (useLocalProject) {
+                        echo "Using synced Vagrant project directory: ${env.BUILD_DIR}"
+                    } else {
+                        echo "Using Jenkins SCM workspace: ${env.BUILD_DIR}"
+                        checkout scm
+                    }
+                }
+
+                dir("${env.BUILD_DIR}") {
+                    sh 'chmod +x mvnw'
+                    sh './mvnw -v'
+                    sh 'cat .mvn/wrapper/maven-wrapper.properties'
+                }
             }
         }
 
         stage('Maven unit tests') {
             steps {
-                sh './mvnw -B test'
+                dir("${env.BUILD_DIR}") {
+                    sh './mvnw -B test'
+                }
             }
         }
 
         stage('SonarQube analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh './mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_KEY'
+                dir("${env.BUILD_DIR}") {
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                        withSonarQubeEnv('SonarQube') {
+                            withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                                sh 'mkdir -p "$WORKSPACE/.scannerwork"'
+                                sh './mvnw -e -B $SONAR_GOAL -DskipTests -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_KEY -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN -Dsonar.scanner.metadataFilePath=$WORKSPACE/.scannerwork/report-task.txt'
+                            }
+                        }
+                    }
                 }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    timeout(time: 10, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
                 }
             }
         }
 
         stage('Maven package') {
             steps {
-                sh './mvnw -B clean package -DskipTests'
+                dir("${env.BUILD_DIR}") {
+                    sh './mvnw -B clean package -DskipTests'
+                }
             }
         }
 
         stage('Docker build') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE .'
+                dir("${env.BUILD_DIR}") {
+                    sh 'docker build -t $DOCKER_IMAGE .'
+                }
             }
         }
 
@@ -55,8 +94,10 @@ pipeline {
                     usernameVariable: 'DOCKERHUB_USER',
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
-                    sh 'echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin'
-                    sh 'docker push $DOCKER_IMAGE'
+                    dir("${env.BUILD_DIR}") {
+                        sh 'echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin'
+                        sh 'docker push $DOCKER_IMAGE'
+                    }
                 }
             }
         }

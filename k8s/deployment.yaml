@@ -1,0 +1,52 @@
+# CD flow:
+# Docker Hub image -> Kubernetes pulls image -> deployment inside namespace freelancy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-service-deployment
+  namespace: freelancy
+  labels:
+    app: blog-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog-service
+  template:
+    metadata:
+      labels:
+        app: blog-service
+    spec:
+      containers:
+        - name: blog-service
+          image: pidevfreelancy/blog-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8050
+          env:
+            - name: SERVER_PORT
+              value: "8050"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://192.168.56.1:3306/microservices_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://192.168.56.10:8761/eureka/"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health,info,prometheus"
+            - name: MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS
+              value: "always"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8050
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8050
+            initialDelaySeconds: 45
+            periodSeconds: 20

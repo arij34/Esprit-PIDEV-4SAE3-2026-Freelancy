@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    environment {
+        PROJECT_HOME = '/home/vagrant/DEVOPS/blog-service'
+        K8S_NAMESPACE = 'freelancy'
+        DOCKER_IMAGE = 'pidevfreelancy/blog-service:latest'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    def useLocalProject = (sh(
+                        script: "[ -f '${env.PROJECT_HOME}/k8s/deployment.yaml' ] && [ -f '${env.PROJECT_HOME}/k8s/service.yaml' ]",
+                        returnStatus: true
+                    ) == 0)
+
+                    env.BUILD_DIR = useLocalProject ? env.PROJECT_HOME : env.WORKSPACE
+
+                    if (useLocalProject) {
+                        echo "Using synced Vagrant project directory: ${env.BUILD_DIR}"
+                    } else {
+                        echo "Using Jenkins SCM workspace: ${env.BUILD_DIR}"
+                        checkout scm
+                    }
+                }
+            }
+        }
+
+        stage('Docker pull') {
+            steps {
+                sh 'docker pull $DOCKER_IMAGE'
+            }
+        }
+
+        stage('Deploy to Kubernetes namespace freelancy') {
+            steps {
+                sh 'kubectl apply -f /home/vagrant/DEVOPS/k8s/namespace.yaml'
+                dir("${env.BUILD_DIR}") {
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f k8s/service.yaml'
+                }
+            }
+        }
+
+        stage('Rollout status') {
+            steps {
+                sh 'kubectl rollout status deployment/blog-service-deployment -n $K8S_NAMESPACE --timeout=240s'
+            }
+        }
+
+        stage('Smoke test') {
+            steps {
+                sh 'kubectl run blog-service-smoke --rm --restart=Never -n $K8S_NAMESPACE --image=curlimages/curl:8.7.1 -- curl -fsS http://blog-service:8050/actuator/health'
+            }
+        }
+    }
+}
