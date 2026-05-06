@@ -21,9 +21,9 @@ public class ProposalController {
     private final ProjectRepository     projectRepo;
     private final FreelancerInfoService freelancerInfoService;
 
-    // ✅ WebClient vers le microservice contrat (port 8087)
+    // ✅ WebClient vers le microservice contrat (port 8097)
     private final WebClient webClient = WebClient.builder()
-            .baseUrl("http://localhost:8087")
+            .baseUrl("http://localhost:8097")
             .build();
 
     public ProposalController(ProposalRepository proposalRepo,
