@@ -353,7 +353,146 @@ ng serve
 | ExamQuiz Service | http://localhost:8150 |
 | ExamQuiz Swagger | http://localhost:8150/swagger-ui.html |
 
+DevOps & Deployment
+🚀 DevOps Overview
+
+Freelancy implements a complete CI/CD pipeline to automate the build, test, containerization, and deployment of all microservices using cloud-native technologies.
+
+The workflow is divided into two main phases:
+
+Continuous Integration (CI) with Jenkins
+Continuous Deployment (CD) with Kubernetes
+🔁 Continuous Integration (CI) — Jenkins
+
+Each microservice has its own independent Jenkins pipeline, ensuring modularity, scalability, and isolated builds.
+
+🔹 Pipeline Stages
+
+Every pipeline follows a standardized structure:
+
+Checkout
+Retrieve source code from GitHub
+Build
+Spring Boot → mvn clean package
+Angular → npm install && npm run build
+Test
+Execute automated unit tests using JUnit
+Docker Build
+Build a Docker image using the service Dockerfile
+Docker Push
+Push the image to Docker Hub
+
+👉 Output:
+A ready-to-use Docker image for each microservice.
+
+🐳 Dockerization Strategy
+
+Each component of the system is fully containerized:
+
+Spring Boot Microservices → Multi-stage Dockerfile (Maven + JRE)
+Angular Frontend → Built with Node.js and served via Nginx
+Python AI Services → Lightweight Python image
+✔ Benefits
+Environment consistency
+Faster deployments
+Isolation between services
+📦 Docker Registry (Docker Hub)
+
+All Docker images are stored in Docker Hub and versioned:
+
+pidev/ms-user:latest
+pidev/ms-project:latest
+pidev/api-gateway:latest
+pidev/eureka:latest
+pidev/frontend:latest
+
+These images are later used by Kubernetes during deployment.
+
+🚀 Continuous Deployment (CD) — Kubernetes
+
+A centralized Jenkins pipeline handles deployment to the Kubernetes cluster.
+
+🔹 Deployment Workflow
+Checkout Kubernetes manifests
+Pull Docker images from Docker Hub
+Apply manifests → kubectl apply -f
+Wait for pods readiness
+Execute health checks
+☸️ Kubernetes Architecture
+
+The application is deployed as a distributed system of containerized pods:
+
+Angular Frontend
+API Gateway
+Eureka Server (Service Discovery)
+Spring Boot Microservices
+Python AI Services
+MySQL Databases (one per microservice)
+🔹 Kubernetes Responsibilities
+Auto-restart failed pods
+Load balancing
+Horizontal scaling (replicas)
+Internal service discovery
+📄 Kubernetes Resources
+
+Each service is defined using:
+
+Deployment → manages pods and replicas
+Service → exposes applications (ClusterIP / NodePort)
+ConfigMap → configuration variables
+Secret → sensitive data (credentials, tokens)
+PersistentVolumeClaim → database storage
+📊 Monitoring & Observability
+🔹 Prometheus
+Collects metrics from all services
+Uses /actuator/prometheus endpoints (Spring Boot Actuator)
+🔹 Grafana
+Visualizes metrics through dashboards
+Provides real-time monitoring of system health
+🧪 Local Development (Docker Compose)
+
+Docker Compose is used only for local development and testing:
+
+docker-compose up --build
+
+⚠️ In production, Docker Compose is replaced by Kubernetes.
+
+📁 DevOps Project Structure
+/microservices
+  /service-user
+    Dockerfile
+    Jenkinsfile
+  /service-project
+    Dockerfile
+    Jenkinsfile
+  /api-gateway
+  /eureka-server
+
+/frontend
+  Dockerfile
+
+/k8s
+  /deployments
+  /services
+  /monitoring
+  /secrets
+
+/docker-compose.yml   # local environment only
+🧩 DevOps Architecture Flow
+
+CI (Jenkins) → Build & Test → Docker Image → Docker Hub →
+CD (Jenkins) → Kubernetes Deployment → Running Pods
+
+📌 Key DevOps Practices
+Microservices containerization
+CI/CD automation with Jenkins
+Infrastructure as Code (Kubernetes YAML)
+Service discovery with Eureka
+Secure authentication (Keycloak + JWT)
+Monitoring with Prometheus & Grafana
+
 ---
+
 
 ## Contributors
 
