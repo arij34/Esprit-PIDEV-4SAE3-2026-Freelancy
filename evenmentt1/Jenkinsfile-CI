@@ -12,10 +12,30 @@ pipeline {
                     credentialsId: 'github-token'
             }
         }
-        stage('MVN CLEAN')   { steps { dir('evenmentt1') { sh 'mvn clean' } } }
-        stage('MVN COMPILE') { steps { dir('evenmentt1') { sh 'mvn compile' } } }
-        stage('MVN TEST')    { steps { dir('evenmentt1') { sh 'mvn test -DskipTests' } } }
-        stage('MVN PACKAGE') { steps { dir('evenmentt1') { sh 'mvn package -DskipTests' } } }
+        stage('MVN CLEAN') {
+            steps { dir('evenmentt1') { sh 'mvn clean' } }
+        }
+        stage('MVN COMPILE') {
+            steps { dir('evenmentt1') { sh 'mvn compile' } }
+        }
+        stage('MVN TEST') {
+            steps { dir('evenmentt1') { sh 'mvn test -DskipTests' } }
+        }
+        stage('MVN PACKAGE') {
+            steps { dir('evenmentt1') { sh 'mvn package -DskipTests' } }
+        }
+        stage('JACOCO REPORT') {
+            steps { dir('evenmentt1') { sh 'mvn jacoco:report' } }
+        }
+        stage('SONARQUBE ANALYSIS') {
+            steps {
+                dir('evenmentt1') {
+                    withSonarQubeEnv('sonar') {
+                        sh 'mvn sonar:sonar -Dsonar.projectKey=event -Dsonar.projectName=event -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml'
+                    }
+                }
+            }
+        }
         stage('DOCKER BUILD') {
             steps {
                 dir('evenmentt1') {
