@@ -352,7 +352,7 @@ ng serve
 | Skill Management | http://localhost:8086 |
 | ExamQuiz Service | http://localhost:8150 |
 | ExamQuiz Swagger | http://localhost:8150/swagger-ui.html |
-
+---
 DevOps & Deployment
 🚀 DevOps Overview
 
@@ -360,45 +360,39 @@ Freelancy implements a complete CI/CD pipeline to automate the build, test, cont
 
 The workflow is divided into two main phases:
 
-Continuous Integration (CI) with Jenkins
-Continuous Deployment (CD) with Kubernetes
+Phase	Tool	Role
+Continuous Integration (CI)	Jenkins	Build, test, and containerize services
+Continuous Deployment (CD)	Kubernetes	Deploy and manage containers in production
 🔁 Continuous Integration (CI) — Jenkins
 
 Each microservice has its own independent Jenkins pipeline, ensuring modularity, scalability, and isolated builds.
 
 🔹 Pipeline Stages
-
-Every pipeline follows a standardized structure:
-
-Checkout
-Retrieve source code from GitHub
-Build
-Spring Boot → mvn clean package
+Stage	Description
+Checkout	Retrieve source code from GitHub
+Build	Spring Boot → mvn clean package
 Angular → npm install && npm run build
-Test
-Execute automated unit tests using JUnit
-Docker Build
-Build a Docker image using the service Dockerfile
-Docker Push
-Push the image to Docker Hub
+Test	Execute automated unit tests (JUnit)
+Docker Build	Build Docker image using the service Dockerfile
+Docker Push	Push image to Docker Hub
 
-👉 Output:
-A ready-to-use Docker image for each microservice.
+👉 Output: A ready-to-use Docker image per microservice
 
 🐳 Dockerization Strategy
 
-Each component of the system is fully containerized:
+Each component of the system is containerized:
 
-Spring Boot Microservices → Multi-stage Dockerfile (Maven + JRE)
-Angular Frontend → Built with Node.js and served via Nginx
-Python AI Services → Lightweight Python image
+Component	Strategy
+Spring Boot Microservices	Multi-stage Dockerfile (Maven + JRE)
+Angular Frontend	Built with Node.js and served via Nginx
+Python AI Services	Lightweight Python image
 ✔ Benefits
 Environment consistency
-Faster deployments
+Faster deployment
 Isolation between services
 📦 Docker Registry (Docker Hub)
 
-All Docker images are stored in Docker Hub and versioned:
+All Docker images are stored and versioned in Docker Hub:
 
 pidev/ms-user:latest
 pidev/ms-project:latest
@@ -406,21 +400,22 @@ pidev/api-gateway:latest
 pidev/eureka:latest
 pidev/frontend:latest
 
-These images are later used by Kubernetes during deployment.
+These images are used by Kubernetes during deployment.
 
 🚀 Continuous Deployment (CD) — Kubernetes
 
 A centralized Jenkins pipeline handles deployment to the Kubernetes cluster.
 
 🔹 Deployment Workflow
-Checkout Kubernetes manifests
-Pull Docker images from Docker Hub
-Apply manifests → kubectl apply -f
-Wait for pods readiness
-Execute health checks
+Step	Description
+1	Checkout Kubernetes manifests
+2	Pull Docker images from Docker Hub
+3	Apply manifests (kubectl apply -f)
+4	Wait for pods readiness
+5	Run health checks
 ☸️ Kubernetes Architecture
 
-The application is deployed as a distributed system of containerized pods:
+Freelancy is deployed as a distributed system of containerized pods:
 
 Angular Frontend
 API Gateway
@@ -434,14 +429,12 @@ Load balancing
 Horizontal scaling (replicas)
 Internal service discovery
 📄 Kubernetes Resources
-
-Each service is defined using:
-
-Deployment → manages pods and replicas
-Service → exposes applications (ClusterIP / NodePort)
-ConfigMap → configuration variables
-Secret → sensitive data (credentials, tokens)
-PersistentVolumeClaim → database storage
+Resource	Role
+Deployment	Manages pods and replicas
+Service	Exposes applications (ClusterIP / NodePort)
+ConfigMap	Stores configuration variables
+Secret	Stores sensitive data (credentials, tokens)
+PersistentVolumeClaim	Handles database storage
 📊 Monitoring & Observability
 🔹 Prometheus
 Collects metrics from all services
@@ -479,10 +472,8 @@ docker-compose up --build
 
 /docker-compose.yml   # local environment only
 🧩 DevOps Architecture Flow
-
-CI (Jenkins) → Build & Test → Docker Image → Docker Hub →
+CI (Jenkins) → Build & Test → Docker Image → Docker Hub
 CD (Jenkins) → Kubernetes Deployment → Running Pods
-
 📌 Key DevOps Practices
 Microservices containerization
 CI/CD automation with Jenkins
