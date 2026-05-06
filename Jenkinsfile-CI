@@ -40,9 +40,7 @@ pipeline {
 
         stage('Maven unit tests') {
             steps {
-                dir("${env.BUILD_DIR}") {
-                    sh './mvnw -B test'
-                }
+                sh 'MAVEN_OPTS="-Djdk.attach.allowAttachSelf=true" ./mvnw -B test'
             }
         }
 
