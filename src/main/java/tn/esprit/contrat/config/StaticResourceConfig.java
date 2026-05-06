@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Expose les PDF générés (dossier ./pdfs/) comme ressources statiques.
- * Exemple d'URL : http://localhost:8087/pdfs/contract-44.pdf
+ * Exemple d'URL : http://localhost:8097/pdfs/contract-44.pdf
  */
 @Configuration
 public class StaticResourceConfig implements WebMvcConfigurer {

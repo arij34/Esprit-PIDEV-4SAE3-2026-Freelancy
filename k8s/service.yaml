@@ -8,7 +8,7 @@ spec:
     app: contrat
   ports:
     - protocol: TCP
-      port: 8087
-      targetPort: 8087
-      nodePort: 30087
+      port: 8097
+      targetPort: 8097
+      nodePort: 30097
   type: NodePort

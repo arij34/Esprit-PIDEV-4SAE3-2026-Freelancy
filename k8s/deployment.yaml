@@ -15,7 +15,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/actuator/prometheus"
-        prometheus.io/port: "8087"
+        prometheus.io/port: "8097"
     spec:
       initContainers:
         - name: wait-for-mysql
@@ -26,7 +26,7 @@ spec:
         - name: contrat
           image: pidevfreelancy/contract-management:latest   # ✅ Corrigé
           ports:
-            - containerPort: 8087
+            - containerPort: 8097
           envFrom:
             - configMapRef:
                 name: contrat-config
@@ -35,14 +35,14 @@ spec:
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: 8087
+              port: 8097
             initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 10
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8087
+              port: 8097
             initialDelaySeconds: 210
             periodSeconds: 20
             failureThreshold: 5

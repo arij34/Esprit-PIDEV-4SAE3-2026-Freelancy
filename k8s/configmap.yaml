@@ -6,7 +6,7 @@ metadata:
 data:
   SPRING_DATASOURCE_URL: jdbc:mysql://mysql-contrat-service:3306/contrat_dbdb?createDatabaseIfNotExist=true
   SPRING_DATASOURCE_USERNAME: root
-  SERVER_PORT: "8087"
+  SERVER_PORT: "8097"
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka
   EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
   EUREKA_CLIENT_FETCH_REGISTRY: "true"

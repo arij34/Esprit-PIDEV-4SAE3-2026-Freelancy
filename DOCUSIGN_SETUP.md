@@ -16,7 +16,7 @@ This document provides a complete setup guide for integrating DocuSign digital s
                        │
                        ↓ HTTP REST API Calls
 ┌──────────────────────────────────────────────────────────────────┐
-│              Spring Boot Backend (Port 8087)                    │
+│              Spring Boot Backend (Port 8097)                    │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │ Contract Service                                           │ │
 │  │ - Send contract for signature via DocuSign API            │ │
@@ -399,18 +399,18 @@ private String createJWT(String clientId, String userId) {
 
 1. **Send for Signature:**
    ```
-   POST http://localhost:8087/api/contracts/1/send-for-signature
+   POST http://localhost:8097/api/contracts/1/send-for-signature
    Body: {"signerEmail": "test@example.com", "signerName": "Test User"}
    ```
 
 2. **Check Status:**
    ```
-   GET http://localhost:8087/api/contracts/1/signature-status
+   GET http://localhost:8097/api/contracts/1/signature-status
    ```
 
 3. **Download Signed Document:**
    ```
-   GET http://localhost:8087/api/contracts/1/download-signed
+   GET http://localhost:8097/api/contracts/1/download-signed
    ```
 
 ### 2. Signature Flow Test
