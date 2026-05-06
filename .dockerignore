@@ -1,0 +1,10 @@
+target/
+*.log
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+README-DEVOPS.md
+k8s/
+.github/

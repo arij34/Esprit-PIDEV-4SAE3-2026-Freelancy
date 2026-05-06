@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blog-analytics-config
+  namespace: freelancy
+data:
+  SPRING_APPLICATION_NAME: "BLOG-ANALYTICS-SERVICE"
+  SERVER_PORT: "8053"
+  SPRING_DATASOURCE_URL: "jdbc:mysql://CHANGE_ME_HOST:3306/microservices_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC"
+  SPRING_DATASOURCE_USERNAME: "CHANGE_ME"
+  SPRING_DATASOURCE_PASSWORD: "CHANGE_ME"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  SPRING_JPA_SHOW_SQL: "true"
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://CHANGE_ME_EUREKA:8761/eureka/"
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+  EUREKA_CLIENT_FETCH_REGISTRY: "true"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
