@@ -3,7 +3,6 @@ pipeline {
     tools {
         maven "Maven3"
     }
-
     environment {
         MS_NAME            = "backend"
         IMAGE_NAME         = "pidevfreelancy/examquiz-service"
@@ -12,7 +11,6 @@ pipeline {
         SONAR_PROJECT_NAME = "examquiz-service"
         DOCKER_CREDS       = credentials('docker-hub-credentials')
     }
-
     stages {
         stage('1 - Checkout') {
             steps {
@@ -22,7 +20,6 @@ pipeline {
                 echo "Code retrieved from GitHub - branch ExamQuiz-Service"
             }
         }
-
         stage('2 - Build Maven') {
             steps {
                 dir("${MS_NAME}") {
@@ -31,7 +28,6 @@ pipeline {
                 }
             }
         }
-
         stage('3 - Tests + JaCoCo') {
             steps {
                 dir("${MS_NAME}") {
@@ -48,23 +44,21 @@ pipeline {
                 }
             }
         }
-
-          
-
-          stage('SONARQUBE ANALYSIS') {
+        stage('4 - SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar') {
-                    sh """
-                        mvn sonar:sonar \
-                         Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                        -Dsonar.java.source=17 \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                    """
+                dir("${MS_NAME}") {
+                    withSonarQubeEnv('sonar') {
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                            -Dsonar.java.source=17 \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        """
+                    }
                 }
             }
         }
-
         stage('5 - Docker Build') {
             steps {
                 dir("${MS_NAME}") {
@@ -73,7 +67,6 @@ pipeline {
                 }
             }
         }
-
         stage('6 - Docker Push') {
             steps {
                 sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
@@ -82,7 +75,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo "CI Pipeline completed - image ${IMAGE_NAME}:${IMAGE_TAG} available on Docker Hub"
