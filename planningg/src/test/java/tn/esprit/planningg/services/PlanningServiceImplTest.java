@@ -18,7 +18,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,5 +84,65 @@ class PlanningServiceImplTest {
         );
 
         assertEquals("Planning introuvable avec id=99", exception.getMessage());
+    }
+
+    @Test
+    void addPlanning_shouldSavePlanning() {
+        Planning planning = new Planning();
+        planning.setType("Sprint");
+
+        when(planningRepository.save(planning)).thenReturn(planning);
+
+        Planning saved = planningService.addPlanning(planning);
+
+        assertNotNull(saved);
+        assertEquals("Sprint", saved.getType());
+    }
+
+    @Test
+    void updatePlanning_shouldSavePlanning() {
+        Planning planning = new Planning();
+        planning.setId(5L);
+        planning.setType("Release");
+
+        when(planningRepository.save(planning)).thenReturn(planning);
+
+        Planning updated = planningService.updatePlanning(planning);
+
+        assertNotNull(updated);
+        assertEquals(5L, updated.getId());
+    }
+
+    @Test
+    void getPlanningById_shouldReturnPlanning() {
+        Planning planning = new Planning();
+        planning.setId(2L);
+
+        when(planningRepository.findById(2L)).thenReturn(Optional.of(planning));
+
+        Planning found = planningService.getPlanningById(2L);
+
+        assertNotNull(found);
+        assertEquals(2L, found.getId());
+    }
+
+    @Test
+    void getAllPlannings_shouldReturnAll() {
+        Planning planning = new Planning();
+        planning.setId(3L);
+
+        when(planningRepository.findAll()).thenReturn(List.of(planning));
+
+        List<Planning> plannings = planningService.getAllPlannings();
+
+        assertEquals(1, plannings.size());
+        assertEquals(3L, plannings.get(0).getId());
+    }
+
+    @Test
+    void deletePlanning_shouldCallRepository() {
+        planningService.deletePlanning(7L);
+
+        verify(planningRepository).deleteById(7L);
     }
 }
