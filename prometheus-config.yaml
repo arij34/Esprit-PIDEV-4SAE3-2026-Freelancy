@@ -7,12 +7,21 @@ data:
   prometheus.yml: |
     global:
       scrape_interval: 15s
+
     scrape_configs:
+
+      # ── Infrastructure ──────────────────────────────────────────────────
       - job_name: 'eureka-server'
         metrics_path: '/actuator/prometheus'
         static_configs:
           - targets: ['eureka-service:8761']
 
+      - job_name: 'api-gateway'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['api-gateway-service:8091']
+
+      # ── Services existants ──────────────────────────────────────────────
       - job_name: 'challenge-service'
         metrics_path: '/actuator/prometheus'
         static_configs:
@@ -23,7 +32,38 @@ data:
         static_configs:
           - targets: ['examquiz-service:8150']
 
-      - job_name: 'api-gateway'
+      - job_name: 'skill-management'
         metrics_path: '/actuator/prometheus'
         static_configs:
-          - targets: ['api-gateway-service:8091']
+          - targets: ['skill-service:8086']
+
+      - job_name: 'matching-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['matching-service:8097']
+
+      # ── Services collègues ajoutés ──────────────────────────────────────
+      - job_name: 'projet-module-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['projet-module-service:8085']
+
+      - job_name: 'contrat-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['contrat-service:8097']
+
+      - job_name: 'planning-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['planning-service:8089']
+
+      - job_name: 'user-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['user-service:8090']
+
+      - job_name: 'payment-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['payment-service:8092']
