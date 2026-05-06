@@ -80,7 +80,7 @@ pipeline {
         stage('7 — Deploy Challenge Service') {
             steps {
                 sh "kubectl apply -f k8s/challenge-deployment.yaml -n ${NAMESPACE}"
-                sh "kubectl rollout status deployment/challenge-deployment -n ${NAMESPACE} --timeout=120s"
+                sh "kubectl rollout status deployment/challenge-deployment -n ${NAMESPACE} --timeout=300s"
                 echo "Challenge service deployed"
             }
         }
