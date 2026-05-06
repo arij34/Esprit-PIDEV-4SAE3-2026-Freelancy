@@ -1,8 +1,7 @@
-# ✅ PersistentVolumeClaim — les données MySQL survivent aux redémarrages
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-skill-pvc
+  name: mysql-projet-pvc          # ✅ Corrigé: mysql-skill-pvc → mysql-projet-pvc
   namespace: freelancy
 spec:
   accessModes:
@@ -14,17 +13,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql-skill
+  name: mysql-projet              # ✅ Corrigé: mysql-skill → mysql-projet
   namespace: freelancy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql-skill
+      app: mysql-projet           # ✅ Corrigé
   template:
     metadata:
       labels:
-        app: mysql-skill
+        app: mysql-projet         # ✅ Corrigé
     spec:
       containers:
         - name: mysql
@@ -33,11 +32,11 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               value: "root"
             - name: MYSQL_DATABASE
-              value: skill_db
+              value: projet_Module  # ✅ Correct
             - name: MYSQL_USER
-              value: skill_user
+              value: root
             - name: MYSQL_PASSWORD
-              value: skill_pass
+              value: ""
           ports:
             - containerPort: 3306
           volumeMounts:
@@ -45,18 +44,17 @@ spec:
               mountPath: /var/lib/mysql
       volumes:
         - name: mysql-storage
-          # ✅ PVC à la place de emptyDir — données persistantes
           persistentVolumeClaim:
-            claimName: mysql-skill-pvc
+            claimName: mysql-projet-pvc   # ✅ Corrigé
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-service
+  name: mysql-projet-service      # ✅ Corrigé: mysql-service → mysql-projet-service
   namespace: freelancy
 spec:
   selector:
-    app: mysql-skill
+    app: mysql-projet             # ✅ Corrigé
   ports:
     - port: 3306
       targetPort: 3306

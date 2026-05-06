@@ -2,9 +2,21 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: projet-config
-  namespace: freelancy          # ✅ Corrigé: skill → freelancy
+  namespace: freelancy
 data:
-  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-service:3306/projet_Module?createDatabaseIfNotExist=true
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql-projet-service:3306/projet_Module?createDatabaseIfNotExist=true
   SPRING_DATASOURCE_USERNAME: root
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-service:8761/eureka
-  # ✅ Corrigé: SPRING_DATASOURCE_PASSWORD supprimé d'ici (déplacé dans secret.yaml)
+  EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+  EUREKA_CLIENT_FETCH_REGISTRY: "true"
+  SERVER_PORT: "8085"
+  SPRING_MAIL_HOST: smtp.gmail.com
+  SPRING_MAIL_PORT: "587"
+  SPRING_MAIL_USERNAME: sirinebouden20@gmail.com
+  SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+  SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+  KEYCLOAK_ADMIN_URL: http://keycloak-service:8081
+  KEYCLOAK_ADMIN_REALM: smart-platform
+  KEYCLOAK_ADMIN_USERNAME: admin
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
+  MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"

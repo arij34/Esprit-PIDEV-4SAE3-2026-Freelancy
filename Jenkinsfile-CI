@@ -1,114 +1,53 @@
 pipeline {
     agent any
-    options {
-        skipDefaultCheckout(true)
-    }
-    parameters {
-        string(name: 'SONAR_HOST_URL', defaultValue: 'http://localhost:9000', description: 'SonarQube server URL (reachable from Jenkins inside the VM)')
+    tools {
+        maven "M2_HOME"
     }
     environment {
-        DOCKER_IMAGE_REPO = "syrinebouden/projet"
-        DOCKER_IMAGE_TAG = "latest"
-        SONAR_PROJECT_KEY = "ProjetManagement"
-        SONAR_PROJECT_NAME = "ProjetManagement"
-        SONAR_HOST_URL = "${params.SONAR_HOST_URL}"
+        DOCKER_IMAGE = "pidevfreelancy/project-management:latest"
     }
     stages {
-        stage('CHECKOUT') {
-            options {
-                timeout(time: 5, unit: 'MINUTES')
-            }
+        stage('CLEAN') {
             steps {
-                script {
-                    echo "Testing Git connectivity to GitHub..."
-                    sh 'timeout 10s git ls-remote --heads https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git || exit 1'
-                }
                 deleteDir()
-                retry(2) {
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: env.BRANCH_NAME ?: '*/project_management']],
-                        userRemoteConfigs: [[url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git']],
-                        extensions: [
-                            [$class: 'CloneOption', shallow: true, noTags: false, depth: 1, timeout: 10]
-                        ]
-                    ])
-                }
+            }
+        }
+        stage('GIT') {
+            steps {
+                git branch: 'project_management',
+                    url: 'https://github.com/arij34/Esprit-PIDEV-4SAE3-2026-Freelancy.git'
             }
         }
         stage('BUILD') {
             steps {
-                sh '''
-                    if [ -f ./mvnw ]; then
-                      chmod +x ./mvnw
-                      MVN=./mvnw
-                    else
-                      MVN=mvn
-                    fi
-                    $MVN -B clean package -DskipTests
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
         stage('TESTS UNITAIRES') {
             steps {
-                sh '''
-                    if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
-                    $MVN -B test
-                '''
+                sh 'mvn test'
             }
         }
         stage('JACOCO REPORT') {
             steps {
-                sh '''
-                    if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
-                    $MVN -B jacoco:report
-                '''
+                sh 'mvn jacoco:report'
             }
         }
         stage('SONARQUBE ANALYSIS') {
             steps {
-                withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
-                    sh '''
-                        if [ -f ./mvnw ]; then MVN=./mvnw; else MVN=mvn; fi
-
-                                                echo "Waiting for SonarQube to be UP at ${SONAR_HOST_URL} ..."
-                                                if command -v curl >/dev/null 2>&1; then
-                                                    fetch() { curl -fsS --connect-timeout 2 --max-time 3 "$1"; }
-                                                elif command -v wget >/dev/null 2>&1; then
-                                                    fetch() { wget -qO- --timeout=3 "$1"; }
-                                                else
-                                                    echo "Neither curl nor wget is available to check SonarQube readiness."
-                                                    exit 2
-                                                fi
-
-                                                i=1
-                                                status=""
-                                                while [ $i -le 120 ]; do
-                                                    status="$(fetch "${SONAR_HOST_URL}/api/system/status" 2>/dev/null || true)"
-                                                    echo "$status" | grep -q '"status":"UP"' && break
-                                                    echo "SonarQube not ready yet (attempt $i/120)."
-                                                    i=$((i+1))
-                                                    sleep 5
-                                                done
-
-                                                if [ $i -gt 120 ]; then
-                                                    echo "SonarQube is still not UP at ${SONAR_HOST_URL}."
-                                                    echo "Last status: $status"
-                                                    exit 1
-                                                fi
-
-                        $MVN -B org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.3922:sonar \
-                          -Dsonar.host.url=${SONAR_HOST_URL} \
-                          -Dsonar.login=${SONAR_TOKEN} \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                    '''
+                withSonarQubeEnv('sonar') {
+                    sh """
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=ProjetManagement \
+                        -Dsonar.projectName=ProjetManagement \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    """
                 }
             }
         }
         stage('DOCKER BUILD IMAGE') {
             steps {
-                sh 'docker build -t ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG} .'
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
         stage('DOCKER PUSH IMAGE') {
@@ -120,7 +59,7 @@ pipeline {
                 )]) {
                     sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${DOCKER_IMAGE_REPO}:${DOCKER_IMAGE_TAG}
+                        docker push ${DOCKER_IMAGE}
                     """
                 }
             }
@@ -128,16 +67,10 @@ pipeline {
     }
     post {
         success {
-            script {
-                def jobName = env.JOB_NAME ?: ''
-                def lastSlashIndex = jobName.lastIndexOf('/')
-                def prefix = lastSlashIndex >= 0 ? jobName.substring(0, lastSlashIndex + 1) : ''
-                def base = lastSlashIndex >= 0 ? jobName.substring(lastSlashIndex + 1) : jobName
-                def cdBase = base.endsWith('-CI') ? base.replaceFirst(/-CI$/, '-CD') : (base + '-CD')
-                def cdJob = prefix + cdBase
-                echo "Pipeline CI terminé avec succès — lancement du CD: ${cdJob}"
-                build job: cdJob, wait: true, propagate: true
-            }
+            echo 'Pipeline CI terminé avec succès — lancement du CD...'
+            build job: 'project-management-CD',
+                  wait: true,
+                  propagate: true
         }
         failure {
             echo 'Pipeline CI échoué !'
