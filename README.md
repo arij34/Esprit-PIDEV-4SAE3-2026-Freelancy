@@ -353,104 +353,150 @@ ng serve
 | ExamQuiz Service | http://localhost:8150 |
 | ExamQuiz Swagger | http://localhost:8150/swagger-ui.html |
 ---
-DevOps & Deployment
-🚀 DevOps Overview
+# 🚀 DevOps & Deployment
 
-Freelancy implements a complete CI/CD pipeline to automate the build, test, containerization, and deployment of all microservices using cloud-native technologies.
+## 📌 DevOps Overview
 
-The workflow is divided into two main phases:
+Freelancy implements a complete **CI/CD pipeline** to automate the build, test, containerization, and deployment of all microservices using **cloud-native technologies**.
 
-Phase	Tool	Role
-Continuous Integration (CI)	Jenkins	Build, test, and containerize services
-Continuous Deployment (CD)	Kubernetes	Deploy and manage containers in production
-🔁 Continuous Integration (CI) — Jenkins
+### 🔄 Workflow Phases
 
-Each microservice has its own independent Jenkins pipeline, ensuring modularity, scalability, and isolated builds.
+| Phase | Tool | Role |
+|------|------|------|
+| **Continuous Integration (CI)** | Jenkins | Build, test, and containerize services |
+| **Continuous Deployment (CD)** | Kubernetes | Deploy and manage containers in production |
 
-🔹 Pipeline Stages
-Stage	Description
-Checkout	Retrieve source code from GitHub
-Build	Spring Boot → mvn clean package
-Angular → npm install && npm run build
-Test	Execute automated unit tests (JUnit)
-Docker Build	Build Docker image using the service Dockerfile
-Docker Push	Push image to Docker Hub
+---
 
-👉 Output: A ready-to-use Docker image per microservice
+## 🔁 Continuous Integration (CI) — Jenkins
 
-🐳 Dockerization Strategy
+Each microservice has its own **independent Jenkins pipeline**, ensuring **modularity**, **scalability**, and **isolated builds**.
 
-Each component of the system is containerized:
+### 🔹 Pipeline Stages
 
-Component	Strategy
-Spring Boot Microservices	Multi-stage Dockerfile (Maven + JRE)
-Angular Frontend	Built with Node.js and served via Nginx
-Python AI Services	Lightweight Python image
-✔ Benefits
-Environment consistency
-Faster deployment
-Isolation between services
-📦 Docker Registry (Docker Hub)
+| Stage | Description |
+|------|------------|
+| **Checkout** | Retrieve source code from GitHub |
+| **Build** | Spring Boot → `mvn clean package` <br> Angular → `npm install && npm run build` |
+| **Test** | Execute automated unit tests (JUnit) |
+| **Docker Build** | Build Docker image using the service Dockerfile |
+| **Docker Push** | Push image to Docker Hub |
 
-All Docker images are stored and versioned in Docker Hub:
+👉 **Output:** A ready-to-use Docker image per microservice
 
+---
+
+## 🐳 Dockerization Strategy
+
+Each component of the system is **containerized**:
+
+| Component | Strategy |
+|----------|----------|
+| **Spring Boot Microservices** | Multi-stage Dockerfile (Maven + JRE) |
+| **Angular Frontend** | Built with Node.js and served via Nginx |
+| **Python AI Services** | Lightweight Python image |
+
+### ✔ Benefits
+
+- Environment consistency  
+- Faster deployment  
+- Isolation between services  
+
+---
+
+## 📦 Docker Registry (Docker Hub)
+
+All Docker images are **stored and versioned** in Docker Hub:
+
+```bash
 pidev/ms-user:latest
 pidev/ms-project:latest
 pidev/api-gateway:latest
 pidev/eureka:latest
 pidev/frontend:latest
+```
 
-These images are used by Kubernetes during deployment.
+These images are used by **Kubernetes during deployment**.
 
-🚀 Continuous Deployment (CD) — Kubernetes
+---
 
-A centralized Jenkins pipeline handles deployment to the Kubernetes cluster.
+## 🚀 Continuous Deployment (CD) — Kubernetes
 
-🔹 Deployment Workflow
-Step	Description
-1	Checkout Kubernetes manifests
-2	Pull Docker images from Docker Hub
-3	Apply manifests (kubectl apply -f)
-4	Wait for pods readiness
-5	Run health checks
-☸️ Kubernetes Architecture
+A **centralized Jenkins pipeline** handles deployment to the Kubernetes cluster.
 
-Freelancy is deployed as a distributed system of containerized pods:
+### 🔹 Deployment Workflow
 
-Angular Frontend
-API Gateway
-Eureka Server (Service Discovery)
-Spring Boot Microservices
-Python AI Services
-MySQL Databases (one per microservice)
-🔹 Kubernetes Responsibilities
-Auto-restart failed pods
-Load balancing
-Horizontal scaling (replicas)
-Internal service discovery
-📄 Kubernetes Resources
-Resource	Role
-Deployment	Manages pods and replicas
-Service	Exposes applications (ClusterIP / NodePort)
-ConfigMap	Stores configuration variables
-Secret	Stores sensitive data (credentials, tokens)
-PersistentVolumeClaim	Handles database storage
-📊 Monitoring & Observability
-🔹 Prometheus
-Collects metrics from all services
-Uses /actuator/prometheus endpoints (Spring Boot Actuator)
-🔹 Grafana
-Visualizes metrics through dashboards
-Provides real-time monitoring of system health
-🧪 Local Development (Docker Compose)
+| Step | Description |
+|------|------------|
+| **1** | Checkout Kubernetes manifests |
+| **2** | Pull Docker images from Docker Hub |
+| **3** | Apply manifests (`kubectl apply -f`) |
+| **4** | Wait for pods readiness |
+| **5** | Run health checks |
 
-Docker Compose is used only for local development and testing:
+---
 
+## ☸️ Kubernetes Architecture
+
+Freelancy is deployed as a **distributed system of containerized pods**:
+
+- Angular Frontend  
+- API Gateway  
+- Eureka Server (Service Discovery)  
+- Spring Boot Microservices  
+- Python AI Services  
+- MySQL Databases *(one per microservice)*  
+
+### 🔹 Kubernetes Responsibilities
+
+- Auto-restart failed pods  
+- Load balancing  
+- Horizontal scaling *(replicas)*  
+- Internal service discovery  
+
+---
+
+## 📄 Kubernetes Resources
+
+| Resource | Role |
+|---------|------|
+| **Deployment** | Manages pods and replicas |
+| **Service** | Exposes applications (ClusterIP / NodePort) |
+| **ConfigMap** | Stores configuration variables |
+| **Secret** | Stores sensitive data (credentials, tokens) |
+| **PersistentVolumeClaim** | Handles database storage |
+
+---
+
+## 📊 Monitoring & Observability
+
+### 🔹 Prometheus
+
+- Collects metrics from all services  
+- Uses `/actuator/prometheus` endpoints *(Spring Boot Actuator)*  
+
+### 🔹 Grafana
+
+- Visualizes metrics through dashboards  
+- Provides real-time monitoring of system health  
+
+---
+
+## 🧪 Local Development (Docker Compose)
+
+Docker Compose is used only for **local development and testing**:
+
+```bash
 docker-compose up --build
+```
 
-⚠️ In production, Docker Compose is replaced by Kubernetes.
+⚠️ In production, Docker Compose is **replaced by Kubernetes**.
 
-📁 DevOps Project Structure
+---
+
+## 📁 DevOps Project Structure
+
+```bash
 /microservices
   /service-user
     Dockerfile
@@ -471,16 +517,27 @@ docker-compose up --build
   /secrets
 
 /docker-compose.yml   # local environment only
-🧩 DevOps Architecture Flow
-CI (Jenkins) → Build & Test → Docker Image → Docker Hub
+```
+
+---
+
+## 🧩 DevOps Architecture Flow
+
+```text
+CI (Jenkins) → Build & Test → Docker Image → Docker Hub  
 CD (Jenkins) → Kubernetes Deployment → Running Pods
-📌 Key DevOps Practices
-Microservices containerization
-CI/CD automation with Jenkins
-Infrastructure as Code (Kubernetes YAML)
-Service discovery with Eureka
-Secure authentication (Keycloak + JWT)
-Monitoring with Prometheus & Grafana
+```
+
+---
+
+## 📌 Key DevOps Practices
+
+- Microservices containerization  
+- CI/CD automation with Jenkins  
+- Infrastructure as Code *(Kubernetes YAML)*  
+- Service discovery with Eureka  
+- Secure authentication *(Keycloak + JWT)*  
+- Monitoring with Prometheus & Grafana  
 
 ---
 
