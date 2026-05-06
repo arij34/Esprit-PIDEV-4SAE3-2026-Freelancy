@@ -46,15 +46,9 @@ pipeline {
         }
         stage('4 - SonarQube Analysis') {
             steps {
-                dir("${MS_NAME}") {
-                    withSonarQubeEnv('sonar') {
-                        sh """
-                            mvn sonar:sonar \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                            -Dsonar.java.source=17 \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
+                withSonarQubeEnv('sonar') {
+                    dir("${MS_NAME}") {
+                        sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.projectName=${SONAR_PROJECT_NAME} -Dsonar.java.source=17 -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml"
                     }
                 }
             }
