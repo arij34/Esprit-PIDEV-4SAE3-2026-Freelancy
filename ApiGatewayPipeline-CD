@@ -116,12 +116,12 @@ pipeline {
             }
         }
         stage('7 — Deploy API Gateway') {
-            steps {
-                sh "${KUBECTL} apply --validate=false -f k8s/api-gateway-deployment.yaml -n ${NAMESPACE}"
-                sh "${KUBECTL} rollout status deployment/api-gateway-deployment -n ${NAMESPACE} --timeout=120s"
-                echo "API Gateway deployed"
-            }
-        }
+    steps {
+        sh "${KUBECTL} apply --validate=false -f k8s/api-gateway-deployment.yaml -n ${NAMESPACE}"
+        sh "${KUBECTL} rollout status deployment/api-gateway-deployment -n ${NAMESPACE} --timeout=300s"
+        echo "API Gateway deployed"
+    }
+}
         stage('8 — Smoke Test') {
             steps {
                 sh "${KUBECTL} get pods -n ${NAMESPACE} -o wide"
