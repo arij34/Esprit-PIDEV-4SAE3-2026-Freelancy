@@ -64,11 +64,11 @@ pipeline {
             }
         }
         stage('4 — Deploy MySQL') {
-            steps {
-                sh "${KUBECTL} apply --validate=false -f k8s/mysql-deployment.yaml -n ${NAMESPACE}"
-                sh "${KUBECTL} rollout status deployment/mysql-challenge -n ${NAMESPACE} --timeout=120s"
-                echo "MySQL ready"
-            }
+        steps {
+            sh "${KUBECTL} apply --validate=false -f k8s/mysql-deployment.yaml -n ${NAMESPACE}"
+            sh "${KUBECTL} rollout status deployment/mysql-challenge -n ${NAMESPACE} --timeout=300s"
+            echo "MySQL ready"
+        }
         }
         stage('5 — Deploy Prometheus') {
             steps {
