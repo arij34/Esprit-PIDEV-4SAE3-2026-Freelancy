@@ -3,103 +3,109 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+ 
     <modelVersion>4.0.0</modelVersion>
-
+ 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.5</version>
         <relativePath/>
     </parent>
-
+ 
     <groupId>tn.esprit</groupId>
     <artifactId>Matching</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Matching</name>
     <description>Matching microservice</description>
-
+ 
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
         <lombok.version>1.18.36</lombok.version>
+        <!-- SonarQube -->
+        <sonar.projectKey>matching-service</sonar.projectKey>
+        <sonar.projectName>matching-service</sonar.projectName>
+        <sonar.host.url>http://192.168.51.4:9000</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
+ 
     <dependencies>
-
-        <!-- ✅ WEB -->
+ 
+        <!-- WEB -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- ✅ JPA -->
+ 
+        <!-- JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-
-        <!-- ✅ EUREKA CLIENT -->
+ 
+        <!-- EUREKA CLIENT -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
-
-        <!-- ✅ FEIGN -->
+ 
+        <!-- FEIGN -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
-
-        <!-- ✅ MYSQL -->
+ 
+        <!-- MYSQL -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- ✅ LOMBOK (une seule fois) -->
+ 
+        <!-- LOMBOK -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
-
-        <!-- ✅ Validation -->
+ 
+        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
-        <!-- ✅ Feign Jackson codec -->
+ 
+        <!-- Feign Jackson codec -->
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-jackson</artifactId>
             <version>13.6</version>
         </dependency>
-
-        <!-- ✅ TEST : une seule dépendance, gérée par le parent Spring Boot -->
+ 
+        <!-- TEST -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- ✅ ACTUATOR -->
+ 
+        <!-- ACTUATOR -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-
-        <!-- ✅ PROMETHEUS -->
+ 
+        <!-- PROMETHEUS -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
-
+ 
     </dependencies>
-
-    <!-- ✅ SPRING CLOUD VERSION -->
+ 
+    <!-- SPRING CLOUD VERSION -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -111,11 +117,11 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <!-- ✅ BUILD -->
+ 
+    <!-- BUILD -->
     <build>
         <plugins>
-
+ 
             <!-- Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -129,8 +135,8 @@
                     </excludes>
                 </configuration>
             </plugin>
-
-            <!-- ✅ Lombok annotation processor avec version explicite -->
+ 
+            <!-- Lombok annotation processor -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -139,26 +145,24 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version> <!-- ✅ FIX principal -->
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-
+ 
+            <!-- JaCoCo -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
                 <executions>
-                    <!-- Attache l'agent Jacoco pendant les tests -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-
-                    <!-- Génère le rapport après les tests -->
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
@@ -168,8 +172,15 @@
                     </execution>
                 </executions>
             </plugin>
-
+ 
+            <!-- SonarQube -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.11.0.3922</version>
+            </plugin>
+ 
         </plugins>
     </build>
-
+ 
 </project>
