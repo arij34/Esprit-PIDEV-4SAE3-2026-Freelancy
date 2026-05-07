@@ -28,7 +28,7 @@ spec:
           command: ['sh', '-c', 'until nc -z mysql-matching 3306; do echo waiting for mysql; sleep 5; done']
       containers:
         - name: matching-module
-          image: arijachach/matching-module:latest
+          image: pidevfreelancy/skill-management:latest
           ports:
             - containerPort: 8087
           envFrom:
