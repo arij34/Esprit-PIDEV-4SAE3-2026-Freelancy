@@ -40,7 +40,7 @@ data:
       - job_name: 'matching-service'
         metrics_path: '/actuator/prometheus'
         static_configs:
-          - targets: ['matching-service:8097']
+          - targets: ['matching-service:8087']
 
       # ── Services collègues ajoutés ──────────────────────────────────────
       - job_name: 'projet-module-service'
