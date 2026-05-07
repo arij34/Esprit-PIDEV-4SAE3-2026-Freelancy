@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: ameni221/api-gateway:latest
+          image: pidevfreelancy/api-gateway:latest
           ports:
             - containerPort: 8091
           env:
