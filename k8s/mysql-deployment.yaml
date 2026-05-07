@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-projet-pvc          # ✅ Corrigé: mysql-skill-pvc → mysql-projet-pvc
+  name: mysql-projet-pvc
   namespace: freelancy
 spec:
   accessModes:
@@ -13,17 +13,17 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql-projet              # ✅ Corrigé: mysql-skill → mysql-projet
+  name: mysql-projet
   namespace: freelancy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql-projet           # ✅ Corrigé
+      app: mysql-projet
   template:
     metadata:
       labels:
-        app: mysql-projet         # ✅ Corrigé
+        app: mysql-projet
     spec:
       containers:
         - name: mysql
@@ -32,11 +32,11 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               value: "root"
             - name: MYSQL_DATABASE
-              value: projet_Module  # ✅ Correct
+              value: projet_Module
             - name: MYSQL_USER
-              value: root
+              value: projet_user    # ✅ différent de root
             - name: MYSQL_PASSWORD
-              value: ""
+              value: "projet_pass"  # ✅ mot de passe non vide
           ports:
             - containerPort: 3306
           volumeMounts:
@@ -45,16 +45,16 @@ spec:
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
-            claimName: mysql-projet-pvc   # ✅ Corrigé
+            claimName: mysql-projet-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-projet-service      # ✅ Corrigé: mysql-service → mysql-projet-service
+  name: mysql-projet-service
   namespace: freelancy
 spec:
   selector:
-    app: mysql-projet             # ✅ Corrigé
+    app: mysql-projet
   ports:
     - port: 3306
       targetPort: 3306
