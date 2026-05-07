@@ -29,9 +29,9 @@ pipeline {
         stage('Deploy to Kubernetes namespace freelancy') {
             steps {
                 dir('/home/vagrant/DEVOPS/blog-service') {
-                    sh 'minikube kubectl -- apply -f /home/vagrant/DEVOPS/k8s/namespace.yaml'
-                    sh 'minikube kubectl -- apply -f k8s/deployment.yaml'
-                    sh 'minikube kubectl -- apply -f k8s/service.yaml'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- apply -f /home/vagrant/DEVOPS/k8s/namespace.yaml'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- apply -f k8s/deployment.yaml'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- apply -f k8s/service.yaml'
                 }
             }
         }
@@ -39,7 +39,7 @@ pipeline {
         stage('Rollout status') {
             steps {
                 dir('/home/vagrant/DEVOPS/blog-service') {
-                    sh 'minikube kubectl -- rollout status deployment/blog-service-deployment -n $K8S_NAMESPACE --timeout=240s'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- rollout status deployment/blog-service-deployment -n $K8S_NAMESPACE --timeout=240s'
                 }
             }
         }
@@ -47,7 +47,9 @@ pipeline {
         stage('Smoke test') {
             steps {
                 dir('/home/vagrant/DEVOPS/blog-service') {
-                    sh 'minikube kubectl -- run blog-service-smoke --rm --restart=Never -n $K8S_NAMESPACE --image=curlimages/curl:8.7.1 -- curl -fsS http://blog-service:8050/actuator/health'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- run blog-service-smoke --rm --restart=Never -n $K8S_NAMESPACE --image=curlimages/curl:8.7.1 -- curl -fsS http://blog-service:8050/actuator/health'
+
+
                 }
             }
         }
