@@ -26,7 +26,7 @@ pipeline {
 
         stage('Maven unit tests') {
             steps {
-        	dir("${PROJECT_DIR}") {
+        	dir('/home/vagrant/DEVOPS/blog-analytics-service') {
             	    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                 	sh 'MAVEN_OPTS="-Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading" ./mvnw -B test'
             	    }
