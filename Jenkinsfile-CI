@@ -28,7 +28,7 @@ pipeline {
             
 	    steps {
         	
-		dir("${PROJECT_DIR}") {
+		dir('/home/vagrant/DEVOPS/blog-service') {
             		
 		    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                 
