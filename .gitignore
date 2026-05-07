@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local DevOps outputs ###
+*.log
+effective-pom

@@ -9,28 +9,14 @@ pipeline {
         DOCKER_IMAGE = 'pidevfreelancy/blog-analytics-service:latest'
         SONAR_PROJECT_KEY = 'blog-analytics-service'
         SONAR_GOAL = 'org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar'
+        TEST_JAVA_OPTS = '-Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    def useLocalProject = (sh(
-                        script: "[ -f '${env.PROJECT_HOME}/pom.xml' ] && [ -f '${env.PROJECT_HOME}/mvnw' ]",
-                        returnStatus: true
-                    ) == 0)
-
-                    env.BUILD_DIR = useLocalProject ? env.PROJECT_HOME : env.WORKSPACE
-
-                    if (useLocalProject) {
-                        echo "Using synced Vagrant project directory: ${env.BUILD_DIR}"
-                    } else {
-                        echo "Using Jenkins SCM workspace: ${env.BUILD_DIR}"
-                        checkout scm
-                    }
-                }
-
-                dir("${env.BUILD_DIR}") {
+                dir('/home/vagrant/DEVOPS/blog-analytics-service') {
+                    sh '[ -f pom.xml ] && [ -f mvnw ]'
                     sh 'chmod +x mvnw'
                     sh './mvnw -v'
                     sh 'cat .mvn/wrapper/maven-wrapper.properties'
@@ -40,15 +26,17 @@ pipeline {
 
         stage('Maven unit tests') {
             steps {
-                dir("${env.BUILD_DIR}") {
-                    sh './mvnw -B test'
+                dir('/home/vagrant/DEVOPS/blog-analytics-service') {
+                    withEnv(["MAVEN_OPTS=${env.TEST_JAVA_OPTS}"]) {
+                        sh './mvnw -B test'
+                    }
                 }
             }
         }
 
         stage('SonarQube analysis') {
             steps {
-                dir("${env.BUILD_DIR}") {
+                dir('/home/vagrant/DEVOPS/blog-analytics-service') {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         withSonarQubeEnv('SonarQube') {
                             withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
@@ -73,7 +61,7 @@ pipeline {
 
         stage('Maven package') {
             steps {
-                dir("${env.BUILD_DIR}") {
+                dir('/home/vagrant/DEVOPS/blog-analytics-service') {
                     sh './mvnw -B clean package -DskipTests'
                 }
             }
@@ -81,7 +69,7 @@ pipeline {
 
         stage('Docker build') {
             steps {
-                dir("${env.BUILD_DIR}") {
+                dir('/home/vagrant/DEVOPS/blog-analytics-service') {
                     sh 'docker build -t $DOCKER_IMAGE .'
                 }
             }
@@ -94,7 +82,7 @@ pipeline {
                     usernameVariable: 'DOCKERHUB_USER',
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
-                    dir("${env.BUILD_DIR}") {
+                    dir('/home/vagrant/DEVOPS/blog-analytics-service') {
                         sh 'echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin'
                         sh 'docker push $DOCKER_IMAGE'
                     }
@@ -105,7 +93,9 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout || true'
+            dir('/home/vagrant/DEVOPS/blog-analytics-service') {
+                sh 'docker logout || true'
+            }
         }
     }
 }
