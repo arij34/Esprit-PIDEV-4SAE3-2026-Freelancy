@@ -47,8 +47,9 @@ pipeline {
         stage('Smoke test') {
             steps {
                 dir('/home/vagrant/DEVOPS/blog-analytics-service') {
-                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- delete pod blog-analytics-service-smoke -n $K8S_NAMESPACE --ignore-not-found=true'
-		    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- run blog-analytics-service-smoke --restart=Never -n $K8S_NAMESPACE --image=curlimages/curl:8.7.1 --attach --command -- curl -fsS http://blog-analytics-service:8060/actuator/health'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- get pods -n $K8S_NAMESPACE'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- get svc blog-analytics-service -n $K8S_NAMESPACE'
+                    sh 'KUBECONFIG=/home/vagrant/.kube/config minikube kubectl -- get endpoints blog-analytics-service -n $K8S_NAMESPACE'
                 }
             }
         }
