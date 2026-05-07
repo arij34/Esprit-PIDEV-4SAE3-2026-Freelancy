@@ -26,13 +26,13 @@ pipeline {
 
         stage('Maven unit tests') {
             steps {
-                dir('/home/vagrant/DEVOPS/blog-analytics-service') {
-                    withEnv(["MAVEN_OPTS=${env.TEST_JAVA_OPTS}"]) {
-                        sh './mvnw -B test'
-                    }
-                }
-            }
-        }
+        	dir("${PROJECT_DIR}") {
+            	    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                	sh 'MAVEN_OPTS="-Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading" ./mvnw -B test'
+            	    }
+        	}
+    	    }
+	}
 
         stage('SonarQube analysis') {
             steps {
