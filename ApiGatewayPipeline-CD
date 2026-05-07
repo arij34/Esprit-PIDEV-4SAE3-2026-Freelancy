@@ -4,6 +4,8 @@ pipeline {
         IMAGE_NAME = "pidevfreelancy/api-gateway"
         IMAGE_TAG  = "latest"
         NAMESPACE  = "freelancy"
+        KUBECONFIG = "/var/jenkins_home/kubeconfig"
+        KUBECTL    = "kubectl --kubeconfig=/var/jenkins_home/kubeconfig"
     }
     stages {
         stage('Clean Workspace') {
@@ -47,7 +49,11 @@ pipeline {
         }
         stage('3 — Prepare Namespace') {
             steps {
-                sh "kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
+                sh """
+                    ${KUBECTL} create namespace ${NAMESPACE} \
+                        --dry-run=client -o yaml | \
+                    ${KUBECTL} apply --validate=false -f -
+                """
                 echo "Namespace ready"
             }
         }
@@ -70,14 +76,14 @@ pipeline {
                         credentialsId: 'github-credentials'
                     ]]
                 ])
-                sh "kubectl apply -f prometheus-config.yaml -n ${NAMESPACE}"
-                sh "kubectl apply -f prometheus-deployment.yaml -n ${NAMESPACE}"
+                sh "${KUBECTL} apply --validate=false -f prometheus-config.yaml -n ${NAMESPACE}"
+                sh "${KUBECTL} apply --validate=false -f prometheus-deployment.yaml -n ${NAMESPACE}"
                 echo "Prometheus deployed"
             }
         }
         stage('5 — Deploy Grafana') {
             steps {
-                sh "kubectl apply -f grafana-deployment.yaml -n ${NAMESPACE}"
+                sh "${KUBECTL} apply --validate=false -f grafana-deployment.yaml -n ${NAMESPACE}"
                 echo "Grafana deployed"
             }
         }
@@ -111,15 +117,15 @@ pipeline {
         }
         stage('7 — Deploy API Gateway') {
             steps {
-                sh "kubectl apply -f k8s/api-gateway-deployment.yaml -n ${NAMESPACE}"
-                sh "kubectl rollout status deployment/api-gateway-deployment -n ${NAMESPACE} --timeout=120s"
+                sh "${KUBECTL} apply --validate=false -f k8s/api-gateway-deployment.yaml -n ${NAMESPACE}"
+                sh "${KUBECTL} rollout status deployment/api-gateway-deployment -n ${NAMESPACE} --timeout=120s"
                 echo "API Gateway deployed"
             }
         }
         stage('8 — Smoke Test') {
             steps {
-                sh "kubectl get pods -n ${NAMESPACE} -o wide"
-                sh "kubectl get services -n ${NAMESPACE}"
+                sh "${KUBECTL} get pods -n ${NAMESPACE} -o wide"
+                sh "${KUBECTL} get services -n ${NAMESPACE}"
                 echo "API Gateway: http://192.168.49.2:30091/actuator/health"
                 echo "Prometheus:  http://localhost:30090"
                 echo "Grafana:     http://localhost:30030 (admin/admin123)"
@@ -132,7 +138,7 @@ pipeline {
         }
         failure {
             script {
-                sh "kubectl get events -n ${env.NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
+                sh "${KUBECTL} get events -n ${NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -20"
             }
             echo '❌ CD Pipeline failed!'
         }
