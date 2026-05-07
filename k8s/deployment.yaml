@@ -24,7 +24,7 @@ spec:
           command: ['sh', '-c', 'until nc -z mysql-service 3306; do echo waiting for mysql; sleep 5; done']
       containers:
         - name: skill-management
-          image: arijachach/skill-management:latest
+          image: pidevfreelancy/skill-management:latest
           ports:
             - containerPort: 8086
           envFrom:
