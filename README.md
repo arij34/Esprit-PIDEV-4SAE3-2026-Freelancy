@@ -516,7 +516,7 @@ docker-compose up --build
   /monitoring
   /secrets
 
-/docker-compose.yml   # local environment only
+/docker-compose.yml   
 ```
 
 ---
@@ -538,6 +538,297 @@ CD (Jenkins) → Kubernetes Deployment → Running Pods
 - Service discovery with Eureka  
 - Secure authentication *(Keycloak + JWT)*  
 - Monitoring with Prometheus & Grafana  
+
+
+
+# 🚀 Advanced DevOps & Cloud-Native Deployment
+
+## DevOps Strategy
+
+Freelancy follows a modern DevOps approach based on:
+
+- Continuous Integration (CI)
+- Continuous Deployment (CD)
+- Containerization
+- Kubernetes Orchestration
+- Automated Quality Analysis
+- Cloud-Native Deployment
+
+The objective is to ensure:
+
+- Faster software delivery
+- Stable deployments
+- Better scalability
+- High availability
+- Continuous monitoring
+- Infrastructure automation
+
+---
+
+# 🔄 CI/CD Pipeline Architecture
+
+The project uses Jenkins pipelines to automate the entire delivery lifecycle.
+
+## CI/CD Workflow
+
+```text
+Developer Push
+      ↓
+GitHub Repository
+      ↓
+Jenkins CI Pipeline
+      ↓
+Maven Build & Tests
+      ↓
+SonarQube Analysis
+      ↓
+Docker Image Build
+      ↓
+Docker Hub Push
+      ↓
+Jenkins CD Pipeline
+      ↓
+Kubernetes Deployment
+      ↓
+Running Microservices
+```
+
+---
+
+# ⚙️ Continuous Integration (CI)
+
+Each microservice has its own dedicated CI pipeline.
+
+## Implemented Pipelines
+
+| Pipeline | Description |
+|----------|-------------|
+| USER-CI | User Service Integration |
+| PAYMENT-CI | Payment Service Integration |
+| SUBSCRIPTION-CI | Subscription Service Integration |
+
+---
+
+## CI Pipeline Stages
+
+### 1️⃣ Workspace Cleanup
+Removes old build artifacts and temporary files.
+
+### 2️⃣ Git Checkout
+Retrieves the latest source code from GitHub.
+
+### 3️⃣ Maven Build
+Compiles and packages the backend services.
+
+```bash
+mvn clean install -DskipTests
+```
+
+### 4️⃣ SonarQube Analysis
+Performs static code quality and security analysis.
+
+### 5️⃣ Docker Build
+Creates Docker images for each microservice.
+
+### 6️⃣ Docker Push
+Pushes images to Docker Hub registry.
+
+### 7️⃣ CD Trigger
+Automatically launches deployment pipelines.
+
+---
+
+# 🔍 SonarQube Integration
+
+Freelancy integrates SonarQube for continuous code inspection.
+
+## Features
+
+- Code smell detection
+- Vulnerability analysis
+- Maintainability analysis
+- Security hotspot detection
+- Technical debt estimation
+
+## Example SonarQube Command
+
+```bash
+mvn sonar:sonar -Dsonar.projectKey=payment-service -Dsonar.host.url=http://<SONAR_IP>:9000 -Dsonar.login=<TOKEN>
+```
+
+---
+
+# 🐳 Docker Containerization
+
+All services are containerized using Docker.
+
+## Services Containerized
+
+- User Service
+- Payment Service
+- Subscription Service
+- MySQL Database
+
+---
+
+## Docker Advantages
+
+- Environment consistency
+- Fast deployment
+- Lightweight containers
+- Easy scalability
+- Better isolation
+
+---
+
+# 📦 Docker Hub Registry
+
+The project uses Docker Hub as the image registry.
+
+## Example Images
+
+```bash
+pidevfreelancy/user-service:latest
+pidevfreelancy/payment-service:latest
+pidevfreelancy/subscription-service:latest
+```
+
+Each successful CI pipeline automatically updates the Docker images.
+
+---
+
+# ☸️ Kubernetes Deployment
+
+Freelancy uses Kubernetes for orchestration and deployment management.
+
+---
+
+## Kubernetes Responsibilities
+
+- Pod management
+- Container orchestration
+- Auto-restart
+- Load balancing
+- Internal networking
+- Service discovery
+- Resource management
+
+---
+
+# 📁 Kubernetes YAML Structure
+
+```text
+k8s/
+├── namespace.yaml
+├── mysql.yaml
+├── mysql-service.yaml
+├── payment-deployment.yaml
+├── payment-service.yaml
+├── subscription-deployment.yaml
+├── subscription-service.yaml
+├── user-deployment.yaml
+└── user-service.yaml
+```
+
+---
+
+# 🚀 Kubernetes Deployment Command
+
+```bash
+kubectl apply -f k8s/
+```
+
+---
+
+# 📊 Kubernetes Monitoring
+
+Useful commands used during deployment:
+
+## Check Pods
+
+```bash
+kubectl get pods -n freelancy
+```
+
+## Check Services
+
+```bash
+kubectl get svc -n freelancy
+```
+
+## Check Deployments
+
+```bash
+kubectl get deployments -n freelancy
+```
+
+---
+
+# 🖥 Local Kubernetes Environment
+
+The project uses:
+
+- Minikube
+- Docker Driver
+- kubectl CLI
+
+This allows local simulation of a production Kubernetes cluster.
+
+---
+
+# 🔐 Security & Authentication
+
+Freelancy integrates:
+
+- Keycloak Authentication
+- JWT Security
+- OAuth2
+- RBAC Authorization
+
+---
+
+# 🌐 Full DevOps Ecosystem
+
+| Tool | Purpose |
+|------|---------|
+| GitHub | Source code management |
+| Jenkins | CI/CD automation |
+| SonarQube | Static code analysis |
+| Docker | Containerization |
+| Docker Hub | Image registry |
+| Kubernetes | Orchestration |
+| Minikube | Local Kubernetes cluster |
+| MySQL | Database |
+| Keycloak | Authentication & authorization |
+
+---
+
+# ✅ DevOps Achievements
+
+The project successfully demonstrates:
+
+- Enterprise CI/CD pipelines
+- Automated deployments
+- Kubernetes orchestration
+- Dockerized microservices
+- Cloud-native architecture
+- Infrastructure automation
+- DevSecOps practices
+- Production-ready deployment workflow
+
+---
+
+# 💡 Future Improvements
+
+Potential future enhancements include:
+
+- Prometheus monitoring
+- Grafana dashboards
+- ArgoCD GitOps deployment
+- Helm Charts
+- Kubernetes Ingress
+- HTTPS with Cert-Manager
+- Horizontal Pod Autoscaling (HPA)
 
 ---
 
@@ -569,3 +860,6 @@ This project applies full-stack development, microservices architecture, DevOps 
 ---
 
 *Esprit School of Engineering – PIDEV 4SAE3 | 2025–2026*
+
+
+---
