@@ -482,9 +482,9 @@ Freelancy is deployed as a **distributed system of containerized pods**:
 
 ---
 
-## 🧪 Local Development (Docker Compose)
+## 🧪  Development (Docker Compose)
 
-Docker Compose is used only for **local development and testing**:
+Docker Compose is used only for ** development and testing**:
 
 ```bash
 docker-compose up --build
@@ -764,15 +764,14 @@ kubectl get deployments -n freelancy
 
 ---
 
-# 🖥 Local Kubernetes Environment
+# 🖥  Kubernetes Environment
 
 The project uses:
 
 - Minikube
-- Docker Driver
 - kubectl CLI
 
-This allows local simulation of a production Kubernetes cluster.
+ simulation of a production Kubernetes cluster.
 
 ---
 
@@ -797,7 +796,7 @@ Freelancy integrates:
 | Docker | Containerization |
 | Docker Hub | Image registry |
 | Kubernetes | Orchestration |
-| Minikube | Local Kubernetes cluster |
+| Minikube |  Kubernetes cluster |
 | MySQL | Database |
 | Keycloak | Authentication & authorization |
 
